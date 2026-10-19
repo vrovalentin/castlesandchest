@@ -299,9 +299,19 @@
   }
   const isComplete = (s) => s.filled.every(Boolean);
 
+  // Какой цвет блоков даёт деталь (для подсказки на поле). Украшения только собираются.
+  const PART_COLOR = { brick: 0, wall: 1, floor: 2, window: 3, door: 3, roof: 4, tiles: 4 };
+
+  // Чего не хватает замку с учётом склада: [{ type, n }].
+  function missing(s) {
+    const out = [];
+    PART_KEYS.forEach((k) => { const n = need(s, k); if (n > 0) out.push({ type: k, n }); });
+    return out;
+  }
+
   function newRun(s, rng) {
     const castle = castleOf(s);
-    s.run = { board: genBoard(castle, rng), moves: s.opts.moves, got: [] };
+    s.run = { board: genBoard(castle, rng), moves: s.opts.moves, got: [], extraUsed: false };
     s.runs++;
     return s.run;
   }
@@ -327,6 +337,6 @@
   root.Core = {
     ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, partsOfTier, starsFor,
     genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove,
-    newGame, castleOf, need, openChest, canMerge, merge, place, isComplete, newRun, endRun, syncIds,
+    newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, newRun, endRun, syncIds,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
