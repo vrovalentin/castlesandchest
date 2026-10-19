@@ -259,3 +259,65 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
   pointer-events: none; animation: appear .2s ease-out;
 }
 .blk .st.two { font-size: 2.9cqw; }
+
+/* ---------- Раскладка по схеме экранов (wireframe.html) ---------- */
+.btn.icon { width: 40px; height: 40px; padding: 0; font-size: 18px; flex: none; }
+.bar-title { flex: 1; min-width: 0; }
+.bar-title .title { font-size: 18px; }
+.progressbar { height: 6px; border-radius: 3px; background: rgba(255,255,255,.6); overflow: hidden; margin-top: -6px; }
+.progressbar i { display: block; height: 100%; background: var(--gold); transition: width .4s; }
+
+.row-panel { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; gap: 6px 10px; align-items: center; }
+.row-panel h2 { grid-column: 1 / -1; margin: 0; }
+.row-panel .btn { align-self: center; }
+.strip { display: flex; gap: 6px; overflow-x: auto; min-width: 0; padding-bottom: 2px; scrollbar-width: thin; }
+.strip .chest-btn { flex: none; width: 46px; }
+.strip .chest-btn svg { width: 46px; height: 39px; }
+.strip.parts { flex-wrap: wrap; overflow: visible; }
+.strip.parts .part { padding: 3px 7px 3px 5px; font-size: 12px; }
+#mine .row-panel { grid-template-columns: 1fr; }
+
+/* Полоса «Нужно замку» на поле */
+.needs {
+  display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center;
+  background: #fff6dd; border: 2px dashed var(--gold); border-radius: 12px; padding: 5px 8px; font-size: 12.5px;
+}
+.needs .lbl { font-weight: 700; color: var(--wood-dark); }
+.need-chip { display: inline-flex; align-items: center; gap: 4px; background: var(--panel); border-radius: 8px; padding: 1px 6px 1px 3px; font-weight: 600; }
+.need-chip .sw, .from .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
+.need-chip .sw.merge { background: var(--t4); color: #fff; font-size: 9px; line-height: 12px; text-align: center; }
+
+/* Окна поверх */
+.modal .sub { margin: -6px 0 0; color: var(--ink-soft); font-size: 13px; }
+.modal.wide { max-width: 420px; }
+.big-count { margin: 0; font-size: 16px; }
+.from { list-style: none; margin: 0; padding: 10px; background: #eef4f8; border-radius: 12px; text-align: left; display: grid; gap: 6px; font-size: 14px; }
+.from li { display: flex; align-items: center; gap: 6px; }
+.modal .actions { justify-content: center; }
+.modal .actions .btn { flex: 1 1 0; }
+.cells { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.cell-slot {
+  flex: 1; min-height: 44px; border: 2px dashed var(--panel-edge); border-radius: 12px; display: grid; place-items: center;
+  color: var(--ink-soft); font-size: 13px; background: none; padding: 4px;
+}
+.cell-slot.full { border-style: solid; border-color: var(--gold); background: #fff6dd; }
+.plus { font-weight: 800; color: var(--ink-soft); }
+.targets { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.target { border: 2px solid var(--panel-edge); background: var(--panel); border-radius: 12px; padding: 8px 12px; font-weight: 700; }
+.target.on { border-color: var(--t3); background: #e3f1fc; }
+.target .star { color: var(--gold-dark); }
+.modal .part[disabled] { cursor: default; }
+.chest-btn.open svg { animation: lid .5s ease-out; }
+@keyframes lid { 0% { transform: scale(.7) rotate(-6deg); } 60% { transform: scale(1.1) rotate(4deg); } 100% { transform: none; } }
+.part.fly { animation: appear .4s ease-out both; }
+.done-pic svg { width: 100%; height: auto; border-radius: 14px; display: block; }
+.done-pic .slot { pointer-events: none; }
+.modal select { font: inherit; padding: 4px 6px; border-radius: 8px; border: 2px solid var(--panel-edge); }
+.dev { text-align: left; border-top: 1px solid var(--panel-edge); padding-top: 8px; display: grid; gap: 8px; }
+.dev summary { cursor: pointer; color: var(--ink-soft); font-size: 13px; }
+.dev[open] { gap: 10px; }
+.dev .btn { justify-self: start; }
+.overlay.ad { z-index: 40; }
+
+.castle-wrap { background: linear-gradient(180deg, #bfe4f7, #e8f6fc 70%, #7cc06a 70%); }
+.castle-wrap svg { max-height: 42dvh; margin-inline: auto; }
