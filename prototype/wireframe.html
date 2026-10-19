@@ -1,0 +1,369 @@
+<title>Схема экранов</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ruslan+Display&family=Rubik:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Раскладка: лента телефонных экранов-«каркасов» 9:16, под каждым подписи к пронумерованным элементам. */
+:root {
+  --bg: #eef0f3;
+  --paper: #ffffff;
+  --ink: #232831;
+  --muted: #6a7280;
+  --wire: #c9ced6;      /* серые прямоугольники */
+  --wire-2: #aeb5c0;    /* темнее: важное */
+  --line: #8d95a3;
+  --mark: #3d5a99;      /* номера-выноски и кнопки-переходы */
+  --mark-ink: #ffffff;
+  --new: #a2672a;       /* предложение, ещё не решено */
+  --f-display: "Ruslan Display", Georgia, serif;
+  --f-body: "Rubik", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171a1f; --paper: #20242b; --ink: #e4e7ec; --muted: #9aa2af; --wire: #363c46; --wire-2: #4a525e;
+  --line: #6f7886; --mark: #8fa9e6; --mark-ink: #12151a; --new: #d9a05e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171a1f; --paper: #20242b; --ink: #e4e7ec; --muted: #9aa2af; --wire: #363c46; --wire-2: #4a525e;
+  --line: #6f7886; --mark: #8fa9e6; --mark-ink: #12151a; --new: #d9a05e; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 8px; max-width: 70ch; }
+h1 { font: 400 clamp(26px, 5vw, 38px)/1.1 var(--f-display); margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.key { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.key span { display: inline-flex; align-items: center; gap: 6px; }
+.flow { font-size: 14px; background: var(--paper); border: 1px solid var(--wire); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+.flow b { font-weight: 500; }
+.flow code { font: 500 12px var(--f-mono); color: var(--muted); }
+
+.screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 28px 22px; align-items: start; }
+.screen { display: grid; gap: 10px; min-width: 0; scroll-margin-top: 16px; }
+.screen h2 { font: 500 16px/1.2 var(--f-body); margin: 0; display: flex; gap: 8px; align-items: baseline; }
+.screen h2 small { font: 500 11px var(--f-mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.screen.flash .phone { outline: 3px solid var(--mark); outline-offset: 3px; }
+
+.phone { position: relative; aspect-ratio: 9 / 16; max-width: 100%; background: var(--paper); border: 2px solid var(--line);
+  border-radius: 18px; padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; font-size: 10.5px; }
+.box { background: var(--wire); border-radius: 5px; display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 4px 6px; color: var(--ink); text-align: center; position: relative; min-height: 22px; }
+.box.dark { background: var(--wire-2); }
+.box.dash { background: transparent; border: 1.5px dashed var(--line); }
+.box.new { background: transparent; border: 1.5px dashed var(--new); color: var(--new); }
+.row { display: flex; gap: 6px; }
+.row > * { flex: 1; }
+.grow { flex: 1; }
+button.box { font: inherit; cursor: pointer; border: 0; }
+button.box.go { background: var(--mark); color: var(--mark-ink); font-weight: 500; }
+button.box:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.n { position: absolute; top: -6px; left: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--ink); color: var(--paper);
+  font: 500 9.5px/16px var(--f-mono); text-align: center; z-index: 2; }
+
+.scene { flex: 1; border: 1.5px solid var(--wire-2); border-radius: 6px; position: relative; background:
+  repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--wire) 45%, transparent) 8px 9px); }
+.ghost { position: absolute; border: 1.5px dashed var(--line); border-radius: 3px; }
+.ghost.ok { border-color: var(--mark); border-style: solid; }
+.chip { width: 22px; height: 18px; border-radius: 4px; background: var(--wire-2); flex: none; }
+.strip { display: flex; gap: 4px; overflow: hidden; }
+
+.board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1.5px; aspect-ratio: 10 / 12; width: 100%;
+  border: 1.5px solid var(--wire-2); border-radius: 6px; padding: 3px; position: relative; }
+.board i { background: var(--wire); border-radius: 2px; }
+.board i.c { background: var(--wire-2); outline: 1.5px solid var(--line); outline-offset: -1.5px; }
+.board i.s { background: color-mix(in srgb, var(--mark) 35%, var(--wire)); }
+
+.dim { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 38%, transparent); z-index: 1; }
+.sheet { position: absolute; left: 8px; right: 8px; z-index: 3; background: var(--paper); border: 2px solid var(--line);
+  border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.sheet.bottom { bottom: 8px; }
+.sheet.mid { top: 50%; transform: translateY(-50%); }
+.sheet .t { font-weight: 700; font-size: 12px; text-align: center; }
+.under { opacity: .55; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+ol.notes { margin: 0; padding-left: 22px; font-size: 13.5px; display: grid; gap: 3px; }
+ol.notes li::marker { font: 500 12px var(--f-mono); color: var(--muted); }
+.tag { font: 500 10.5px var(--f-mono); color: var(--new); border: 1px solid var(--new); border-radius: 4px; padding: 0 4px; margin-left: 4px; white-space: nowrap; }
+.foot { font-size: 13.5px; color: var(--muted); max-width: 75ch; display: grid; gap: 6px; }
+.foot h3 { color: var(--ink); font: 500 15px var(--f-body); margin: 8px 0 0; }
+.foot ul { margin: 0; padding-left: 20px; }
+@media (prefers-reduced-motion: no-preference) { .screen .phone { transition: outline-color .3s; } }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>«Замок из сундуков»: схема экранов</h1>
+  <p>Серый каркас без графики: что стоит на каждом экране и куда ведут кнопки. Синие кнопки кликаются и показывают экран, на который ведут. Цифры на элементах совпадают с подписями под экраном.</p>
+  <div class="key">
+    <span><i class="chip" style="width:14px;height:14px;background:var(--wire)"></i>элемент</span>
+    <span><i class="chip" style="width:14px;height:14px;background:var(--mark)"></i>кнопка-переход</span>
+    <span><i class="chip" style="width:14px;height:14px;background:transparent;border:1.5px dashed var(--line)"></i>пустое место под деталь</span>
+    <span><i class="chip" style="width:14px;height:14px;background:transparent;border:1.5px dashed var(--new)"></i>моё предложение, решать тебе</span>
+  </div>
+</header>
+
+<div class="flow"><b>Путь игрока:</b> Стройка → Добыча → ходы кончились → (+5 ходов за рекламу или) Итог забега → Стройка → открыть сундуки → собрать и поставить детали → … → Замок построен → следующий замок. <code>Экран 9:16, портрет, одна раскладка для телефона и Яндекс Игр.</code></div>
+
+<div class="screens">
+
+<!-- 1. Стройка -->
+<section class="screen" id="build">
+  <h2>1. Стройка <small>главный</small></h2>
+  <div class="phone">
+    <div class="row" style="flex:none">
+      <button class="box go" data-go="settings" style="flex:0 0 26px"><span class="n">1</span>⚙</button>
+      <div class="box" style="flex:1"><span class="n">2</span>Замок 1 · Башня · 8 из 13</div>
+    </div>
+    <div class="scene"><span class="n">3</span>
+      <div class="ghost ok" style="left:30%;top:46%;width:18%;height:18%"></div>
+      <div class="ghost" style="left:52%;top:46%;width:18%;height:18%"></div>
+      <div class="ghost" style="left:30%;top:26%;width:40%;height:16%"></div>
+      <button class="ghost" data-go="slot" aria-label="Пустое место: окно" style="left:44%;top:68%;width:12%;height:14%;background:transparent;cursor:pointer"></button>
+    </div>
+    <div class="box" style="justify-content:space-between"><span class="n">4</span>
+      <span class="strip"><i class="chip"></i><i class="chip"></i><i class="chip"></i></span>
+      <button class="box go" data-go="chest" style="min-height:18px">Открыть все</button>
+    </div>
+    <div class="box" style="justify-content:space-between"><span class="n">5</span>
+      <span class="strip"><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i></span>
+      <button class="box go" data-go="merge" style="min-height:18px">Собрать</button>
+    </div>
+    <button class="box go" data-go="mine" style="min-height:34px;font-size:12px"><span class="n">6</span>▶ Добывать · 30 ходов</button>
+  </div>
+  <ol class="notes">
+    <li>Настройки.</li>
+    <li>Номер и название замка, прогресс деталей.</li>
+    <li>Усадьба. Пустые места пунктиром; синяя рамка значит, что деталь уже есть на складе. Тап по месту открывает экран 2.</li>
+    <li>Стопка закрытых сундуков. Тап по одному или «Открыть все» (экран 4).</li>
+    <li>Склад: лента деталей со счётчиками, цвет по ступени. «Собрать» открывает экран 3.</li>
+    <li>Главная кнопка. Если забег не закончен: «Продолжить · 12 ходов».</li>
+  </ol>
+</section>
+
+<!-- 2. Подсказка места -->
+<section class="screen" id="slot">
+  <h2>2. Пустое место <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="scene"></div><div class="box"></div><div class="box"></div></div>
+    <div class="dim"></div>
+    <div class="sheet bottom">
+      <div class="t">Окно · 3-я ступень</div>
+      <div class="box dark" style="min-height:44px"><span class="n">1</span>картинка детали</div>
+      <div class="box"><span class="n">2</span>На складе: 0</div>
+      <div class="box"><span class="n">3</span>Собрать из 2 деталей 2-й ступени · есть 3</div>
+      <div class="row">
+        <button class="box go" data-go="merge"><span class="n">4</span>Собрать</button>
+        <button class="box go" data-go="mine">Добывать</button>
+      </div>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Как выглядит деталь на замке.</li>
+    <li>Сколько таких деталей есть. Если есть, вместо кнопок одна: «Поставить».</li>
+    <li>Откуда её взять: сборкой или из сундука какого цвета.</li>
+    <li>Сразу ведёт туда, где деталь можно получить.</li>
+  </ol>
+</section>
+
+<!-- 3. Сборка -->
+<section class="screen" id="merge">
+  <h2>3. Сборка 2 → 1 <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="scene"></div></div>
+    <div class="dim"></div>
+    <div class="sheet bottom">
+      <div class="t">Собрать деталь</div>
+      <div class="row" style="align-items:center">
+        <div class="box dash" style="min-height:40px"><span class="n">1</span>Стенка</div>
+        <span style="flex:none">+</span>
+        <div class="box dash" style="min-height:40px">Перекрытие</div>
+      </div>
+      <div class="t" style="font-weight:400">↓ во что собрать</div>
+      <div class="row"><div class="box dark"><span class="n">2</span>Окно ★</div><div class="box">Дверь</div><div class="box">Крыша</div></div>
+      <div class="strip" style="justify-content:center"><span class="n" style="position:static">3</span><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i></div>
+      <button class="box go" data-go="build"><span class="n">4</span>Собрать</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Две ячейки: тап по детали на складе кладёт её сюда.</li>
+    <li>Варианты следующей ступени. Звёздочкой отмечено то, что нужно замку.</li>
+    <li>Склад: можно брать только детали той же ступени.</li>
+    <li>Собирает и возвращает на Стройку.</li>
+  </ol>
+</section>
+
+<!-- 4. Открытие сундука -->
+<section class="screen" id="chest">
+  <h2>4. Открытие сундуков <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="scene"></div></div>
+    <div class="dim"></div>
+    <div class="sheet mid">
+      <div class="t">Открыто сундуков: 3</div>
+      <div class="box dark" style="min-height:70px"><span class="n">1</span>сундук открывается</div>
+      <div class="row"><div class="box"><span class="n">2</span>Кирпич ×5</div><div class="box">Стенка ×2</div></div>
+      <div class="row"><div class="box">Окно ×1</div><div class="box new">Удвоить за рекламу</div></div>
+      <button class="box go" data-go="build"><span class="n">3</span>Забрать</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Анимация: крышка, детали вылетают и летят на склад.</li>
+    <li>Что выпало, по типам.</li>
+    <li>Закрыть и вернуться на Стройку.</li>
+  </ol>
+</section>
+
+<!-- 5. Добыча -->
+<section class="screen" id="mine">
+  <h2>5. Добыча <small>поле</small></h2>
+  <div class="phone">
+    <div class="row" style="flex:none">
+      <button class="box go" data-go="build" style="flex:0 0 26px"><span class="n">1</span>←</button>
+      <div class="box"><span class="n">2</span>Ходы 27</div>
+      <div class="box">Сундуки 3</div>
+    </div>
+    <div class="box new"><span class="n">3</span>Нужно замку: стенка ×2, окно ×1</div>
+    <div class="board" id="board"><span class="n">4</span></div>
+    <div class="box grow" style="justify-content:flex-start"><span class="n">5</span>
+      <span class="strip"><i class="chip"></i><i class="chip"></i><i class="chip"></i></span>
+    </div>
+    <button class="box go" data-go="out"><span class="n">6</span>(ходы кончились)</button>
+  </div>
+  <ol class="notes">
+    <li>Назад на Стройку, забег сохраняется.</li>
+    <li>Ходы и сколько сундуков уже упало.</li>
+    <li>Подсказка, детали какого цвета нужны замку. Это наше отличие: поле связано со стройкой. <span class="tag">предложение</span></li>
+    <li>Поле: 12 строк × 10 столбцов. Тёмные клетки с обводкой: сундуки. Синеватые: группа 4+ со звёздами.</li>
+    <li>Лента: сундуки, упавшие за край в этом забеге.</li>
+    <li>В игре этой кнопки нет: экран 6 появляется сам.</li>
+  </ol>
+</section>
+
+<!-- 6. Ходы кончились -->
+<section class="screen" id="out">
+  <h2>6. Ходы кончились <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="board" style="opacity:.6"></div></div>
+    <div class="dim"></div>
+    <div class="sheet mid">
+      <div class="t">Ходы кончились</div>
+      <div class="box"><span class="n">1</span>На поле ещё 2 сундука</div>
+      <button class="box go" data-go="mine" style="min-height:30px"><span class="n">2</span>+5 ходов · реклама</button>
+      <button class="box go" data-go="result"><span class="n">3</span>Закончить</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Почему стоит продолжить: сколько сундуков ещё не упало.</li>
+    <li>Реклама за награду (rewarded). Один раз за забег.</li>
+    <li>Итог забега.</li>
+  </ol>
+</section>
+
+<!-- 7. Итог забега -->
+<section class="screen" id="result">
+  <h2>7. Итог забега <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="board" style="opacity:.6"></div></div>
+    <div class="dim"></div>
+    <div class="sheet mid">
+      <div class="t">Добыто сундуков: 5</div>
+      <div class="strip" style="justify-content:center;flex-wrap:wrap"><span class="n" style="position:static">1</span><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i><i class="chip"></i></div>
+      <div class="box"><span class="n">2</span>Сгорело на поле: 3</div>
+      <div class="box new"><span class="n">3</span>Удвоить сундуки · реклама</div>
+      <button class="box go" data-go="build" style="min-height:30px"><span class="n">4</span>Открывать в Стройке</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Сундуки по цвету и звёздам.</li>
+    <li>Или «достались тебе», если включим, что сундуки с поля не сгорают.</li>
+    <li>Вторая реклама за награду. Возможно, хватит одной из двух (здесь или в экране 4). <span class="tag">решить</span></li>
+    <li>На Стройку; сундуки уже лежат в стопке.</li>
+  </ol>
+</section>
+
+<!-- 8. Замок построен -->
+<section class="screen" id="done">
+  <h2>8. Замок построен <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="scene"></div></div>
+    <div class="dim"></div>
+    <div class="sheet mid">
+      <div class="t">Башня построена!</div>
+      <div class="box dark" style="min-height:80px"><span class="n">1</span>готовый замок, салют</div>
+      <div class="box"><span class="n">2</span>Забегов: 3 · Следующий: Усадьба с фермой</div>
+      <button class="box go" data-go="build" style="min-height:30px"><span class="n">3</span>Следующий замок</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Награда глазами: замок целиком.</li>
+    <li>Короткая статистика и что дальше.</li>
+    <li>Новая усадьба на Стройке. Построенные замки потом можно смотреть в «Коллекции». <span class="tag">позже</span></li>
+  </ol>
+</section>
+
+<!-- 9. Настройки -->
+<section class="screen" id="settings">
+  <h2>9. Настройки <small>окно поверх</small></h2>
+  <div class="phone">
+    <div class="under"><div class="box"></div><div class="scene"></div></div>
+    <div class="dim"></div>
+    <div class="sheet mid">
+      <div class="t">Настройки</div>
+      <div class="row"><div class="box"><span class="n">1</span>Звук</div><div class="box dark" style="flex:0 0 34px">вкл</div></div>
+      <div class="row"><div class="box">Музыка</div><div class="box dark" style="flex:0 0 34px">вкл</div></div>
+      <div class="row"><div class="box"><span class="n">2</span>Язык</div><div class="box dark" style="flex:0 0 34px">RU</div></div>
+      <div class="box"><span class="n">3</span>Без рекламы · покупка</div>
+      <button class="box go" data-go="build"><span class="n">4</span>Закрыть</button>
+    </div>
+  </div>
+  <ol class="notes">
+    <li>Звук и музыка: обязательны для модерации Яндекса (и пауза звука на время рекламы).</li>
+    <li>Язык: русский и английский для Google Play.</li>
+    <li>Покупки появятся позже (раздел 10).</li>
+    <li>Сохранение автоматическое: облако Яндекса или телефон.</li>
+  </ol>
+</section>
+
+</div>
+
+<div class="foot">
+  <h3>Чем раскладка отличается от мини-игры Forge of Empires</h3>
+  <ul>
+    <li>Главный экран у нас Стройка с усадьбой, а поле открывается кнопкой.</li>
+    <li>Сундуки на поле не открываются: они копятся и открываются на Стройке.</li>
+    <li>На поле есть подсказка «что нужно замку», поле и стройка связаны.</li>
+    <li>Своя графика, шрифты и тексты будут в Unity; здесь только расположение.</li>
+  </ul>
+  <h3>Чего здесь нет</h3>
+  <ul><li>Обучение (туториал), загрузочный экран, магазин и коллекция замков: добавим, когда дойдём до этапа «Контент».</li></ul>
+</div>
+</div>
+
+<script>
+(function () {
+  // Поле 12×10: несколько сундуков и одна подсвеченная группа для примера.
+  var board = document.getElementById('board');
+  var chests = { 14: 1, 37: 1, 82: 1 };
+  var stars = { 61: 1, 62: 1, 71: 1, 72: 1, 73: 1 };
+  for (var i = 0; i < 120; i++) {
+    var c = document.createElement('i');
+    if (chests[i]) c.className = 'c'; else if (stars[i]) c.className = 's';
+    board.appendChild(c);
+  }
+  var timer;
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]');
+    if (!b) return;
+    var t = document.getElementById(b.dataset.go);
+    if (!t) return;
+    document.querySelectorAll('.screen.flash').forEach(function (s) { s.classList.remove('flash'); });
+    t.classList.add('flash');
+    var smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    t.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    clearTimeout(timer);
+    timer = setTimeout(function () { t.classList.remove('flash'); }, 1600);
+  });
+})();
+</script>
