@@ -333,3 +333,5 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
 .slot.ghost .line { fill: none !important; stroke-width: 3 !important; }
 .slot.flash { animation: flash .9s ease-in-out 2; }
 @keyframes flash { 50% { opacity: .2; } }
+
+.hint.burn { color: var(--danger); }

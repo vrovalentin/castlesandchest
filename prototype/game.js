@@ -388,11 +388,19 @@
     save();
     modal(`<h3>${castle.name}: построено!</h3>
       <div class="done-pic">${castleSVG(castle)}</div>
-      <p>Забегов на этот замок: <b>${S.runs}</b>.${last ? ' Это последний замок демоверсии.' : ' Склад и сундуки переходят на следующий замок.'}</p>`, [
+      <p>Забегов на этот замок: <b>${S.runs}</b>.${last ? ' Это последний замок демоверсии.' : ''}</p>
+      ${last ? '' : burnNote()}`, [
       last
         ? ['Пройти демо заново', 'primary', () => { const opts = S.opts; S = C.newGame(); S.opts = opts; S.chests = []; save(); go('build'); }]
         : ['Следующий замок', 'primary', () => { C.nextCastle(S); save(); go('build'); }],
     ]);
+  }
+
+  function burnNote() {
+    const b = C.burnPreview(S);
+    const lost = [b.parts ? `деталей: ${b.parts}` : '', b.chests ? `закрытых сундуков: ${b.chests}` : ''].filter(Boolean).join(', ');
+    const kept = b.kept.map(({ type, n }) => `${partName(type).toLowerCase()}${n > 1 ? ` ×${n}` : ''}`).join(', ');
+    return `<p class="hint burn">${lost ? `При переходе сгорят ${lost}.` : 'Склад пуст, сгорать нечему.'} ${kept ? `Фигурки остаются: ${kept}.` : 'С собой переходят только фигурки.'}</p>`;
   }
 
   // ---------- 9. Настройки ----------
@@ -406,7 +414,7 @@
       <details class="dev"><summary>Для теста баланса</summary>
         <label for="optMoves">Ходов на забег <input id="optMoves" type="number" min="5" max="99" value="${o.moves}"></label>
         <label for="optKeep">Сундуки на поле в конце забега достаются игроку <input id="optKeep" type="checkbox" ${o.keepOnEnd ? 'checked' : ''}></label>
-        <p class="hint">По документу они сгорают: замок 1 строится примерно за 6 забегов, замок 2 ещё за 12. Если отдавать, примерно 2 и 4. Действует со следующего забега.</p>
+        <p class="hint">По документу они сгорают: замок 1 строится примерно за 6 забегов, замок 2 ещё за 14. Если отдавать, примерно 2 и 4. Действует со следующего забега.</p>
         <button class="btn small" type="button" id="reset">Начать игру заново</button>
       </details>`, [
       ['Закрыть', 'primary', (ov) => {

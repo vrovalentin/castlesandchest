@@ -97,7 +97,7 @@ const runs2 = res.map((r) => r.runs2).sort((a, b) => a - b);
 const avg = (k) => (res.reduce((a, r) => a + r[k], 0) / res.length).toFixed(1);
 console.log(`Игр: ${games}, сундуки в конце забега: ${KEEP ? 'достаются игроку' : 'сгорают'}`);
 console.log(`Забегов на замок 1: медиана ${runs[runs.length >> 1]}, среднее ${avg('runs')}, мин ${runs[0]}, макс ${runs[runs.length - 1]}`);
-console.log(`Забегов на замок 2 (склад после замка 1 остаётся): медиана ${runs2[runs2.length >> 1]}, среднее ${avg('runs2')}, мин ${runs2[0]}, макс ${runs2[runs2.length - 1]}`);
+console.log(`Забегов на замок 2 (склад при переходе сгорает, кроме фигурок): медиана ${runs2[runs2.length >> 1]}, среднее ${avg('runs2')}, мин ${runs2[0]}, макс ${runs2[runs2.length - 1]}`);
 console.log(`Сундуков за забег: ${(res.reduce((a, r) => a + r.chests / r.runs, 0) / res.length).toFixed(1)}`);
 console.log(`Сгорело сундуков на поле за забег: ${(res.reduce((a, r) => a + r.burned / r.runs, 0) / res.length).toFixed(1)}`);
 console.log(`Средний размер группы: ${avg('avgSize')}`);

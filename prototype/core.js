@@ -335,8 +335,18 @@
   const isComplete = (s) => s.filled.every(Boolean);
   const isLastCastle = (s) => s.castle >= CASTLES.length - 1;
 
-  // Следующий замок: склад и сундуки остаются.
+  // Что переходит на следующий замок: только фигурки (уровень 7) [по умолчанию].
+  // Остальной склад и закрытые сундуки сгорают (решение Валентина 19.10: «почти всё сгорает»).
+  const KEEP_TIER = 7;
+  function burnPreview(s) {
+    let parts = 0;
+    PART_KEYS.forEach((k) => { if (PARTS[k].tier < KEEP_TIER) parts += s.inv[k]; });
+    const kept = PART_KEYS.filter((k) => PARTS[k].tier >= KEEP_TIER && s.inv[k] > 0).map((k) => ({ type: k, n: s.inv[k] }));
+    return { parts, chests: s.chests.length, kept };
+  }
   function nextCastle(s) {
+    PART_KEYS.forEach((k) => { if (PARTS[k].tier < KEEP_TIER) s.inv[k] = 0; });
+    s.chests = [];
     s.castle = Math.min(s.castle + 1, CASTLES.length - 1);
     s.filled = castleOf(s).slots.map(() => false);
     s.runs = 0;
@@ -381,6 +391,6 @@
   root.Core = {
     ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, MAX_TIER, partsOfTier, starsFor, chestTiers,
     genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove,
-    newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, isLastCastle, nextCastle, newRun, endRun, syncIds,
+    newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, isLastCastle, nextCastle, burnPreview, newRun, endRun, syncIds,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
