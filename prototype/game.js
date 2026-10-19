@@ -5,6 +5,8 @@
   const $ = (sel, el = document) => el.querySelector(sel);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const rng = Math.random;
+  const XP = 100 / C.COLS; // ширина клетки в %
+  const YP = 100 / C.ROWS; // высота клетки в %
 
   const COLOR_VAR = ['var(--c-purple)', 'var(--c-gray)', 'var(--c-brown)', 'var(--c-blue)', 'var(--c-red)'];
   const COLOR_HEX = ['#8e5bd6', '#98a2ad', '#a8703f', '#4fa8e8', '#e2524a'];
@@ -26,7 +28,10 @@
       if (hot && hot.state) return hot.state;
       const raw = localStorage.getItem(SAVE_KEY);
       const s = raw && JSON.parse(raw);
-      return s && s.v === 1 ? s : null;
+      if (!s || s.v !== 1) return null;
+      // Забег со старым размером поля (10×10) не продолжаем.
+      if (s.run && s.run.board.length !== C.ROWS) s.run = null;
+      return s;
     } catch (e) { return null; }
   }
   function save() {
@@ -303,17 +308,18 @@
         <span class="pill" id="moves"></span>
         <span class="pill" id="got"></span>
       </div>
-      <div class="board" id="board" aria-label="Поле 10 на 10"></div>
+      <div class="board" id="board" aria-label="Поле 12 на 10"></div>
       <section class="panel">
         <h2>Добыто за забег</h2>
         <div class="chests" id="ribbon"></div>
       </section>
-      <p class="hint">Тапни группу из 2+ одинаковых блоков. Группа из 4+ оставляет сундук. Сундук нужно уронить за нижний край: убирай блоки под ним.</p>
+      <p class="hint">Тапни группу из 2+ одинаковых блоков. Группа из 4+ оставляет сундук, звёзды на блоках показывают, сколько звёзд он получит. Сундук нужно уронить за нижний край: убирай блоки под ним.</p>
       <div class="legend">${C.COLORS.map((c, i) => `<span><i style="background:${COLOR_VAR[i]}"></i>${c.gives}</span>`).join('')}</div>`;
     els.clear();
     $('#board').addEventListener('pointerdown', onBoardTap);
     $('#toBuild').onclick = () => go('build');
     renderBoard(S.run.board, {});
+    showStars(S.run.board);
     renderHud();
   }
 
@@ -337,8 +343,8 @@
     const board = $('#board');
     const from = new Map((spawns || []).map((s) => [s.id, s.from]));
     const seen = new Set();
-    for (let r = 0; r < C.N; r++)
-      for (let c = 0; c < C.N; c++) {
+    for (let r = 0; r < C.ROWS; r++)
+      for (let c = 0; c < C.COLS; c++) {
         const x = b[r][c];
         if (!x) continue;
         seen.add(x.id);
@@ -347,16 +353,16 @@
           el = document.createElement('div');
           el.className = 'cell';
           el.innerHTML = cellHTML(x);
-          el.style.left = c * 10 + '%';
-          el.style.top = (from.has(x.id) ? from.get(x.id) : r) * 10 + '%';
+          el.style.left = c * XP + '%';
+          el.style.top = (from.has(x.id) ? from.get(x.id) : r) * YP + '%';
           if (!from.has(x.id) && leave) el.classList.add('pop');
           board.append(el);
           els.set(x.id, el);
           el.getBoundingClientRect(); // применить стартовую позицию до перехода
           el.classList.remove('pop');
         }
-        el.style.left = c * 10 + '%';
-        el.style.top = r * 10 + '%';
+        el.style.left = c * XP + '%';
+        el.style.top = r * YP + '%';
       }
     for (const [id, el] of els) {
       if (seen.has(id)) continue;
@@ -366,12 +372,33 @@
     }
   }
 
+  // Подсказка: на каждом блоке группы из 4+ рисуем, сколько звёзд даст сундук.
+  // null — убрать подсказки (на время анимации хода).
+  function showStars(b) {
+    els.forEach((el) => { const st = el.querySelector('.st'); if (st) st.remove(); });
+    if (!b) return;
+    for (const g of C.allGroups(b)) {
+      const stars = C.starsFor(g.length);
+      if (!stars) continue;
+      const html = stars <= 3 ? '★'.repeat(stars) : '★★★<br>' + '★'.repeat(stars - 3);
+      for (const [r, c] of g) {
+        const el = els.get(b[r][c].id);
+        const blk = el && el.querySelector('.blk');
+        if (!blk) continue;
+        const st = document.createElement('span');
+        st.className = 'st' + (stars > 3 ? ' two' : '');
+        st.innerHTML = html;
+        blk.append(st);
+      }
+    }
+  }
+
   function floatText(r, c, text) {
     const f = document.createElement('div');
     f.className = 'float';
     f.textContent = text;
-    f.style.left = (c + 0.5) * 10 + '%';
-    f.style.top = (r + 0.5) * 10 + '%';
+    f.style.left = (c + 0.5) * XP + '%';
+    f.style.top = (r + 0.5) * YP + '%';
     $('#board').append(f);
     setTimeout(() => f.remove(), 900);
   }
@@ -379,9 +406,9 @@
   async function onBoardTap(e) {
     if (busy || !S.run || S.run.moves <= 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const c = Math.floor(((e.clientX - rect.left) / rect.width) * C.N);
-    const r = Math.floor(((e.clientY - rect.top) / rect.height) * C.N);
-    if (r < 0 || r >= C.N || c < 0 || c >= C.N) return;
+    const c = Math.floor(((e.clientX - rect.left) / rect.width) * C.COLS);
+    const r = Math.floor(((e.clientY - rect.top) / rect.height) * C.ROWS);
+    if (r < 0 || r >= C.ROWS || c < 0 || c >= C.COLS) return;
     const b = S.run.board;
     const cell = b[r][c];
     if (!cell) return;
@@ -393,6 +420,7 @@
     }
 
     busy = true;
+    showStars(null);
     const frames = [];
     const res = C.doMove(b, r, c, C.castleOf(S), rng, (phase, data) => {
       frames.push({ phase, data, snap: b.map((row) => row.slice()) });
@@ -424,6 +452,7 @@
     S.run.moves--;
     save();
     renderHud();
+    showStars(b);
     busy = false;
     if (S.run.moves <= 0) setTimeout(finishRun, 400);
   }

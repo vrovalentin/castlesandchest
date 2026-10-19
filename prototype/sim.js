@@ -19,20 +19,15 @@ const rng = () => {
 // который после этого хода опустится ниже (под ним освободится клетка).
 function bestTap(b) {
   let best = null, bestScore = -1;
-  const seen = new Set();
-  for (let r = 0; r < C.N; r++)
-    for (let c = 0; c < C.N; c++) {
-      if (seen.has(r * C.N + c)) continue;
-      const g = C.group(b, r, c);
-      g.forEach(([y, x]) => seen.add(y * C.N + x));
-      if (g.length < 2) continue;
-      const top = {};
-      g.forEach(([y, x]) => { top[x] = Math.min(top[x] ?? C.N, y); });
-      let chestsAbove = 0;
-      for (const x in top) for (let y = 0; y < top[x]; y++) if (b[y][x] && b[y][x].k === 'c') chestsAbove++;
-      const score = g.length + 3 * chestsAbove;
-      if (score > bestScore) { bestScore = score; best = g; }
-    }
+  for (const g of C.allGroups(b)) {
+    if (g.length < 2) continue;
+    const top = {};
+    g.forEach(([y, x]) => { top[x] = Math.min(top[x] ?? C.ROWS, y); });
+    let chestsAbove = 0;
+    for (const x in top) for (let y = 0; y < top[x]; y++) if (b[y][x] && b[y][x].k === 'c') chestsAbove++;
+    const score = g.length + 3 * chestsAbove;
+    if (score > bestScore) { bestScore = score; best = g; }
+  }
   // Тап по нижней клетке группы: новый сундук ближе к краю.
   return best.reduce((a, p) => (p[0] > a[0] ? p : a));
 }

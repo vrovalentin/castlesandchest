@@ -4,7 +4,9 @@
 (function (root) {
   'use strict';
 
-  const N = 10;
+  // Поле: 12 строк × 10 столбцов (вертикально, под телефон).
+  const ROWS = 12;
+  const COLS = 10;
 
   // 0 — фиолетовый «мусорный» (кирпичи), дальше цвета деталей.
   const COLORS = [
@@ -70,12 +72,12 @@
   }
 
   function hasMove(b) {
-    for (let r = 0; r < N; r++)
-      for (let c = 0; c < N; c++) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++) {
         const x = b[r][c];
         if (!x || x.k !== 'b') continue;
-        const right = c + 1 < N && b[r][c + 1];
-        const down = r + 1 < N && b[r + 1][c];
+        const right = c + 1 < COLS && b[r][c + 1];
+        const down = r + 1 < ROWS && b[r + 1][c];
         if (right && right.k === 'b' && right.color === x.color) return true;
         if (down && down.k === 'b' && down.color === x.color) return true;
       }
@@ -85,8 +87,8 @@
   function shuffle(b, rng) {
     const pos = [];
     const colors = [];
-    for (let r = 0; r < N; r++)
-      for (let c = 0; c < N; c++)
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
         if (b[r][c] && b[r][c].k === 'b') { pos.push([r, c]); colors.push(b[r][c]); }
     for (let t = 0; t < 20; t++) {
       for (let i = colors.length - 1; i > 0; i--) {
@@ -98,18 +100,18 @@
     }
     // Не вышло: ставим пару принудительно.
     for (const [r, c] of pos) {
-      const right = c + 1 < N && b[r][c + 1];
+      const right = c + 1 < COLS && b[r][c + 1];
       if (right && right.k === 'b') { right.color = b[r][c].color; return; }
-      const down = r + 1 < N && b[r + 1][c];
+      const down = r + 1 < ROWS && b[r + 1][c];
       if (down && down.k === 'b') { down.color = b[r][c].color; return; }
     }
   }
 
   function genBoard(castle, rng) {
     const b = [];
-    for (let r = 0; r < N; r++) {
+    for (let r = 0; r < ROWS; r++) {
       b.push([]);
-      for (let c = 0; c < N; c++) b[r].push(mkBlock(randColor(castle, rng)));
+      for (let c = 0; c < COLS; c++) b[r].push(mkBlock(randColor(castle, rng)));
     }
     if (!hasMove(b)) shuffle(b, rng);
     return b;
@@ -118,7 +120,7 @@
   function group(b, r, c) {
     const start = b[r] && b[r][c];
     if (!start || start.k !== 'b') return [];
-    const seen = new Set([r * N + c]);
+    const seen = new Set([r * COLS + c]);
     const q = [[r, c]];
     const out = [];
     while (q.length) {
@@ -126,21 +128,35 @@
       out.push([y, x]);
       for (const [dy, dx] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const ny = y + dy, nx = x + dx;
-        if (ny < 0 || ny >= N || nx < 0 || nx >= N) continue;
+        if (ny < 0 || ny >= ROWS || nx < 0 || nx >= COLS) continue;
         const cell = b[ny][nx];
-        if (!cell || cell.k !== 'b' || cell.color !== start.color || seen.has(ny * N + nx)) continue;
-        seen.add(ny * N + nx);
+        if (!cell || cell.k !== 'b' || cell.color !== start.color || seen.has(ny * COLS + nx)) continue;
+        seen.add(ny * COLS + nx);
         q.push([ny, nx]);
       }
     }
     return out;
   }
 
+  // Все группы поля (для подсказки «сколько звёзд даст группа»).
+  function allGroups(b) {
+    const seen = new Set();
+    const out = [];
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++) {
+        if (seen.has(r * COLS + c)) continue;
+        const g = group(b, r, c);
+        g.forEach(([y, x]) => seen.add(y * COLS + x));
+        if (g.length) out.push(g);
+      }
+    return out;
+  }
+
   function gravity(b) {
     let moved = false;
-    for (let c = 0; c < N; c++) {
-      let w = N - 1;
-      for (let r = N - 1; r >= 0; r--) {
+    for (let c = 0; c < COLS; c++) {
+      let w = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
         if (b[r][c]) {
           if (w !== r) { b[w][c] = b[r][c]; b[r][c] = null; moved = true; }
           w--;
@@ -152,9 +168,9 @@
 
   function collectBottom(b) {
     const got = [];
-    for (let c = 0; c < N; c++) {
-      const x = b[N - 1][c];
-      if (x && x.k === 'c') { got.push(x); b[N - 1][c] = null; }
+    for (let c = 0; c < COLS; c++) {
+      const x = b[ROWS - 1][c];
+      if (x && x.k === 'c') { got.push(x); b[ROWS - 1][c] = null; }
     }
     return got;
   }
@@ -162,11 +178,11 @@
   // Возвращает новые блоки с рядом, откуда они «падают» (для анимации).
   function refill(b, castle, rng) {
     const spawns = [];
-    for (let c = 0; c < N; c++) {
+    for (let c = 0; c < COLS; c++) {
       let empty = 0;
-      while (empty < N && !b[empty][c]) empty++;
+      while (empty < ROWS && !b[empty][c]) empty++;
       for (let r = empty - 1; r >= 0; r--) {
-        const below = r + 1 < N ? b[r + 1][c] : null;
+        const below = r + 1 < ROWS ? b[r + 1][c] : null;
         const help = below && below.k === 'b' && rng() < castle.helpChance;
         const blk = mkBlock(help ? below.color : randColor(castle, rng));
         b[r][c] = blk;
@@ -309,8 +325,8 @@
   }
 
   root.Core = {
-    N, COLORS, PARTS, PART_KEYS, CASTLES, partsOfTier, starsFor,
-    genBoard, group, gravity, collectBottom, refill, hasMove, shuffle, doMove,
+    ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, partsOfTier, starsFor,
+    genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove,
     newGame, castleOf, need, openChest, canMerge, merge, place, isComplete, newRun, endRun, syncIds,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
