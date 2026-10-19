@@ -69,7 +69,7 @@ button.box:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .chip { width: 22px; height: 18px; border-radius: 4px; background: var(--wire-2); flex: none; }
 .strip { display: flex; gap: 4px; overflow: hidden; }
 
-.board { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1.5px; aspect-ratio: 10 / 12; width: 100%;
+.board { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5px; aspect-ratio: 12 / 10; width: 100%;
   border: 1.5px solid var(--wire-2); border-radius: 6px; padding: 3px; position: relative; }
 .board i { background: var(--wire); border-radius: 2px; }
 .board i.c { background: var(--wire-2); outline: 1.5px solid var(--line); outline-offset: -1.5px; }
@@ -235,7 +235,7 @@ ol.notes li::marker { font: 500 12px var(--f-mono); color: var(--muted); }
     <li>Назад на Стройку, забег сохраняется.</li>
     <li>Ходы и сколько сундуков уже упало.</li>
     <li>Подсказка, детали какого цвета нужны замку. Это наше отличие: поле связано со стройкой. <span class="tag">предложение</span></li>
-    <li>Поле: 12 строк × 10 столбцов. Тёмные клетки с обводкой: сундуки. Синеватые: группа 4+ со звёздами.</li>
+    <li>Поле: 10 строк × 12 столбцов. Тёмные клетки с обводкой: сундуки. Синеватые: группа 4+ со звёздами.</li>
     <li>Лента: сундуки, упавшие за край в этом забеге.</li>
     <li>В игре этой кнопки нет: экран 6 появляется сам.</li>
   </ol>

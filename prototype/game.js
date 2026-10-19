@@ -8,11 +8,12 @@
   const XP = 100 / C.COLS; // ширина клетки в %
   const YP = 100 / C.ROWS; // высота клетки в %
 
-  const COLOR_VAR = ['var(--c-purple)', 'var(--c-gray)', 'var(--c-brown)', 'var(--c-blue)', 'var(--c-red)'];
-  const COLOR_HEX = ['#8e5bd6', '#98a2ad', '#a8703f', '#4fa8e8', '#e2524a'];
-  const TIER_VAR = [null, 'var(--t1)', 'var(--t2)', 'var(--t3)', 'var(--t4)'];
-  const TIER_NAME = [null, 'Простые', 'Конструкция', 'Проёмы и кровля', 'Украшения'];
-  const SAVE_KEY = 'castles-and-chest-proto-v1';
+  // Цвет блоков = уровень детали: фиолетовый 1, коричневый 2, серый 3, синий 4, зелёный 5.
+  const COLOR_VAR = ['var(--c-purple)', 'var(--c-brown)', 'var(--c-gray)', 'var(--c-blue)', 'var(--c-green)'];
+  const COLOR_HEX = ['#8e5bd6', '#a8703f', '#98a2ad', '#4f8fe0', '#4fb35a'];
+  const TIER_VAR = [null, 'var(--t1)', 'var(--t2)', 'var(--t3)', 'var(--t4)', 'var(--t5)', 'var(--t6)', 'var(--t7)'];
+  const TIER_NAME = [null, 'Глина', 'Кирпичи', 'Стенки', 'Перекрытия и кровля', 'Окна и двери', 'Декор', 'Фигурки'];
+  const SAVE_KEY = 'castles-and-chest-proto-v2';
 
   // ---------- Состояние и сохранение ----------
   let S = load() || C.newGame();
@@ -27,7 +28,7 @@
       if (hot && hot.state) return hot.state;
       const raw = localStorage.getItem(SAVE_KEY);
       const s = raw && JSON.parse(raw);
-      if (!s || s.v !== 1) return null;
+      if (!s || s.v !== 2) return null;
       // Забег со старым размером поля (10×10) не продолжаем.
       if (s.run && s.run.board.length !== C.ROWS) s.run = null;
       return s;
@@ -83,47 +84,85 @@
     return `<span class="part ${extra}"><span class="sw" style="background:${TIER_VAR[p.tier]}"></span>${p.name}</span>`;
   }
 
-  // ---------- Картинка замка ----------
-  // Слоты (порядок как в Core.CASTLES[0].slots):
-  // 0–3 стенки, 4–5 перекрытия, 6 крыша, 7 черепица, 8–9 окна, 10 крыльцо, 11 шпиль, 12 фонарик.
-  const SLOT_SVG = {
-    0: '<rect x="100" y="236" width="60" height="64" fill="url(#bricks)" stroke="#7b6a55" stroke-width="2"/>',
-    1: '<rect x="160" y="236" width="60" height="64" fill="url(#bricks)" stroke="#7b6a55" stroke-width="2"/>',
-    2: '<rect x="100" y="164" width="60" height="64" fill="url(#bricks)" stroke="#7b6a55" stroke-width="2"/>',
-    3: '<rect x="160" y="164" width="60" height="64" fill="url(#bricks)" stroke="#7b6a55" stroke-width="2"/>',
-    4: '<rect x="92" y="228" width="136" height="9" rx="2" fill="#8a5a34" stroke="#5e3b20" stroke-width="2"/>',
-    5: '<rect x="92" y="156" width="136" height="9" rx="2" fill="#8a5a34" stroke="#5e3b20" stroke-width="2"/>',
-    6: '<polygon points="84,158 236,158 160,82" fill="#c4473d" stroke="#7d2620" stroke-width="2.5" stroke-linejoin="round"/>',
-    7: '<path d="M106 142 Q114 148 122 142 Q130 148 138 142 Q146 148 154 142 Q162 148 170 142 Q178 148 186 142 Q194 148 202 142 Q210 148 214 142 M124 122 Q132 128 140 122 Q148 128 156 122 Q164 128 172 122 Q180 128 188 122 Q196 128 198 122 M140 104 Q148 110 156 104 Q164 110 172 104 Q178 109 181 104" fill="none" stroke="#8f2a24" stroke-width="3.5" stroke-linecap="round"/>',
-    8: '<rect x="144" y="176" width="32" height="38" rx="16" fill="#9fdcff" stroke="#5a4632" stroke-width="3.5"/><path d="M160 178 V212 M146 196 H174" stroke="#5a4632" stroke-width="2.5"/>',
-    9: '<rect x="180" y="248" width="28" height="32" rx="14" fill="#9fdcff" stroke="#5a4632" stroke-width="3.5"/><path d="M194 250 V278 M182 265 H206" stroke="#5a4632" stroke-width="2.5"/>',
-    10: '<polygon points="104,258 160,258 132,240" fill="#c4473d" stroke="#7d2620" stroke-width="2"/><rect x="114" y="258" width="36" height="42" rx="16" fill="#7a4a26" stroke="#4a2c14" stroke-width="2.5"/><circle cx="142" cy="281" r="2.5" fill="#f2b134"/><rect x="104" y="300" width="56" height="8" rx="2" fill="#b3a898" stroke="#7b6a55" stroke-width="2"/>',
-    11: '<polygon points="153,86 167,86 160,44" fill="#e2b13c" stroke="#8a6410" stroke-width="2"/><path d="M160 44 V26" stroke="#5e3b20" stroke-width="2.5"/><polygon points="160,26 180,31 160,37" fill="#e2524a" stroke="#7d2620" stroke-width="1.5"/>',
-    12: '<path d="M220 248 H236 V252" fill="none" stroke="#3b3b3b" stroke-width="3"/><circle cx="236" cy="264" r="13" fill="rgba(255,220,120,.35)" stroke="none"/><rect x="230" y="252" width="12" height="20" rx="3" fill="#f6d36b" stroke="#5a4632" stroke-width="2.5"/>',
+  // ---------- Картинки замков ----------
+  // Каждая деталь — свой кусок SVG; индекс совпадает со слотом в Core.CASTLES[n].slots.
+  const A = {
+    clay: (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="#b9825c" stroke="#7a4f30" stroke-width="2"/>`,
+    wall: (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#bricks)" stroke="#7b6a55" stroke-width="2"/>`,
+    beam: (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="9" rx="2" fill="#4f7fb8" stroke="#2f5482" stroke-width="2"/>`,
+    roof: (x1, x2, yb, yt) => `<polygon points="${x1},${yb} ${x2},${yb} ${(x1 + x2) / 2},${yt}" fill="#3d6fae" stroke="#22477a" stroke-width="2.5" stroke-linejoin="round"/>`,
+    win: (x, y, w, h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2}" fill="#bfeec9" stroke="#3f7a4a" stroke-width="3"/><path d="M${x + w / 2} ${y + 2} V${y + h - 2} M${x + 2} ${y + h / 2} H${x + w - 2}" stroke="#3f7a4a" stroke-width="2"/>`,
+    porch: (x, y, w, h) => `<polygon points="${x - 8},${y} ${x + w + 8},${y} ${x + w / 2},${y - 16}" fill="#d39a12" stroke="#8a6410" stroke-width="2"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w / 2.2}" fill="#6a9a4a" stroke="#3d6128" stroke-width="2.5"/><circle cx="${x + w - 8}" cy="${y + h * 0.55}" r="2.5" fill="#f2b134"/><rect x="${x - 8}" y="${y + h}" width="${w + 16}" height="7" rx="2" fill="#b3a898" stroke="#7b6a55" stroke-width="2"/>`,
+    spire: (cx, yb, yt) => `<polygon points="${cx - 7},${yb} ${cx + 7},${yb} ${cx},${yt + 14}" fill="#e2b13c" stroke="#8a6410" stroke-width="2"/><path d="M${cx} ${yt + 14} V${yt}" stroke="#5e3b20" stroke-width="2.5"/><polygon points="${cx},${yt} ${cx + 18},${yt + 5} ${cx},${yt + 10}" fill="#e2524a" stroke="#7d2620" stroke-width="1.5"/>`,
+    lantern: (x, y) => `<path d="M${x - 14} ${y - 4} H${x + 6} V${y}" fill="none" stroke="#3b3b3b" stroke-width="3"/><circle cx="${x + 6}" cy="${y + 12}" r="13" fill="rgba(255,220,120,.35)"/><rect x="${x}" y="${y}" width="12" height="20" rx="3" fill="#f6d36b" stroke="#5a4632" stroke-width="2.5"/>`,
+    princess: (x, y) => `<polygon points="${x - 13},${y} ${x + 13},${y} ${x},${y - 30}" fill="#f29ac0" stroke="#a24a78" stroke-width="2"/><circle cx="${x}" cy="${y - 35}" r="7" fill="#ffd9b8" stroke="#a24a78" stroke-width="1.5"/><polygon points="${x - 6},${y - 41} ${x - 6},${y - 48} ${x - 2},${y - 44} ${x},${y - 49} ${x + 2},${y - 44} ${x + 6},${y - 48} ${x + 6},${y - 41}" fill="#f2b134" stroke="#8a6410" stroke-width="1"/>`,
+    knight: (x, y) => `<rect x="${x - 8}" y="${y - 28}" width="16" height="28" rx="4" fill="#b8c1cc" stroke="#55606e" stroke-width="2"/><circle cx="${x}" cy="${y - 35}" r="8" fill="#cfd6de" stroke="#55606e" stroke-width="2"/><path d="M${x - 5} ${y - 35} H${x + 5}" stroke="#55606e" stroke-width="2"/><path d="M${x + 14} ${y} V${y - 34} M${x + 9} ${y - 12} H${x + 19}" stroke="#55606e" stroke-width="2.5"/><path d="M${x - 16} ${y - 22} h12 v10 q-6 8 -12 0 z" fill="#c8443b" stroke="#7d2620" stroke-width="1.5"/>`,
   };
-  const DRAW_ORDER = [0, 1, 2, 3, 4, 5, 8, 9, 10, 6, 7, 11, 12];
 
-  function castleSVG() {
-    const flowers = [[30, 312, '#e2524a'], [48, 322, '#f2b134'], [64, 314, '#fff'], [258, 316, '#e2524a'], [276, 324, '#8e5bd6'], [292, 312, '#f2b134'], [80, 326, '#8e5bd6'], [244, 328, '#fff']]
+  const CASTLE_ART = {
+    // Замок 1. Слоты: 0–3 глина (фундамент), 4–7 стенки, 8–9 перекрытия, 10 крыша, 11 черепица,
+    // 12–13 окна, 14 крыльцо, 15 шпиль, 16 фонарик.
+    1: {
+      label: 'Башня в 2 этажа',
+      parts: [
+        A.clay(96, 298, 32, 14), A.clay(128, 298, 32, 14), A.clay(160, 298, 32, 14), A.clay(192, 298, 32, 14),
+        A.wall(100, 236, 60, 62), A.wall(160, 236, 60, 62), A.wall(100, 164, 60, 64), A.wall(160, 164, 60, 64),
+        A.beam(92, 228, 136), A.beam(92, 156, 136),
+        A.roof(84, 236, 158, 82),
+        '<path d="M106 142 Q114 148 122 142 Q130 148 138 142 Q146 148 154 142 Q162 148 170 142 Q178 148 186 142 Q194 148 202 142 Q210 148 214 142 M124 122 Q132 128 140 122 Q148 128 156 122 Q164 128 172 122 Q180 128 188 122 Q196 128 198 122 M140 104 Q148 110 156 104 Q164 110 172 104 Q178 109 181 104" fill="none" stroke="#22477a" stroke-width="3.5" stroke-linecap="round"/>',
+        A.win(144, 176, 32, 38), A.win(180, 248, 28, 32),
+        A.porch(114, 256, 36, 40),
+        A.spire(160, 86, 26),
+        A.lantern(222, 250),
+      ],
+      order: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 14, 10, 11, 15, 16],
+    },
+    // Замок 2. Слоты: 0–9 глина, 10–17 стенки (по 2 на этаж + 2 башенки), 18–20 перекрытия,
+    // 21–26 окна, 27–28 крыльца, 29–30 крыши, 31–32 шпили, 33 фонарик, 34 принцесса, 35 рыцарь.
+    2: {
+      label: 'Замок с башнями',
+      parts: [
+        ...Array.from({ length: 10 }, (_, i) => A.clay(70 + i * 18, 298, 18, 14)),
+        A.wall(80, 244, 80, 54), A.wall(160, 244, 80, 54),
+        A.wall(80, 182, 80, 54), A.wall(160, 182, 80, 54),
+        A.wall(80, 120, 80, 54), A.wall(160, 120, 80, 54),
+        A.wall(88, 66, 48, 46), A.wall(184, 66, 48, 46),
+        A.beam(72, 236, 176), A.beam(72, 174, 176), A.beam(72, 112, 176),
+        A.win(106, 190, 28, 36), A.win(186, 190, 28, 36),
+        A.win(106, 128, 28, 36), A.win(186, 128, 28, 36),
+        A.win(100, 76, 24, 28), A.win(196, 76, 24, 28),
+        A.porch(98, 256, 34, 40), A.porch(188, 256, 34, 40),
+        A.roof(80, 144, 68, 28), A.roof(176, 240, 68, 28),
+        A.spire(112, 32, 6), A.spire(208, 32, 6),
+        A.lantern(154, 254),
+        A.princess(38, 312), A.knight(284, 312),
+      ],
+      order: [...Array(36).keys()],
+    },
+  };
+
+  function castleSVG(castle = C.castleOf(S)) {
+    const art = CASTLE_ART[castle.id];
+    const flowers = [[30, 322, '#e2524a'], [52, 330, '#f2b134'], [64, 318, '#fff'], [258, 320, '#e2524a'], [276, 330, '#8e5bd6'], [300, 318, '#f2b134'], [90, 330, '#8e5bd6'], [236, 330, '#fff']]
       .map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.6" fill="#f2b134"/>`).join('');
-    const fence = Array.from({ length: 9 }, (_, i) => `<rect x="${12 + i * 10}" y="284" width="5" height="20" rx="2" fill="#e8d3b0" stroke="#8a5a34"/>`).join('')
-      + Array.from({ length: 9 }, (_, i) => `<rect x="${222 + i * 10}" y="284" width="5" height="20" rx="2" fill="#e8d3b0" stroke="#8a5a34"/>`).join('');
-    const slots = DRAW_ORDER.map((i) => `<g class="slot" data-slot="${i}" tabindex="0" role="button">${SLOT_SVG[i]}</g>`).join('');
-    return `<svg viewBox="0 0 320 340" role="img" aria-label="Усадьба: башня в 2 этажа">
+    const fence = Array.from({ length: 6 }, (_, i) => `<rect x="${6 + i * 10}" y="284" width="5" height="20" rx="2" fill="#e8d3b0" stroke="#8a5a34"/>`).join('')
+      + Array.from({ length: 6 }, (_, i) => `<rect x="${260 + i * 10}" y="284" width="5" height="20" rx="2" fill="#e8d3b0" stroke="#8a5a34"/>`).join('');
+    const slots = art.order.map((i) => `<g class="slot" data-slot="${i}" tabindex="0" role="button">${art.parts[i]}</g>`).join('');
+    return `<svg viewBox="0 0 320 340" role="img" aria-label="Усадьба: ${art.label}">
       <defs>
         <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe4f7"/><stop offset="1" stop-color="#e8f6fc"/></linearGradient>
         <pattern id="bricks" width="20" height="12" patternUnits="userSpaceOnUse">
-          <rect width="20" height="12" fill="#d9c7ad"/>
-          <path d="M0 6 H20 M0 12 H20 M10 0 V6 M0 6 V12 M20 6 V12" stroke="#b39b7c" stroke-width="1.2"/>
+          <rect width="20" height="12" fill="#c9ced6"/>
+          <path d="M0 6 H20 M0 12 H20 M10 0 V6 M0 6 V12 M20 6 V12" stroke="#9aa2ad" stroke-width="1.2"/>
         </pattern>
       </defs>
       <rect width="320" height="340" fill="url(#sky)"/>
-      <circle cx="270" cy="50" r="22" fill="#ffe08a"/>
+      <circle cx="286" cy="40" r="20" fill="#ffe08a"/>
       <ellipse cx="70" cy="300" rx="120" ry="60" fill="#9fd08a"/>
       <ellipse cx="270" cy="296" rx="110" ry="54" fill="#93c97e"/>
       <rect y="300" width="320" height="40" fill="#7cc06a"/>
       ${fence}
-      <ellipse cx="160" cy="306" rx="80" ry="8" fill="rgba(0,0,0,.12)"/>
+      <ellipse cx="160" cy="312" rx="100" ry="8" fill="rgba(0,0,0,.12)"/>
       ${slots}
       ${flowers}
     </svg>`;
@@ -221,7 +260,7 @@
     if (t.dataset.chest) return openChests([+t.dataset.chest]);
     if (t.dataset.part) {
       const k = t.dataset.part;
-      if (tierOf(k) === 4) return toast('Украшения — высшая ступень, их ставят на замок');
+      if (tierOf(k) === C.MAX_TIER) return toast('Фигурки — высший уровень, их ставят на замок');
       if (!S.inv[k]) return toast(`${partName(k)}: на складе нет`);
       return mergeSheet({ pick: k });
     }
@@ -240,12 +279,13 @@
     const lower = tier > 1 ? C.partsOfTier(tier - 1).reduce((a, k) => a + S.inv[k], 0) : 0;
     const have = S.inv[type];
     const from = [];
-    if (tier > 1) from.push(`Собрать из 2 деталей ${tier - 1}-й ступени · есть ${lower}`);
+    if (tier > 1) from.push(`Собрать из 2 деталей ${tier - 1}-го уровня · есть ${lower}`);
     if (color !== undefined) from.push(`<span class="sw" style="background:${COLOR_VAR[color]}"></span> ${C.COLORS[color].name} сундук`);
-    if (tier === 4) from.push('Изредка из сундуков с 5 звёздами');
+    if (tier >= 6) from.push(`<span class="sw" style="background:${COLOR_VAR[4]}"></span> Шанс из зелёного сундука ★4–5`);
+    else if (tier > 1) from.push(`Шанс из ${['фиолетового', 'коричневого', 'серого', 'синего'][tier - 2]} сундука ★4–5`);
     sheet(() => `
       <h3>${partName(type)}</h3>
-      <p class="sub">${tier}-я ступень · ${TIER_NAME[tier]}</p>
+      <p class="sub">${tier}-й уровень · ${TIER_NAME[tier]}</p>
       <p class="big-count">На складе: <b>${have}</b></p>
       ${have ? '' : `<ul class="from">${from.map((f) => `<li>${f}</li>`).join('')}</ul>`}
       <div class="actions">${have
@@ -272,7 +312,7 @@
       const cells = [0, 1].map((n) => pick[n]
         ? `<button class="cell-slot full" data-act="unpick" data-n="${n}">${partChip(pick[n])}</button>`
         : '<span class="cell-slot">пусто</span>').join('<span class="plus">+</span>');
-      const stock = C.PART_KEYS.filter((k) => tierOf(k) < 4 && (tier == null || tierOf(k) === tier))
+      const stock = C.PART_KEYS.filter((k) => tierOf(k) < C.MAX_TIER && (tier == null || tierOf(k) === tier))
         .map((k) => `<button class="part ${free(k) > 0 ? '' : 'zero'}" data-act="pick" data-k="${k}" ${free(k) > 0 ? '' : 'disabled'}><span class="sw" style="background:${TIER_VAR[tierOf(k)]}"></span>${partName(k)} <span class="cnt">${free(k)}</span></button>`).join('');
       const targets = tier ? C.partsOfTier(tier + 1) : [];
       if (target && tier && tierOf(target) !== tier + 1) target = null;
@@ -280,7 +320,7 @@
       return `
         <h3>Собрать деталь</h3>
         <div class="cells">${cells}</div>
-        <p class="sub">${pick.length < 2 ? `Выбери ${pick.length ? 'вторую' : 'две'} детали${tier ? ` ${tier}-й ступени` : ' одной ступени'}` : '↓ во что собрать'}</p>
+        <p class="sub">${pick.length < 2 ? `Выбери ${pick.length ? 'вторую' : 'две'} детали${tier ? ` ${tier}-го уровня` : ' одного уровня'}` : '↓ во что собрать'}</p>
         <div class="list">${stock || '<span class="empty">На складе нечего собирать</span>'}</div>
         ${targets.length ? `<div class="targets">${targets.map((t) => {
           const need = Math.max(0, C.need(S, t));
@@ -326,15 +366,15 @@
   // ---------- 8. Замок построен ----------
   function castleDone() {
     S.built++;
+    const castle = C.castleOf(S);
+    const last = C.isLastCastle(S);
     save();
-    modal(`<h3>Башня построена!</h3>
-      <div class="done-pic">${castleSVG()}</div>
-      <p>Забегов на этот замок: <b>${S.runs}</b>. Следующие замки ещё не придуманы, поэтому в прототипе башня строится заново.</p>`, [
-      ['Следующий замок', 'primary', () => {
-        const opts = S.opts;
-        S = C.newGame(); S.opts = opts; S.chests = [];
-        save(); go('build');
-      }],
+    modal(`<h3>${castle.name}: построено!</h3>
+      <div class="done-pic">${castleSVG(castle)}</div>
+      <p>Забегов на этот замок: <b>${S.runs}</b>.${last ? ' Это последний замок демоверсии.' : ' Склад и сундуки переходят на следующий замок.'}</p>`, [
+      last
+        ? ['Пройти демо заново', 'primary', () => { const opts = S.opts; S = C.newGame(); S.opts = opts; S.chests = []; save(); go('build'); }]
+        : ['Следующий замок', 'primary', () => { C.nextCastle(S); save(); go('build'); }],
     ]);
   }
 
@@ -349,7 +389,7 @@
       <details class="dev"><summary>Для теста баланса</summary>
         <label for="optMoves">Ходов на забег <input id="optMoves" type="number" min="5" max="99" value="${o.moves}"></label>
         <label for="optKeep">Сундуки на поле в конце забега достаются игроку <input id="optKeep" type="checkbox" ${o.keepOnEnd ? 'checked' : ''}></label>
-        <p class="hint">По документу они сгорают: башня строится примерно за 7 забегов. Если отдавать, примерно за 2. Действует со следующего забега.</p>
+        <p class="hint">По документу они сгорают: замок 1 строится примерно за 6 забегов, замок 2 ещё за 12. Если отдавать, примерно 2 и 4. Действует со следующего забега.</p>
         <button class="btn small" type="button" id="reset">Начать игру заново</button>
       </details>`, [
       ['Закрыть', 'primary', (ov) => {
@@ -383,7 +423,7 @@
         <span class="pill" id="got"></span>
       </div>
       <div class="needs" id="needs"></div>
-      <div class="board" id="board" aria-label="Поле 12 на 10"></div>
+      <div class="board" id="board" aria-label="Поле 10 строк на 12 столбцов"></div>
       <section class="panel row-panel">
         <h2>Добыто</h2>
         <div class="strip" id="ribbon"></div>
@@ -403,11 +443,13 @@
     if (!box) return;
     const list = C.missing(S);
     if (!list.length) { box.innerHTML = '<span class="lbl">Замку всего хватает: открывай сундуки и строй</span>'; return; }
-    // Украшения собираются, а не падают с поля, поэтому показываем их одним значком.
-    const deco = list.filter(({ type }) => C.PART_COLOR[type] === undefined).reduce((a, x) => a + x.n, 0);
+    // Декор и фигурки не падают с поля обычным цветом, поэтому показываем их одним значком на уровень.
+    const sum = (t) => list.filter(({ type }) => tierOf(type) === t).reduce((a, x) => a + x.n, 0);
+    const deco = sum(6), figs = sum(7);
     box.innerHTML = '<span class="lbl">Нужно замку:</span>' + list.filter(({ type }) => C.PART_COLOR[type] !== undefined).map(({ type, n }) =>
       `<span class="need-chip"><span class="sw" style="background:${COLOR_VAR[C.PART_COLOR[type]]}"></span>${partName(type).toLowerCase()}${n > 1 ? ` ×${n}` : ''}</span>`).join('')
-      + (deco ? `<span class="need-chip" title="Собираются из деталей 3-й ступени"><span class="sw merge">⇡</span>украшения ×${deco}</span>` : '');
+      + (deco ? `<span class="need-chip" title="Собирается из 2 деталей 5-го уровня или выпадает из зелёного сундука ★4–5"><span class="sw" style="background:var(--t6)"></span>декор ×${deco}</span>` : '')
+      + (figs ? `<span class="need-chip" title="Собирается из 2 деталей декора или выпадает из зелёного сундука ★4–5"><span class="sw" style="background:var(--t7)"></span>фигурки ×${figs}</span>` : '');
   }
 
   function renderHud() {

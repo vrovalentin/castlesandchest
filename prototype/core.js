@@ -4,38 +4,48 @@
 (function (root) {
   'use strict';
 
-  // Поле: 12 строк × 10 столбцов (вертикально, под телефон).
-  const ROWS = 12;
-  const COLS = 10;
+  // Поле: 10 строк × 12 столбцов (решение Валентина 19.10).
+  const ROWS = 10;
+  const COLS = 12;
 
-  // 0 — фиолетовый «мусорный» (кирпичи), дальше цвета деталей.
+  // Цвет блоков = уровень детали из сундука: индекс 0 → уровень 1 и т.д.
   const COLORS = [
-    { key: 'purple', name: 'Фиолетовый', gives: 'кирпичи' },
+    { key: 'purple', name: 'Фиолетовый', gives: 'глина' },
+    { key: 'brown', name: 'Коричневый', gives: 'кирпич' },
     { key: 'gray', name: 'Серый', gives: 'стенка' },
-    { key: 'brown', name: 'Коричневый', gives: 'перекрытие' },
-    { key: 'blue', name: 'Голубой', gives: 'окно / дверь' },
-    { key: 'red', name: 'Красный', gives: 'крыша / черепица' },
+    { key: 'blue', name: 'Синий', gives: 'перекрытие, кровля' },
+    { key: 'green', name: 'Зелёный', gives: 'окно, дверь' },
   ];
 
+  // 7 уровней деталей (решение Валентина 19.10).
   const PARTS = {
-    brick: { name: 'Кирпич', tier: 1 },
-    wall: { name: 'Стенка', tier: 2 },
-    floor: { name: 'Перекрытие', tier: 2 },
-    window: { name: 'Окно', tier: 3 },
-    door: { name: 'Дверь', tier: 3 },
-    roof: { name: 'Крыша', tier: 3 },
-    tiles: { name: 'Черепица', tier: 3 },
-    porch: { name: 'Крыльцо', tier: 4 },
-    lantern: { name: 'Фонарик', tier: 4 },
-    spire: { name: 'Шпиль', tier: 4 },
-    cornice: { name: 'Карниз', tier: 4 },
+    clay: { name: 'Глина', tier: 1 },
+    brick: { name: 'Кирпич', tier: 2 },
+    wall: { name: 'Стенка', tier: 3 },
+    floor: { name: 'Перекрытие', tier: 4 },
+    roof: { name: 'Крыша', tier: 4 },
+    tiles: { name: 'Черепица', tier: 4 },
+    window: { name: 'Окно', tier: 5 },
+    door: { name: 'Дверь', tier: 5 },
+    spire: { name: 'Шпиль', tier: 6 },
+    porch: { name: 'Крыльцо', tier: 6 },
+    lantern: { name: 'Фонарик', tier: 6 },
+    princess: { name: 'Принцесса', tier: 7 },
+    knight: { name: 'Рыцарь', tier: 7 },
+    dragon: { name: 'Дракон', tier: 7 },
+    unicorn: { name: 'Единорог', tier: 7 },
   };
+  const MAX_TIER = 7;
+  const COLOR_TIERS = 5; // уровни 1–5 падают из сундуков своего цвета
   const PART_KEYS = Object.keys(PARTS);
   const partsOfTier = (t) => PART_KEYS.filter((k) => PARTS[k].tier === t);
 
-  const COLOR_PARTS = { 1: ['wall'], 2: ['floor'], 3: ['window', 'door'], 4: ['roof', 'tiles'] };
+  // Награда по звёздам (решение Валентина 19.10). Премиум: у зелёного сундука декор или фигурка,
+  // у остальных деталь на уровень выше [по умолчанию].
+  const PREMIUM_CHANCE = { 4: 0.2, 5: 0.4 };
+  const GREEN_FIGURE_SHARE = 0.25; // доля фигурок среди премиума зелёного сундука [по умолчанию]
 
-  // Замок 1 «Башня в 2 этажа» (раздел 5 дизайн-документа). Порядок слотов совпадает с картинкой.
+  // Замки (раздел 5). Порядок слотов совпадает с картинкой в game.js.
   const CASTLES = [
     {
       id: 1,
@@ -44,11 +54,30 @@
       trashShare: 0.25,
       helpChance: 0.2,
       slots: [
+        'clay', 'clay', 'clay', 'clay',
         'wall', 'wall', 'wall', 'wall',
         'floor', 'floor',
         'roof', 'tiles',
         'window', 'window',
         'porch', 'spire', 'lantern',
+      ],
+    },
+    {
+      id: 2,
+      name: 'Замок с башнями',
+      moves: 30,
+      trashShare: 0.25,
+      helpChance: 0.2,
+      slots: [
+        ...Array(10).fill('clay'),
+        ...Array(8).fill('wall'),
+        'floor', 'floor', 'floor',
+        ...Array(6).fill('window'),
+        'porch', 'porch',
+        'roof', 'roof',
+        'spire', 'spire',
+        'lantern',
+        'princess', 'knight',
       ],
     },
   ];
@@ -68,7 +97,7 @@
 
   function randColor(castle, rng) {
     if (rng() < castle.trashShare) return 0;
-    return 1 + Math.floor(rng() * 4);
+    return 1 + Math.floor(rng() * (COLORS.length - 1));
   }
 
   function hasMove(b) {
@@ -218,8 +247,7 @@
     onPhase && onPhase('refill', { spawns });
     if (!hasMove(b)) { shuffle(b, rng); onPhase && onPhase('shuffle', {}); }
 
-    const chests = collected.map((x) => ({ color: x.color, stars: x.stars, series: collected.length }));
-    if (chests.length >= 3) chests[chests.length - 1].bonus = true;
+    const chests = collected.map((x) => ({ color: x.color, stars: x.stars }));
     return { size: g.length, color, chests };
   }
 
@@ -228,13 +256,13 @@
     const inv = {};
     PART_KEYS.forEach((k) => { inv[k] = 0; });
     return {
-      v: 1,
+      v: 2,
       castle: 0,
       inv,
       chests: [
         // Подарок на старт, чтобы «Стройка» сразу была не пустой.
-        { color: 0, stars: 1, series: 2 },
-        { color: 1, stars: 2, series: 1 },
+        { color: 0, stars: 2 },
+        { color: 1, stars: 1 },
       ],
       filled: CASTLES[0].slots.map(() => false),
       run: null,
@@ -245,7 +273,7 @@
     };
   }
 
-  const castleOf = (s) => CASTLES[s.castle % CASTLES.length];
+  const castleOf = (s) => CASTLES[Math.min(s.castle, CASTLES.length - 1)];
 
   function need(s, type) {
     const slots = castleOf(s).slots;
@@ -263,26 +291,33 @@
     return list[Math.floor(rng() * list.length)];
   }
 
+  // Сундук цвета T (уровень T = color + 1):
+  // ★1 — 1 деталь T; ★2 — 1 деталь T + 1 деталь T−1; ★3 — 2 детали T;
+  // ★4 — 2 детали T + 20% премиум; ★5 — 2 детали T + 40% премиум.
+  function chestTiers(chest, rng) {
+    const T = chest.color + 1;
+    const tiers = chest.stars <= 1 ? [T] : chest.stars === 2 ? [T, Math.max(1, T - 1)] : [T, T];
+    const p = PREMIUM_CHANCE[chest.stars] || 0;
+    if (p && rng() < p) {
+      if (T >= COLOR_TIERS) tiers.push(rng() < GREEN_FIGURE_SHARE ? 7 : 6);
+      else tiers.push(T + 1);
+    }
+    return tiers;
+  }
+
   function openChest(s, chest, rng) {
     const out = [];
-    const add = (t) => { s.inv[t]++; out.push(t); };
-    if (chest.color === 0) {
-      const n = chest.series >= 2 ? 3 : 2;
-      for (let i = 0; i < n; i++) add('brick');
-      return out;
-    }
-    const count = chest.stars <= 2 ? 1 : chest.stars <= 4 ? 2 : 3;
-    const up = (chest.stars >= 4 && rng() < 0.25) || (chest.bonus && rng() < 0.5);
-    const upOptions = chest.color <= 2 ? partsOfTier(3) : partsOfTier(4);
-    for (let i = 0; i < count; i++) {
-      add(pickNeeded(s, up && i === 0 ? upOptions : COLOR_PARTS[chest.color], rng));
+    for (const t of chestTiers(chest, rng)) {
+      const k = pickNeeded(s, partsOfTier(t), rng);
+      s.inv[k]++;
+      out.push(k);
     }
     return out;
   }
 
   // Сборка: любые 2 детали одной ступени → 1 деталь следующей [по умолчанию].
   function canMerge(s, a, b) {
-    if (!a || !b || PARTS[a].tier !== PARTS[b].tier || PARTS[a].tier >= 4) return false;
+    if (!a || !b || PARTS[a].tier !== PARTS[b].tier || PARTS[a].tier >= MAX_TIER) return false;
     return a === b ? s.inv[a] >= 2 : s.inv[a] >= 1 && s.inv[b] >= 1;
   }
   function merge(s, a, b, target) {
@@ -298,9 +333,18 @@
     return true;
   }
   const isComplete = (s) => s.filled.every(Boolean);
+  const isLastCastle = (s) => s.castle >= CASTLES.length - 1;
+
+  // Следующий замок: склад и сундуки остаются.
+  function nextCastle(s) {
+    s.castle = Math.min(s.castle + 1, CASTLES.length - 1);
+    s.filled = castleOf(s).slots.map(() => false);
+    s.runs = 0;
+  }
 
   // Какой цвет блоков даёт деталь (для подсказки на поле). Украшения только собираются.
-  const PART_COLOR = { brick: 0, wall: 1, floor: 2, window: 3, door: 3, roof: 4, tiles: 4 };
+  const PART_COLOR = {};
+  PART_KEYS.forEach((k) => { if (PARTS[k].tier <= COLOR_TIERS) PART_COLOR[k] = PARTS[k].tier - 1; });
 
   // Чего не хватает замку с учётом склада: [{ type, n }].
   function missing(s) {
@@ -320,7 +364,7 @@
   // опция keepOnEnd вместо этого отдаёт их игроку (для сравнения на плейтесте).
   function endRun(s) {
     const left = [];
-    s.run.board.forEach((row) => row.forEach((x) => { if (x && x.k === 'c') left.push({ color: x.color, stars: x.stars, series: 1 }); }));
+    s.run.board.forEach((row) => row.forEach((x) => { if (x && x.k === 'c') left.push({ color: x.color, stars: x.stars }); }));
     if (s.opts.keepOnEnd) { s.chests.push(...left); s.run.got.push(...left); }
     const summary = { got: s.run.got, left: left.length, kept: s.opts.keepOnEnd };
     s.run = null;
@@ -335,8 +379,8 @@
   }
 
   root.Core = {
-    ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, partsOfTier, starsFor,
+    ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, MAX_TIER, partsOfTier, starsFor, chestTiers,
     genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove,
-    newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, newRun, endRun, syncIds,
+    newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, isLastCastle, nextCastle, newRun, endRun, syncIds,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
