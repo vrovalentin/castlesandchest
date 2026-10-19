@@ -324,3 +324,12 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
 
 .castle-wrap { background: linear-gradient(180deg, #bfe4f7, #e8f6fc 70%, #7cc06a 70%); }
 .castle-wrap svg { max-height: 42dvh; margin-inline: auto; }
+
+/* «Осталось поставить» на Стройке */
+.todo { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: 12.5px; }
+.todo .lbl { font-weight: 700; color: var(--wood-dark); }
+.todo .need-chip { border: 2px solid transparent; font: inherit; font-weight: 600; cursor: pointer; }
+.todo .need-chip.have { border-color: var(--gold); background: #fff6dd; }
+.slot.ghost .line { fill: none !important; stroke-width: 3 !important; }
+.slot.flash { animation: flash .9s ease-in-out 2; }
+@keyframes flash { 50% { opacity: .2; } }

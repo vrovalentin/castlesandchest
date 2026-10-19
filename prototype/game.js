@@ -109,7 +109,7 @@
         A.wall(100, 236, 60, 62), A.wall(160, 236, 60, 62), A.wall(100, 164, 60, 64), A.wall(160, 164, 60, 64),
         A.beam(92, 228, 136), A.beam(92, 156, 136),
         A.roof(84, 236, 158, 82),
-        '<path d="M106 142 Q114 148 122 142 Q130 148 138 142 Q146 148 154 142 Q162 148 170 142 Q178 148 186 142 Q194 148 202 142 Q210 148 214 142 M124 122 Q132 128 140 122 Q148 128 156 122 Q164 128 172 122 Q180 128 188 122 Q196 128 198 122 M140 104 Q148 110 156 104 Q164 110 172 104 Q178 109 181 104" fill="none" stroke="#22477a" stroke-width="3.5" stroke-linecap="round"/>',
+        '<path d="M106 142 Q114 148 122 142 Q130 148 138 142 Q146 148 154 142 Q162 148 170 142 Q178 148 186 142 Q194 148 202 142 Q210 148 214 142 M124 122 Q132 128 140 122 Q148 128 156 122 Q164 128 172 122 Q180 128 188 122 Q196 128 198 122 M140 104 Q148 110 156 104 Q164 110 172 104 Q178 109 181 104" class="line" fill="none" stroke="#22477a" stroke-width="3.5" stroke-linecap="round"/>',
         A.win(144, 176, 32, 38), A.win(180, 248, 28, 32),
         A.porch(114, 256, 36, 40),
         A.spire(160, 86, 26),
@@ -217,6 +217,7 @@
       </div>
       <div class="progressbar" aria-hidden="true"><i style="width:${(done / total) * 100}%"></i></div>
       <div class="castle-wrap">${castleSVG()}</div>
+      ${todoRow(castle)}
       <section class="panel row-panel">
         <h2>Сундуки${S.chests.length ? ` · ${S.chests.length}` : ''}</h2>
         <div class="strip">${S.chests.length
@@ -243,6 +244,16 @@
     });
   }
 
+  // «Осталось поставить»: пустые места по типам; тап открывает окно места и подсвечивает его на замке.
+  function todoRow(castle) {
+    const left = {};
+    castle.slots.forEach((k, i) => { if (!S.filled[i]) left[k] = (left[k] || 0) + 1; });
+    const keys = Object.keys(left);
+    if (!keys.length) return '';
+    return `<div class="todo"><span class="lbl">Осталось поставить:</span>${keys.map((k) =>
+      `<button class="need-chip ${S.inv[k] > 0 ? 'have' : ''}" data-todo="${k}"><span class="sw" style="background:${TIER_VAR[tierOf(k)]}"></span>${partName(k).toLowerCase()}${left[k] > 1 ? ` ×${left[k]}` : ''}</button>`).join('')}</div>`;
+  }
+
   function afterPlace(placed) {
     save();
     renderBuild();
@@ -258,6 +269,12 @@
     if (t.id === 'openAll') return openChests(S.chests.map((_, i) => i));
     if (t.id === 'merge') return mergeSheet();
     if (t.dataset.chest) return openChests([+t.dataset.chest]);
+    if (t.dataset.todo) {
+      const i = C.castleOf(S).slots.findIndex((k, n) => k === t.dataset.todo && !S.filled[n]);
+      const g = $(`#build .slot[data-slot="${i}"]`);
+      if (g) { g.classList.remove('flash'); g.getBoundingClientRect(); g.classList.add('flash'); }
+      return slotSheet(i);
+    }
     if (t.dataset.part) {
       const k = t.dataset.part;
       if (tierOf(k) === C.MAX_TIER) return toast('Фигурки — высший уровень, их ставят на замок');
