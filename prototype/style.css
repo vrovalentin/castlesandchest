@@ -22,11 +22,11 @@
   --c-green: #4fb35a;
 
   /* Уровни деталей 1–5 совпадают с цветом блоков, 6 — декор (золото), 7 — фигурки (розовый) */
-  --t1: var(--c-purple);
+  --t1: var(--c-green);
   --t2: var(--c-brown);
   --t3: var(--c-gray);
   --t4: var(--c-blue);
-  --t5: var(--c-green);
+  --t5: var(--c-purple);
   --t6: #d39a12;
   --t7: #e06aa6;
 

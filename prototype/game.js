@@ -8,9 +8,9 @@
   const XP = 100 / C.COLS; // ширина клетки в %
   const YP = 100 / C.ROWS; // высота клетки в %
 
-  // Цвет блоков = уровень детали: фиолетовый 1, коричневый 2, серый 3, синий 4, зелёный 5.
-  const COLOR_VAR = ['var(--c-purple)', 'var(--c-brown)', 'var(--c-gray)', 'var(--c-blue)', 'var(--c-green)'];
-  const COLOR_HEX = ['#8e5bd6', '#a8703f', '#98a2ad', '#4f8fe0', '#4fb35a'];
+  // Цвет блоков = уровень детали: зелёный 1, коричневый 2, серый 3, синий 4, фиолетовый 5 (самый ценный).
+  const COLOR_VAR = ['var(--c-green)', 'var(--c-brown)', 'var(--c-gray)', 'var(--c-blue)', 'var(--c-purple)'];
+  const COLOR_HEX = ['#4fb35a', '#a8703f', '#98a2ad', '#4f8fe0', '#8e5bd6'];
   const TIER_VAR = [null, 'var(--t1)', 'var(--t2)', 'var(--t3)', 'var(--t4)', 'var(--t5)', 'var(--t6)', 'var(--t7)'];
   const TIER_NAME = [null, 'Глина', 'Кирпичи', 'Стенки', 'Перекрытия и кровля', 'Окна и двери', 'Декор', 'Фигурки'];
   const SAVE_KEY = 'castles-and-chest-proto-v2';
@@ -341,8 +341,8 @@
     const from = [];
     if (tier > 1) from.push(`Собрать из 2 деталей ${tier - 1}-го уровня · есть ${lower}`);
     if (color !== undefined) from.push(`<span class="sw" style="background:${COLOR_VAR[color]}"></span> ${C.COLORS[color].name} сундук`);
-    if (tier >= 6) from.push(`<span class="sw" style="background:${COLOR_VAR[4]}"></span> Шанс из зелёного сундука ★4–5`);
-    else if (tier > 1) from.push(`Шанс из ${['фиолетового', 'коричневого', 'серого', 'синего'][tier - 2]} сундука ★4–5`);
+    if (tier >= 6) from.push(`<span class="sw" style="background:${COLOR_VAR[4]}"></span> Шанс из фиолетового сундука ★4–5`);
+    else if (tier > 1) from.push(`Шанс из ${['зелёного', 'коричневого', 'серого', 'синего'][tier - 2]} сундука ★4–5`);
     sheet(() => `
       <h3>${partName(type)}</h3>
       <p class="sub">${tier}-й уровень · ${TIER_NAME[tier]}</p>
@@ -530,8 +530,8 @@
     const deco = sum(6), figs = sum(7);
     box.innerHTML = '<span class="lbl">Нужно замку:</span>' + list.filter(({ type }) => C.PART_COLOR[type] !== undefined).map(({ type, n }) =>
       `<span class="need-chip"><span class="sw" style="background:${COLOR_VAR[C.PART_COLOR[type]]}"></span>${partName(type).toLowerCase()}${n > 1 ? ` ×${n}` : ''}</span>`).join('')
-      + (deco ? `<span class="need-chip" title="Собирается из 2 деталей 5-го уровня или выпадает из зелёного сундука ★4–5"><span class="sw" style="background:var(--t6)"></span>декор ×${deco}</span>` : '')
-      + (figs ? `<span class="need-chip" title="Собирается из 2 деталей декора или выпадает из зелёного сундука ★4–5"><span class="sw" style="background:var(--t7)"></span>фигурки ×${figs}</span>` : '');
+      + (deco ? `<span class="need-chip" title="Собирается из 2 деталей 5-го уровня или выпадает из фиолетового сундука ★4–5"><span class="sw" style="background:var(--t6)"></span>декор ×${deco}</span>` : '')
+      + (figs ? `<span class="need-chip" title="Собирается из 2 деталей декора или выпадает из фиолетового сундука ★4–5"><span class="sw" style="background:var(--t7)"></span>фигурки ×${figs}</span>` : '');
   }
 
   function renderTools() {
