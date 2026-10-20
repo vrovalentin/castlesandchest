@@ -1,6 +1,6 @@
 # _Game
 
-All game code and content lives here. Layers (see /design/architecture.md):
+All game code and content lives here. Layers follow the project architecture doc (design/architecture.md in the shared project files, not in this repo):
 
 - **Scripts/Core** - pure C# game rules (board, merges, chests, storage, castles). Assembly `Game.Core`, no UnityEngine references, so it is easy to unit-test.
 - **Scripts/Content** - ScriptableObjects with game data, converted into Core models.
