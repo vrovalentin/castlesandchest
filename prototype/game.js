@@ -19,6 +19,22 @@
   let S = load() || C.newGame();
   C.syncIds(S);
   save();
+  let armed = null; // выбранный помощник на поле: 'broom' | 'hammer' | null
+
+  // Ежедневная выдача: метлы, молотки, билеты. День считается по часам устройства
+  // (в игре на Яндексе возьмём время сервера, чтобы нельзя было перевести часы).
+  const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  function checkDaily() {
+    const got = C.dailyGrant(S, today());
+    if (!got) return;
+    save();
+    const parts = [got.broom && `метлы +${got.broom}`, got.hammer && `молотки +${got.hammer}`, got.tickets && `билеты +${got.tickets}`].filter(Boolean);
+    setTimeout(() => modal(`<h3>Подарок дня</h3>
+      <div class="list">${toolChip('broom', S.tools.broom)}${toolChip('hammer', S.tools.hammer)}<span class="part">${ICON.ticket} Билеты <span class="cnt">${S.tickets}</span></span></div>
+      <p class="hint">${parts.length ? `Пополнено: ${parts.join(', ')}.` : 'Всё и так было полным.'} Каждый день метлы и молотки пополняются до 3, билеты до 15. Один билет — один забег.</p>`,
+      [['Отлично', 'primary', () => render()]]), 200);
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDaily(); });
   let screen = S.run ? 'mine' : 'build';
   let busy = false;
 
@@ -30,8 +46,8 @@
       const s = raw && JSON.parse(raw);
       if (!s || s.v !== 2) return null;
       // Забег со старым размером поля (10×10) не продолжаем.
-      if (s.run && s.run.board.length !== C.ROWS) s.run = null;
-      return s;
+      if (s.run && (s.run.board.length !== C.ROWS || s.run.board[0].length !== C.COLS)) s.run = null;
+      return C.ensureMeta(s);
     } catch (e) { return null; }
   }
   function save() {
@@ -77,6 +93,24 @@
       <rect x="21" y="19" width="10" height="11" rx="2" fill="#f2b134" stroke="#4a3320" stroke-width="2"/>
       ${stars ? `<text x="26" y="39" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" stroke="#4a3320" stroke-width="2.5" paint-order="stroke" font-family="Rubik, sans-serif">${'★'.repeat(stars)}</text>` : ''}
     </svg>`;
+  }
+
+  const ICON = {
+    broom: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2 L11 12" stroke="#8a5a34" stroke-width="2.6" stroke-linecap="round"/><path d="M8 11 L14 14 L11 22 L3 19 Z" fill="#f2c45a" stroke="#8a6410" stroke-width="1.4" stroke-linejoin="round"/><path d="M6 17 L5.2 20 M8.5 18 L7.8 21 M11 18.5 L10.4 21.5" stroke="#8a6410" stroke-width="1.2"/></svg>',
+    hammer: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9 L4 21" stroke="#8a5a34" stroke-width="2.8" stroke-linecap="round"/><path d="M9 4 L17 2 L21 8 L13 11 Z" fill="#98a2ad" stroke="#4d5560" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    ticket: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7 H21 V10 A2 2 0 0 0 21 14 V17 H3 V14 A2 2 0 0 0 3 10 Z" fill="#f2b134" stroke="#8a6410" stroke-width="1.4"/><path d="M15 7.5 V16.5" stroke="#8a6410" stroke-width="1.2" stroke-dasharray="1.5 1.5"/></svg>',
+  };
+  const toolChip = (k, n) => `<span class="part">${ICON[k]} ${C.TOOLS[k].name} <span class="cnt">${n}</span></span>`;
+
+  // Склад по уровням: строка на каждый уровень 1–7, слева цветная плашка с номером и названием.
+  // chip(k) — HTML одной детали или '' (не показывать).
+  function tierRows(chip, tiers = [1, 2, 3, 4, 5, 6, 7]) {
+    return `<div class="tiers">${tiers.map((t) => {
+      const chips = C.partsOfTier(t).map(chip).join('');
+      return `<div class="tier-row ${chips ? '' : 'none'}" style="--tc:${TIER_VAR[t]}">
+        <span class="tier-badge"><b>${t}</b>${TIER_NAME[t]}</span>
+        <div class="tier-parts">${chips || '<span class="dash">—</span>'}</div></div>`;
+    }).join('')}</div>`;
   }
 
   function partChip(type, extra = '') {
@@ -225,16 +259,16 @@
           : '<span class="empty">Пусто. Сундуки добываются на поле.</span>'}</div>
         <button class="btn small wood" id="openAll" ${S.chests.length ? '' : 'disabled'}>Открыть все</button>
       </section>
-      <section class="panel row-panel">
-        <h2>Склад</h2>
-        <div class="strip parts">${C.PART_KEYS.filter((k) => S.inv[k] > 0).map((k) => {
+      <section class="panel stock">
+        <h2>Склад по уровням <button class="btn small wood" id="merge">Собрать 2 → 1</button></h2>
+        ${tierRows((k) => {
           const n = S.inv[k];
+          if (!n) return '';
           const need = Math.max(0, C.need(S, k));
-          return `<button class="part" data-part="${k}"><span class="sw" style="background:${TIER_VAR[tierOf(k)]}"></span>${partName(k)} <span class="cnt">${n}</span>${need ? `<span class="need" title="Не хватает для замка">−${need}</span>` : ''}</button>`;
-        }).join('') || '<span class="empty">Пусто. Детали выпадают из сундуков.</span>'}</div>
-        <button class="btn small wood" id="merge">Собрать</button>
+          return `<button class="part" data-part="${k}">${partName(k)} <span class="cnt">${n}</span>${need ? `<span class="need" title="Не хватает для замка">−${need}</span>` : ''}</button>`;
+        })}
       </section>
-      <button class="btn primary" id="toMine">▶ ${S.run ? `Продолжить · ${S.run.moves} ход.` : `Добывать · ${S.opts.moves} ходов`}</button>`;
+      ${mineButton()}`;
 
     S.filled.forEach((f, i) => {
       const g = root.querySelector(`.slot[data-slot="${i}"]`);
@@ -254,6 +288,14 @@
       `<button class="need-chip ${S.inv[k] > 0 ? 'have' : ''}" data-todo="${k}"><span class="sw" style="background:${TIER_VAR[tierOf(k)]}"></span>${partName(k).toLowerCase()}${left[k] > 1 ? ` ×${left[k]}` : ''}</button>`).join('')}</div>`;
   }
 
+  // Кнопка «Добывать»: продолжение забега бесплатно, новый забег стоит 1 билет.
+  function mineButton() {
+    if (S.run) return `<button class="btn primary" id="toMine">▶ Продолжить · ${S.run.moves} ход.</button>`;
+    if (S.tickets > 0) return `<button class="btn primary" id="toMine">▶ Добывать · ${S.opts.moves} ходов <span class="ticket">${ICON.ticket}${S.tickets}</span></button>`;
+    return `<div class="no-tickets"><button class="btn primary" disabled>Билеты кончились, новые завтра</button>
+      <button class="btn wood" id="ticketAd">+1 билет · реклама</button></div>`;
+  }
+
   function afterPlace(placed) {
     save();
     renderBuild();
@@ -265,6 +307,7 @@
     const t = e.target.closest('button, .slot');
     if (!t) return;
     if (t.id === 'toMine') return go('mine');
+    if (t.id === 'ticketAd') return fakeAd(() => { S.tickets++; save(); renderBuild(); toast('Билет получен'); });
     if (t.id === 'menu') return settings();
     if (t.id === 'openAll') return openChests(S.chests.map((_, i) => i));
     if (t.id === 'merge') return mergeSheet();
@@ -329,8 +372,10 @@
       const cells = [0, 1].map((n) => pick[n]
         ? `<button class="cell-slot full" data-act="unpick" data-n="${n}">${partChip(pick[n])}</button>`
         : '<span class="cell-slot">пусто</span>').join('<span class="plus">+</span>');
-      const stock = C.PART_KEYS.filter((k) => tierOf(k) < C.MAX_TIER && (tier == null || tierOf(k) === tier))
-        .map((k) => `<button class="part ${free(k) > 0 ? '' : 'zero'}" data-act="pick" data-k="${k}" ${free(k) > 0 ? '' : 'disabled'}><span class="sw" style="background:${TIER_VAR[tierOf(k)]}"></span>${partName(k)} <span class="cnt">${free(k)}</span></button>`).join('');
+      const tiers = tier ? [tier] : [1, 2, 3, 4, 5, 6].filter((t) => C.partsOfTier(t).some((k) => S.inv[k] > 0));
+      const stock = tiers.length ? tierRows((k) => (S.inv[k] > 0
+        ? `<button class="part ${free(k) > 0 ? '' : 'zero'}" data-act="pick" data-k="${k}" ${free(k) > 0 ? '' : 'disabled'}>${partName(k)} <span class="cnt">${free(k)}</span></button>`
+        : ''), tiers) : '';
       const targets = tier ? C.partsOfTier(tier + 1) : [];
       if (target && tier && tierOf(target) !== tier + 1) target = null;
       const ok = pick.length === 2 && target;
@@ -338,7 +383,7 @@
         <h3>Собрать деталь</h3>
         <div class="cells">${cells}</div>
         <p class="sub">${pick.length < 2 ? `Выбери ${pick.length ? 'вторую' : 'две'} детали${tier ? ` ${tier}-го уровня` : ' одного уровня'}` : '↓ во что собрать'}</p>
-        <div class="list">${stock || '<span class="empty">На складе нечего собирать</span>'}</div>
+        ${stock || '<p class="empty">На складе нечего собирать</p>'}
         ${targets.length ? `<div class="targets">${targets.map((t) => {
           const need = Math.max(0, C.need(S, t));
           return `<button class="target ${t === target ? 'on' : ''}" data-act="target" data-k="${t}">${partName(t)}${need ? ' <span class="star" title="Нужно замку">★</span>' : ''}</button>`;
@@ -446,9 +491,11 @@
         <button class="btn small icon" id="toBuild" aria-label="На Стройку">←</button>
         <span class="pill" id="moves"></span>
         <span class="pill" id="got"></span>
+        <button class="btn small icon" id="restart" aria-label="Начать забег заново" title="Начать заново">↻</button>
       </div>
       <div class="needs" id="needs"></div>
-      <div class="board" id="board" aria-label="Поле 10 строк на 12 столбцов"></div>
+      <div class="tools" id="tools"></div>
+      <div class="board" id="board" aria-label="Поле 10 на 10"></div>
       <section class="panel row-panel">
         <h2>Добыто</h2>
         <div class="strip" id="ribbon"></div>
@@ -456,6 +503,16 @@
     els.clear();
     $('#board').addEventListener('pointerdown', onBoardTap);
     $('#toBuild').onclick = () => go('build');
+    $('#restart').onclick = () => { if (!busy) confirmRestart(); };
+    $('#tools').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tool]');
+      if (!b || busy) return;
+      const k = b.dataset.tool;
+      if (armed === k) armed = null;
+      else if (S.tools[k] > 0) armed = k;
+      else return toast(`${C.TOOLS[k].name}: кончились, новые завтра`);
+      renderTools();
+    });
     renderBoard(S.run.board, {});
     showStars(S.run.board);
     renderHud();
@@ -477,6 +534,17 @@
       + (figs ? `<span class="need-chip" title="Собирается из 2 деталей декора или выпадает из зелёного сундука ★4–5"><span class="sw" style="background:var(--t7)"></span>фигурки ×${figs}</span>` : '');
   }
 
+  function renderTools() {
+    const box = $('#tools');
+    if (!box) return;
+    box.innerHTML = Object.keys(C.TOOLS).map((k) =>
+      `<button class="tool ${armed === k ? 'on' : ''} ${S.tools[k] ? '' : 'zero'}" data-tool="${k}" aria-pressed="${armed === k}">${ICON[k]}<span>${C.TOOLS[k].name}</span><b>${S.tools[k]}</b></button>`).join('')
+      + `<span class="tool-hint">${armed ? C.TOOLS[armed].hint + '. Ход не тратится.' : 'Помощники: тапни, потом тапни поле'}</span>`;
+    const board = $('#board');
+    board.classList.toggle('armed', !!armed);
+    board.dataset.tool = armed || '';
+  }
+
   function renderHud() {
     const m = $('#moves');
     if (!m || !S.run) return;
@@ -487,6 +555,7 @@
       ? S.run.got.map((ch) => `<span class="chest-btn">${chestSVG(ch.color, ch.stars)}</span>`).join('')
       : '<span class="empty">Сундук упадёт сюда, когда уйдёт за нижний край поля</span>';
     renderNeeds();
+    renderTools();
   }
 
   function cellHTML(x) {
@@ -567,6 +636,7 @@
     const b = S.run.board;
     const cell = b[r][c];
     if (!cell) return;
+    if (armed) return applyTool(armed, r, c);
     if (cell.k === 'c') return toast('Сундук не нажимается. Убери блоки под ним, и он упадёт.');
     if (C.group(b, r, c).length < 2) {
       const el = els.get(cell.id);
@@ -580,10 +650,47 @@
     const res = C.doMove(b, r, c, C.castleOf(S), rng, (phase, data) => {
       frames.push({ phase, data, snap: b.map((row) => row.slice()) });
     });
+    await playFrames(frames, r, c);
+    S.chests.push(...res.chests);
+    S.run.got.push(...res.chests);
+    if (res.chests.length >= 2) toast(`Серия: ${res.chests.length} сундука за ход!`);
+    S.run.moves--;
+    save();
+    renderHud();
+    showStars(b);
+    busy = false;
+    if (S.run.moves <= 0) setTimeout(outOfMoves, 400);
+  }
+
+  // Метла или молоток: ход не тратится, награды за убранные блоки нет, сундуки могут упасть за край.
+  async function applyTool(tool, r, c) {
+    const b = S.run.board;
+    if (tool === 'hammer' && b[r][c].k === 'c') return toast('Молоток бьёт только блоки, сундук не разбить');
+    busy = true;
+    showStars(null);
+    const frames = [];
+    const res = C.useTool(b, tool, r, c, C.castleOf(S), rng, (phase, data) => {
+      frames.push({ phase, data, snap: b.map((row) => row.slice()) });
+    });
+    if (!res) { busy = false; showStars(b); return toast('В этом ряду нет блоков'); }
+    S.tools[tool]--;
+    armed = null;
+    await playFrames(frames, r, c);
+    S.chests.push(...res.chests);
+    S.run.got.push(...res.chests);
+    if (res.chests.length) toast(res.chests.length > 1 ? `Упало сундуков: ${res.chests.length}` : 'Сундук упал за край!');
+    save();
+    renderHud();
+    showStars(b);
+    busy = false;
+  }
+
+  async function playFrames(frames, r, c) {
     for (const f of frames) {
       if (f.phase === 'remove') {
         renderBoard(f.snap, { leave: 'pop' });
-        if (f.data.chest) floatText(r, c, `Сундук ${'★'.repeat(f.data.chest.stars)}`);
+        if (f.data.tool) floatText(r, f.data.tool === 'broom' ? (C.COLS - 1) / 2 : c, C.TOOLS[f.data.tool].name);
+        else if (f.data.chest) floatText(r, c, `Сундук ${'★'.repeat(f.data.chest.stars)}`);
         else if (f.data.size <= 3) floatText(r, c, 'пусто');
         await sleep(200);
       } else if (f.phase === 'gravity') {
@@ -601,15 +708,26 @@
         await sleep(300);
       }
     }
-    S.chests.push(...res.chests);
-    S.run.got.push(...res.chests);
-    if (res.chests.length >= 2) toast(`Серия: ${res.chests.length} сундука за ход!`);
-    S.run.moves--;
-    save();
-    renderHud();
-    showStars(b);
-    busy = false;
-    if (S.run.moves <= 0) setTimeout(outOfMoves, 400);
+  }
+
+  // «Начать заново» во время добычи: новое поле и полные ходы за 1 билет.
+  // Сундуки, уже упавшие за край, остаются; сундуки на поле ведут себя как в конце забега.
+  function confirmRestart() {
+    if (S.tickets < 1) return toast('Билеты кончились, начать заново можно завтра');
+    const left = chestsOnBoard();
+    modal(`<h3>Начать заново?</h3>
+      <p>Будет новое поле и ${S.opts.moves} ходов. Это стоит 1 билет, у тебя их ${S.tickets}.</p>
+      <p class="hint">Добытые сундуки останутся.${left ? (S.opts.keepOnEnd ? ` Сундуки с поля (${left}) тоже достанутся тебе.` : ` Сундуки на поле (${left}) сгорят.`) : ''}</p>`, [
+      ['Начать заново', 'primary', () => {
+        C.endRun(S);
+        C.newRun(S, rng);
+        armed = null;
+        save();
+        renderMineShell();
+        toast(`Новое поле. Билетов осталось: ${S.tickets}`);
+      }],
+      ['Отмена', '', null],
+    ]);
   }
 
   const chestsOnBoard = () => S.run.board.reduce((n, row) => n + row.filter((x) => x && x.k === 'c').length, 0);
@@ -659,7 +777,11 @@
 
   // ---------- Переключение экранов ----------
   function go(name) {
-    if (name === 'mine' && !S.run) { C.newRun(S, rng); save(); }
+    if (name === 'mine' && !S.run) {
+      if (!C.newRun(S, rng)) { toast('Билеты кончились. Новые завтра'); name = 'build'; }
+      save();
+    }
+    armed = null;
     screen = name;
     render();
     window.scrollTo(0, 0);
@@ -676,4 +798,5 @@
     if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('slot')) { e.preventDefault(); onBuildClick(e); }
   });
   render();
+  checkDaily();
 })();

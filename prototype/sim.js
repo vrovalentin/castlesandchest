@@ -82,6 +82,7 @@ function playCastle(s) {
 
 function playGame() {
   const s = C.newGame();
+  s.tickets = Infinity; // бот играет без ограничения билетов
   s.opts.keepOnEnd = KEEP;
   const c1 = playCastle(s);
   C.nextCastle(s);

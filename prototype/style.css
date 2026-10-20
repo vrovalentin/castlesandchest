@@ -186,10 +186,11 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
 /* ---------- Добыча: поле ---------- */
 .board {
   position: relative;
-  /* 12 столбцов × 10 строк */
-  width: 100%;
+  /* 10 × 10; по высоте не больше экрана минус панели */
+  width: min(100%, calc(100dvh - 230px));
+  min-width: min(100%, 280px);
   margin-inline: auto;
-  aspect-ratio: 12 / 10;
+  aspect-ratio: 1;
   max-width: 100%;
   container-type: inline-size;
   background: rgba(44, 42, 59, .18);
@@ -199,7 +200,7 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
   box-shadow: inset 0 2px 6px rgba(0,0,0,.15);
 }
 .cell {
-  position: absolute; width: calc(100% / 12); height: 10%; padding: 1.5px;
+  position: absolute; width: 10%; height: 10%; padding: 1.5px;
   transition: top .2s ease-in, left .25s ease, transform .2s ease, opacity .2s ease;
   pointer-events: none;
 }
@@ -257,11 +258,11 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
 /* Будущие звёзды группы на каждом её блоке */
 .blk { position: relative; display: grid; place-items: center; }
 .blk .st {
-  font-size: 2.2cqw; line-height: .9; text-align: center; letter-spacing: -0.04em;
+  font-size: 3cqw; line-height: .9; text-align: center; letter-spacing: -0.04em;
   color: #fff6c9; text-shadow: 0 0 2px rgba(60, 35, 10, .9), 0 1px 0 rgba(60, 35, 10, .9);
   pointer-events: none; animation: appear .2s ease-out;
 }
-.blk .st.two { font-size: 2cqw; }
+.blk .st.two { font-size: 2.6cqw; }
 
 /* ---------- Раскладка по схеме экранов (wireframe.html) ---------- */
 .btn.icon { width: 40px; height: 40px; padding: 0; font-size: 18px; flex: none; }
@@ -335,3 +336,40 @@ button:focus-visible, .slot:focus-visible { outline: 3px solid var(--gold-dark);
 @keyframes flash { 50% { opacity: .2; } }
 
 .hint.burn { color: var(--danger); }
+
+/* ---------- Склад по уровням ---------- */
+.stock h2 { margin-bottom: 8px; }
+.tiers { display: flex; flex-direction: column; gap: 4px; }
+.tier-row {
+  display: grid; grid-template-columns: 112px 1fr; gap: 8px; align-items: center;
+  padding: 4px; border-radius: 10px;
+  background: color-mix(in srgb, var(--tc) 12%, #fff);
+  border-left: 5px solid var(--tc);
+}
+.tier-row.none { opacity: .5; }
+.tier-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-soft); line-height: 1.1; }
+.tier-badge b {
+  flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--tc); color: #fff;
+  display: grid; place-items: center; font-size: 12px;
+}
+.tier-parts { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.tier-parts .part { padding: 3px 8px; font-size: 12.5px; background: #fff; border-color: color-mix(in srgb, var(--tc) 45%, #fff); }
+.tier-parts .dash { color: var(--ink-soft); font-size: 12px; }
+.modal .tiers { text-align: left; }
+@media (max-width: 360px) { .tier-row { grid-template-columns: 1fr; } }
+
+/* ---------- Билеты и помощники ---------- */
+.ico { width: 18px; height: 18px; flex: none; vertical-align: -4px; }
+.ticket { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font-size: 15px; background: rgba(255,255,255,.55); border-radius: 999px; padding: 1px 8px 1px 4px; }
+.no-tickets { display: grid; gap: 8px; }
+.tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tool {
+  display: inline-flex; align-items: center; gap: 5px; border: 2px solid var(--panel-edge); background: var(--panel);
+  border-radius: 12px; padding: 5px 10px 5px 7px; font-weight: 600; font-size: 13px;
+}
+.tool b { font-variant-numeric: tabular-nums; color: var(--wood); }
+.tool.on { border-color: var(--gold); background: #fff2c6; box-shadow: 0 0 0 3px rgba(242,177,52,.35); }
+.tool.zero { opacity: .45; }
+.tool .ico { width: 22px; height: 22px; }
+.tool-hint { font-size: 12px; color: var(--ink-soft); flex: 1 1 140px; }
+.board.armed { box-shadow: inset 0 0 0 3px var(--gold), inset 0 2px 6px rgba(0,0,0,.15); cursor: crosshair; }

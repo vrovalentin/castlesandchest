@@ -4,9 +4,9 @@
 (function (root) {
   'use strict';
 
-  // Поле: 10 строк × 12 столбцов (решение Валентина 19.10).
+  // Поле: 10 × 10 (решение Валентина 20.10: на 12 столбцах клетки на телефоне слишком мелкие).
   const ROWS = 10;
-  const COLS = 12;
+  const COLS = 10;
 
   // Цвет блоков = уровень детали из сундука: индекс 0 → уровень 1 и т.д.
   const COLORS = [
@@ -234,7 +234,12 @@
       b[r][c] = chest;
     }
     onPhase && onPhase('remove', { removed, chest, size: g.length, r, c });
+    const chests = settle(b, castle, rng, onPhase);
+    return { size: g.length, color, chests };
+  }
 
+  // После удаления клеток: падение, сбор сундуков из нижнего ряда (каскадом), досыпка, перемешивание.
+  function settle(b, castle, rng, onPhase) {
     const collected = [];
     for (;;) {
       if (gravity(b)) onPhase && onPhase('gravity', {});
@@ -247,8 +252,50 @@
     onPhase && onPhase('refill', { spawns });
     if (!hasMove(b)) { shuffle(b, rng); onPhase && onPhase('shuffle', {}); }
 
-    const chests = collected.map((x) => ({ color: x.color, stars: x.stars }));
-    return { size: g.length, color, chests };
+    return collected.map((x) => ({ color: x.color, stars: x.stars }));
+  }
+
+  // ---------- Помощники: метла и молоток (решение Валентина 20.10) ----------
+  // Метла убирает все блоки ряда, молоток — один блок. Сундуки не трогают, сундуков не создают, ход не тратят.
+  const TOOLS = {
+    broom: { name: 'Метла', hint: 'Тапни ряд: все блоки в нём исчезнут' },
+    hammer: { name: 'Молоток', hint: 'Тапни блок: он исчезнет' },
+  };
+  function useTool(b, tool, r, c, castle, rng, onPhase) {
+    const cells = tool === 'broom'
+      ? Array.from({ length: COLS }, (_, x) => [r, x]).filter(([y, x]) => b[y][x] && b[y][x].k === 'b')
+      : (b[r][c] && b[r][c].k === 'b' ? [[r, c]] : []);
+    if (!cells.length) return null;
+    const removed = cells.map(([y, x]) => b[y][x].id);
+    cells.forEach(([y, x]) => { b[y][x] = null; });
+    onPhase && onPhase('remove', { removed, chest: null, size: cells.length, r, c, tool });
+    return { size: cells.length, chests: settle(b, castle, rng, onPhase) };
+  }
+
+  // ---------- Ежедневная выдача (решение Валентина 20.10) ----------
+  // Раз в сутки помощники и билеты пополняются до этих значений [по умолчанию: «до», а не «плюс»].
+  // Билет — вход в один забег на поле.
+  const DAILY = { broom: 3, hammer: 3, tickets: 15 };
+  function ensureMeta(s) {
+    if (!s.tools) s.tools = { broom: 0, hammer: 0 };
+    if (typeof s.tickets !== 'number') s.tickets = 0;
+    if (!('daily' in s)) s.daily = null;
+    return s;
+  }
+  // day — строка даты вида 2026-10-20. Возвращает, сколько выдали, или null, если сегодня уже выдавали.
+  function dailyGrant(s, day) {
+    ensureMeta(s);
+    if (s.daily === day) return null;
+    const got = {
+      broom: Math.max(0, DAILY.broom - s.tools.broom),
+      hammer: Math.max(0, DAILY.hammer - s.tools.hammer),
+      tickets: Math.max(0, DAILY.tickets - s.tickets),
+    };
+    s.tools.broom += got.broom;
+    s.tools.hammer += got.hammer;
+    s.tickets += got.tickets;
+    s.daily = day;
+    return got;
   }
 
   // ---------- Мета: склад, сундуки, замок ----------
@@ -267,6 +314,9 @@
       filled: CASTLES[0].slots.map(() => false),
       run: null,
       runs: 0,
+      tools: { broom: 0, hammer: 0 },
+      tickets: 0,
+      daily: null,
       built: 0,
       // Настройки баланса для плейтеста (раздел 3.1): ходы на забег и судьба сундуков в конце забега.
       opts: { moves: CASTLES[0].moves, keepOnEnd: false },
@@ -363,7 +413,11 @@
     return out;
   }
 
+  // Новый забег стоит 1 билет. Без билетов забег не начинается.
   function newRun(s, rng) {
+    ensureMeta(s);
+    if (s.tickets < 1) return null;
+    s.tickets--;
     const castle = castleOf(s);
     s.run = { board: genBoard(castle, rng), moves: s.opts.moves, got: [], extraUsed: false };
     s.runs++;
@@ -390,7 +444,8 @@
 
   root.Core = {
     ROWS, COLS, COLORS, PARTS, PART_KEYS, CASTLES, MAX_TIER, partsOfTier, starsFor, chestTiers,
-    genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove,
+    genBoard, group, allGroups, gravity, collectBottom, refill, hasMove, shuffle, doMove, settle,
+    TOOLS, useTool, DAILY, ensureMeta, dailyGrant,
     newGame, castleOf, need, missing, PART_COLOR, openChest, canMerge, merge, place, isComplete, isLastCastle, nextCastle, burnPreview, newRun, endRun, syncIds,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
