@@ -50,8 +50,9 @@ namespace Game.View.Tests
             Assert.GreaterOrEqual(_app.Build.PlaceAll(), 4);
             Assert.GreaterOrEqual(s.Filled.Count(f => f), 4);
 
-            // Merge 2 clay into a brick.
+            // Merge 2 clay into a brick. The starting brown chest may already have given a brick.
             s.Inventory["clay"] = 2;
+            s.Inventory["brick"] = 0;
             Assert.IsTrue(_app.Build.Merge("clay", "clay", "brick"));
             Assert.AreEqual(1, s.Count("brick"));
             yield break;
