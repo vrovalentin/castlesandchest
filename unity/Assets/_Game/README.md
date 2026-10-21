@@ -23,14 +23,18 @@ Unity.exe -batchmode -projectPath unity -runTests -testPlatform EditMode -testRe
 
 `BotPlaysTheSameGamesAsThePrototype` checks that the C# bot plays exactly the same games as `node prototype/sim.js` with the same seed. If the rules change, change both and update the expected numbers.
 
-## Mine scene (board)
+## Game scene
 
-`Scenes/Mine.unity` holds a camera and a `MineController`. Everything else is built in code at Play:
-`BoardView` draws the board from `Game.Core.Board` and animates each move phase by phase
-(remove, fall, chests drop out, refill, shuffle); `CellView` is one block or chest with its stars.
-Sprites are placeholders drawn in code (`SpriteFactory`), and the HUD is temporary IMGUI, until the real art and UI.
+`Scenes/Main.unity` holds a camera and an `AppController`. At Play it loads the save (PlayerPrefs, `Game.Core.SaveMapper` + JsonUtility),
+gives the daily gift and opens the build screen, or the mine if a run is in progress. Everything else is built in code:
+
+- `BuildScreen`: castle slots by tier, "needed by the castle", chests, storage by tier, merging 2 → 1, castle done → next castle (storage burns, figurines stay).
+- `MineController` + `BoardView`: the board; `BoardView` animates each move phase by phase (remove, fall, chests drop out, refill, shuffle); `CellView` is one block or chest with its stars.
+- The game is saved after every action.
+
+Sprites are placeholders drawn in code (`SpriteFactory`), and the screens are temporary IMGUI, until the real art and UI.
 
 Recreate the scene and portrait player settings with the menu **Castles → Setup project**, or
 `Unity.exe -batchmode -projectPath unity -executeMethod Game.EditorTools.ProjectSetup.Run -quit`.
 
-PlayMode tests (`Tests/PlayMode`) start a run, tap and use the hammer, and check the views match the board.
+PlayMode tests (`Tests/PlayMode`) cover the mine (taps, hammer, views match the board) and the app (chests, placing, merging, next castle, leaving and continuing a run). They never touch the real save.

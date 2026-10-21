@@ -8,20 +8,22 @@ using UnityEngine;
 namespace Game.View
 {
     /// <summary>
-    /// The mine screen: one run on the board. Owns the game state for now (no saves yet).
+    /// The mine screen: one run on the board. Works on the shared GameSession and saves after every step.
     /// The HUD is temporary IMGUI so the board can be played; the real UI comes from the wireframe later.
     /// </summary>
     public sealed class MineController : MonoBehaviour
     {
         private enum Mode { Play, OutOfMoves, Summary, NoTickets }
 
-        public GameLogic Game { get; private set; }
-        public GameState State { get; private set; }
+        public GameLogic Game => _s.Game;
+        public GameState State => _s.State;
         public bool Busy { get; private set; }
         public Tool? Armed { get; private set; }
         public int CellViewCount => _view != null ? _view.Count : 0;
 
-        private IRandom _rng;
+        private GameSession _s;
+        private Action _toBuild;
+        private IRandom _rng => _s.Rng;
         private BoardView _view;
         private Camera _cam;
         private Mode _mode;
@@ -32,11 +34,6 @@ namespace Game.View
 
         private void Awake()
         {
-            Game = new GameLogic(DemoContent.Create());
-            _rng = new SystemRandom();
-            State = Game.NewGame();
-            Game.DailyGrant(State, DateTime.Now.ToString("yyyy-MM-dd"));
-
             _cam = Camera.main;
             if (_cam == null)
             {
@@ -51,18 +48,47 @@ namespace Game.View
 
             _view = new GameObject("Board").AddComponent<BoardView>();
             _view.transform.SetParent(transform, false);
-            StartRun();
+        }
+
+        /// <summary>toBuild: what the "to the build screen" buttons do; null hides them (standalone mine).</summary>
+        public void Init(GameSession session, Action toBuild)
+        {
+            _s = session;
+            _toBuild = toBuild;
+        }
+
+        // Standalone use (a scene or test with only the mine): play on a fresh, unsaved game.
+        private void Start()
+        {
+            if (_s != null) return;
+            Init(GameSession.Create(false), null);
+            Enter();
+        }
+
+        /// <summary>Show the mine: continue the current run, or start a new one for a ticket.</summary>
+        public void Enter()
+        {
+            Armed = null;
+            if (State.Run == null) { StartRun(); return; }
+            _summary = null;
+            _view.Bind(State.Run.Board, Game.Rules);
+            _mode = State.Run.Moves > 0 ? Mode.Play : Mode.OutOfMoves;
+            FitCamera();
         }
 
         private void StartRun()
         {
             Armed = null;
             _summary = null;
+            _doubled = false;
             if (Game.NewRun(State, _rng) == null) { _mode = Mode.NoTickets; return; }
+            _s.Save();
             _view.Bind(State.Run.Board, Game.Rules);
             _mode = Mode.Play;
             FitCamera();
         }
+
+        private bool _doubled;
 
         // Board is Cols × Rows units; leave room for the HUD above and the tools below.
         private void FitCamera()
@@ -77,6 +103,7 @@ namespace Game.View
 
         private void Update()
         {
+            if (_s == null) return;
             if (!Mathf.Approximately(_cam.aspect, _lastAspect)) FitCamera();
             if (Busy || _mode != Mode.Play || !Input.GetMouseButtonDown(0)) return;
             if (GUIUtility.hotControl != 0) return;
@@ -123,7 +150,7 @@ namespace Game.View
             var res = Game.UseTool(State, tool, r, c, _rng, p => frames.Add(BoardView.Capture(board, p)));
             if (res == null) { Toast("Тут нечего убирать"); return false; }
             Armed = null;
-            StartCoroutine(PlayThen(frames, null));
+            StartCoroutine(PlayThen(frames, () => { if (State.Run.Moves <= 0) _mode = Mode.OutOfMoves; }));
             return true;
         }
 
@@ -135,12 +162,14 @@ namespace Game.View
             _view.RefreshHints();
             Busy = false;
             after?.Invoke();
+            _s.Save();
         }
 
         private void FinishRun()
         {
             _summary = Game.EndRun(State);
             _mode = Mode.Summary;
+            _s.Save();
         }
 
         private void Toast(string text)
@@ -178,6 +207,7 @@ namespace Game.View
 
         private void OnGUI()
         {
+            if (_s == null) return;
             Styles();
             // Layout in a 720-wide virtual screen, scaled to fit.
             _scale = Mathf.Min(Screen.width / 720f, Screen.height / 1280f);
@@ -187,6 +217,7 @@ namespace Game.View
             var run = State.Run;
             if (run != null)
             {
+                if (_toBuild != null && !Busy && GUI.Button(new Rect(10, 75, 200, 55), "← Стройка", _button)) _toBuild();
                 GUI.Label(new Rect(0, 20, w / 3, 50), $"Ходы: {run.Moves}", _label);
                 GUI.Label(new Rect(w / 3, 20, w / 3, 50), $"Сундуки: {run.Got.Count}", _label);
                 GUI.Label(new Rect(2 * w / 3, 20, w / 3, 50), $"Билеты: {State.Tickets}", _label);
@@ -213,8 +244,11 @@ namespace Game.View
             }
 
             if (_mode == Mode.OutOfMoves) Panel(w, h, "Ходы кончились", OutOfMovesText(), OutOfMovesButtons);
-            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count}", SummaryText(), SummaryButtons);
-            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились", "Новые билеты придут завтра.", () => { });
+            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons);
+            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились", "Новые билеты придут завтра.", () =>
+            {
+                if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(70))) _toBuild();
+            });
         }
 
         private string OutOfMovesText()
@@ -234,6 +268,7 @@ namespace Game.View
                 State.Run.Moves += 5;
                 State.Run.ExtraUsed = true;
                 _mode = Mode.Play;
+                _s.Save();
             }
             if (GUILayout.Button("Закончить", _button, GUILayout.Height(70))) FinishRun();
         }
@@ -254,6 +289,13 @@ namespace Game.View
 
         private void SummaryButtons()
         {
+            if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button("Удвоить · реклама", _button, GUILayout.Height(70)))
+            {
+                State.Chests.AddRange(_summary.Got);
+                _doubled = true;
+                _s.Save();
+            }
+            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(70))) _toBuild();
             if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button, GUILayout.Height(70))) StartRun();
         }
 

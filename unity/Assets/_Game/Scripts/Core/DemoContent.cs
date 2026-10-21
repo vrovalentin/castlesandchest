@@ -11,13 +11,13 @@ namespace Game.Core
     {
         public static readonly PartInfo[] Parts =
         {
-            new PartInfo("clay", 1),
-            new PartInfo("brick", 2),
-            new PartInfo("wall", 3),
-            new PartInfo("floor", 4), new PartInfo("roof", 4), new PartInfo("tiles", 4),
-            new PartInfo("window", 5), new PartInfo("door", 5),
-            new PartInfo("spire", 6), new PartInfo("porch", 6), new PartInfo("lantern", 6),
-            new PartInfo("princess", 7), new PartInfo("knight", 7), new PartInfo("dragon", 7), new PartInfo("unicorn", 7),
+            new PartInfo("clay", 1, "Глина"),
+            new PartInfo("brick", 2, "Кирпич"),
+            new PartInfo("wall", 3, "Стенка"),
+            new PartInfo("floor", 4, "Перекрытие"), new PartInfo("roof", 4, "Крыша"), new PartInfo("tiles", 4, "Черепица"),
+            new PartInfo("window", 5, "Окно"), new PartInfo("door", 5, "Дверь"),
+            new PartInfo("spire", 6, "Шпиль"), new PartInfo("porch", 6, "Крыльцо"), new PartInfo("lantern", 6, "Фонарик"),
+            new PartInfo("princess", 7, "Принцесса"), new PartInfo("knight", 7, "Рыцарь"), new PartInfo("dragon", 7, "Дракон"), new PartInfo("unicorn", 7, "Единорог"),
         };
 
         /// <summary>For the demo every castle offers every part of its tier, as in the prototype.</summary>
