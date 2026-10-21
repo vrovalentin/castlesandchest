@@ -12,7 +12,9 @@ namespace Game.Core
     {
         public readonly string Id;
         public readonly int Tier;
-        public PartInfo(string id, int tier) { Id = id; Tier = tier; }
+        /// <summary>Display name (later a localisation key).</summary>
+        public readonly string Name;
+        public PartInfo(string id, int tier, string name = null) { Id = id; Tier = tier; Name = name ?? id; }
     }
 
     public sealed class CastleInfo
@@ -88,6 +90,15 @@ namespace Game.Core
         public bool TryGetPart(string id, out PartInfo part) => _byId.TryGetValue(id, out part);
 
         public int TierOf(string id) => _byId.TryGetValue(id, out var p) ? p.Tier : 0;
+
+        public string NameOf(string id) => _byId.TryGetValue(id, out var p) ? p.Name : id;
+
+        /// <summary>Index of the castle with this id, or -1.</summary>
+        public int CastleIndexOf(string id)
+        {
+            for (int i = 0; i < Castles.Count; i++) if (Castles[i].Id == id) return i;
+            return -1;
+        }
 
         /// <summary>Content problems a designer must fix. Empty list means the catalog is fine.</summary>
         public List<string> Validate()
