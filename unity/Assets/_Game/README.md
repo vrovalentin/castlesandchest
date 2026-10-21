@@ -22,3 +22,15 @@ Unity.exe -batchmode -projectPath unity -runTests -testPlatform EditMode -testRe
 ```
 
 `BotPlaysTheSameGamesAsThePrototype` checks that the C# bot plays exactly the same games as `node prototype/sim.js` with the same seed. If the rules change, change both and update the expected numbers.
+
+## Mine scene (board)
+
+`Scenes/Mine.unity` holds a camera and a `MineController`. Everything else is built in code at Play:
+`BoardView` draws the board from `Game.Core.Board` and animates each move phase by phase
+(remove, fall, chests drop out, refill, shuffle); `CellView` is one block or chest with its stars.
+Sprites are placeholders drawn in code (`SpriteFactory`), and the HUD is temporary IMGUI, until the real art and UI.
+
+Recreate the scene and portrait player settings with the menu **Castles → Setup project**, or
+`Unity.exe -batchmode -projectPath unity -executeMethod Game.EditorTools.ProjectSetup.Run -quit`.
+
+PlayMode tests (`Tests/PlayMode`) start a run, tap and use the hammer, and check the views match the board.
