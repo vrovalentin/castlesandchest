@@ -34,6 +34,8 @@ gives the daily gift and opens the build screen, or the mine if a run is in prog
 
 Sprites are placeholders drawn in code (`SpriteFactory`), and the screens are temporary IMGUI, until the real art and UI.
 
+Castle art (`CastleArt`) is layered: `Art/Resources/Castles/<castle id>/` holds `c<N>_base.png` (faded blueprint), one `c<N>_<slot>_<part>.png` per slot in slot order, and `<castle id>_full.png`, all on the same canvas. The build screen draws the blueprint and the filled slots over it. A castle without art (castle_2 for now) shows only the slot buttons.
+
 Recreate the scene and portrait player settings with the menu **Castles → Setup project**, or
 `Unity.exe -batchmode -projectPath unity -executeMethod Game.EditorTools.ProjectSetup.Run -quit`.
 

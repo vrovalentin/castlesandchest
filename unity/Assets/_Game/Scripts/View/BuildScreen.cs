@@ -8,7 +8,7 @@ namespace Game.View
 {
     /// <summary>
     /// The build screen: castle slots, chests, storage by tier, merging 2 → 1, moving to the next castle.
-    /// Temporary IMGUI with the same flow as the prototype; the real UI and castle art come later.
+    /// Temporary IMGUI with the same flow as the prototype; the castle is drawn from its layer art when it has one.
     /// </summary>
     public sealed class BuildScreen : MonoBehaviour
     {
@@ -207,10 +207,30 @@ namespace Game.View
             GUILayout.Space(10);
         }
 
-        // Castle as rows of slots, highest tier on top (placeholder for the castle picture).
+        private CastleArt _art;
+        private string _artId;
+
+        /// <summary>Layered art of the current castle, or null when it has none yet.</summary>
+        public CastleArt Art
+        {
+            get
+            {
+                var castle = Game.CastleOf(State);
+                if (_artId != castle.Id) { _artId = castle.Id; _art = CastleArt.Load(castle); }
+                return _art;
+            }
+        }
+
+        // Castle picture (when the castle has art), then the slots as rows by tier, highest tier on top.
         private void DrawCastle(float inner)
         {
             var castle = Game.CastleOf(State);
+            if (Art != null)
+            {
+                var pic = GUILayoutUtility.GetRect(inner, inner * 0.8f);
+                Art.Draw(pic, State.Filled);
+                GUILayout.Space(6);
+            }
             var byTier = Enumerable.Range(0, castle.Slots.Length)
                 .GroupBy(i => Game.Catalog.TierOf(castle.Slots[i]))
                 .OrderByDescending(g => g.Key);
