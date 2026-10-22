@@ -94,5 +94,21 @@ namespace Game.View.Tests
             Assert.AreEqual(14, _app.Session.State.Tickets, "no second ticket");
             Assert.AreEqual(100, _app.Mine.CellViewCount);
         }
+
+        [UnityTest]
+        public IEnumerator FirstCastleHasLayerArt()
+        {
+            var art = _app.Build.Art;
+            Assert.IsNotNull(art, "castle_1 layers in Art/Resources/Castles/castle_1");
+            Assert.IsNotNull(art.Base);
+            Assert.IsNotNull(art.Full);
+            Assert.AreEqual(17, art.Layers.Length);
+            Assert.IsTrue(art.Layers.All(t => t != null && t.width == art.Base.width && t.height == art.Base.height),
+                "every layer is on the same canvas as the blueprint");
+
+            _app.Session.Game.NextCastle(_app.Session.State);
+            Assert.IsNull(_app.Build.Art, "castle_2 has no art yet and keeps the slot grid");
+            yield return null;
+        }
     }
 }
