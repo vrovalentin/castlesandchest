@@ -82,7 +82,10 @@ namespace Game.View.Tests
         public void EveryBlockColourHasArt()
         {
             for (int c = 0; c < Palette.Blocks.Length; c++)
-                Assert.IsNotNull(SpriteFactory.BlockArt(c), $"Art/Resources/Board art for colour {c}");
+            {
+                Assert.IsNotNull(SpriteFactory.BlockArt(c), $"block art for colour {c}");
+                Assert.IsNotNull(SpriteFactory.ChestArt(c), $"chest art for colour {c}");
+            }
         }
     }
 }

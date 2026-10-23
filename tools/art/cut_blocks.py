@@ -1,10 +1,11 @@
 # Remove the white background from block images, crop to the block and save 256x256 PNGs.
-# Usage: python3 cut_blocks.py <input folder> <output folder>
+# Usage: python3 cut_blocks.py <input folder> <output folder> [file prefix, default block_]
 import sys, glob, os, numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 src, out = sys.argv[1], sys.argv[2]
-for f in sorted(glob.glob(os.path.join(src, 'block_*.png'))):
+prefix = sys.argv[3] if len(sys.argv) > 3 else 'block_'
+for f in sorted(glob.glob(os.path.join(src, prefix + '*.png'))):
     a = np.array(Image.open(f).convert('RGB')).astype(np.float32)
     white = a.min(2)                       # how white a pixel is
     near = white > 232                     # background candidates
