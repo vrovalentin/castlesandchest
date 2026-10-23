@@ -1,5 +1,5 @@
 # Turn block emblems into faint light outlines (originals in art_source/blocks).
-# Usage: python3 ghost_emblems.py art_source/blocks <out folder> [line alpha 0.6], then cut_blocks.py <out folder> unity/Assets/_Game/Art/Resources/Board
+# Usage: python3 ghost_emblems.py art_source/blocks <out folder> [line alpha 0.6] [emblem opacity 0.5], then cut_blocks.py <out folder> unity/Assets/_Game/Art/Resources/Board
 import sys, os, numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
@@ -17,7 +17,10 @@ def emblem_mask(a):
     keep=np.isin(lab,1+np.where(sz>2000)[0])
     m=ndi.binary_fill_holes(keep)
     return ndi.binary_dilation(m,iterations=3)
-src, out, line_alpha = sys.argv[1], sys.argv[2], float(sys.argv[3]) if len(sys.argv) > 3 else 0.45
+src, out = sys.argv[1], sys.argv[2]
+line_alpha = float(sys.argv[3]) if len(sys.argv) > 3 else 0.6
+# how much of the original emblem stays visible under the lines (0 = none)
+emblem_opacity = float(sys.argv[4]) if len(sys.argv) > 4 else 0.5
 for c in ['blue','brown','gray','green','purple']:
     a=np.array(Image.open(f'{src}/block_{c}.png').convert('RGB')).astype(np.float32)
     m=emblem_mask(a)
@@ -32,6 +35,7 @@ for c in ['blue','brown','gray','green','purple']:
     up=np.array(Image.fromarray(fs.clip(0,255).astype(np.uint8)).resize((1024,1024),Image.BILINEAR)).astype(np.float32)
     soft=ndi.gaussian_filter(m.astype(np.float32),2)[...,None]
     f=a*(1-soft)+up*soft
+    f=f*(1-emblem_opacity*soft)+a*emblem_opacity*soft
     # line art: the outer contour of the emblem plus its strongest inner edges
     core=ndi.binary_erosion(m,iterations=3)          # the emblem before the safety margin
     outer=core&~ndi.binary_erosion(core,iterations=4)
