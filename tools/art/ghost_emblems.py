@@ -1,5 +1,5 @@
 # Turn block emblems into faint light outlines (originals in art_source/blocks).
-# Usage: python3 ghost_emblems.py art_source/blocks <out folder> [line alpha 0.6] [emblem opacity 0.5], then cut_blocks.py <out folder> unity/Assets/_Game/Art/Resources/Board
+# Usage: python3 ghost_emblems.py art_source/blocks <out folder> [line alpha 0.6] [emblem opacity 0.3], then cut_blocks.py <out folder> unity/Assets/_Game/Art/Resources/Board
 import sys, os, numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
@@ -20,7 +20,7 @@ def emblem_mask(a):
 src, out = sys.argv[1], sys.argv[2]
 line_alpha = float(sys.argv[3]) if len(sys.argv) > 3 else 0.6
 # how much of the original emblem stays visible under the lines (0 = none)
-emblem_opacity = float(sys.argv[4]) if len(sys.argv) > 4 else 0.5
+emblem_opacity = float(sys.argv[4]) if len(sys.argv) > 4 else 0.3
 for c in ['blue','brown','gray','green','purple']:
     a=np.array(Image.open(f'{src}/block_{c}.png').convert('RGB')).astype(np.float32)
     m=emblem_mask(a)

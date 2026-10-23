@@ -44,8 +44,7 @@ namespace Game.View
         public void SetHint(int stars)
         {
             if (_kind != CellKind.Block) return;
-            // Low on the block, so the emblem stays visible.
-            ShowStars(stars, -0.3f);
+            ShowStars(stars, 0f);
         }
 
         private void ShowStars(int n, float y)
