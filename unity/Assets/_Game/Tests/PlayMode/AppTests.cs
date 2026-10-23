@@ -105,6 +105,7 @@ namespace Game.View.Tests
             Assert.AreEqual(17, art.Layers.Length);
             Assert.IsTrue(art.Layers.All(t => t != null && t.width == art.Base.width && t.height == art.Base.height),
                 "every layer is on the same canvas as the blueprint");
+            Assert.IsTrue(art.Lines.All(t => t != null), "every slot has an outline");
 
             _app.Session.Game.NextCastle(_app.Session.State);
             Assert.IsNull(_app.Build.Art, "castle_2 has no art yet and keeps the slot grid");

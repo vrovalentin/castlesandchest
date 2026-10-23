@@ -18,6 +18,27 @@ namespace Game.View
         public static Sprite Star => _star != null ? _star : _star = Make(StarPixel);
         public static Sprite Panel => _panel != null ? _panel : _panel = Make(PanelPixel);
 
+        private static readonly string[] BlockFiles = { "block_green", "block_brown", "block_gray", "block_blue", "block_purple" };
+        private static Sprite[] _blockArt;
+
+        /// <summary>Drawn block of a colour from Art/Resources/Board, or null when there is no art for it.</summary>
+        public static Sprite BlockArt(int color)
+        {
+            if (_blockArt == null)
+            {
+                _blockArt = new Sprite[BlockFiles.Length];
+                for (int i = 0; i < BlockFiles.Length; i++)
+                {
+                    var tex = Resources.Load<Texture2D>("Board/" + BlockFiles[i]);
+                    if (tex == null) continue;
+                    // Slightly larger than 1 unit, like the placeholder block with its gap.
+                    _blockArt[i] = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width / 0.94f);
+                    _blockArt[i].hideFlags = HideFlags.DontSave;
+                }
+            }
+            return color >= 0 && color < _blockArt.Length ? _blockArt[color] : null;
+        }
+
         private static Sprite Make(Func<float, float, Color> pixel)
         {
             var tex = new Texture2D(Size, Size, TextureFormat.RGBA32, false)
