@@ -56,7 +56,14 @@ namespace Game.View
                 go.transform.SetParent(transform, false);
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = SpriteFactory.Star;
-                sr.sortingOrder = 2;
+                sr.sortingOrder = 3;
+                var shadow = new GameObject("Shadow");
+                shadow.transform.SetParent(go.transform, false);
+                shadow.transform.localPosition = new Vector3(0.04f, -0.07f, 0);
+                shadow.transform.localScale = Vector3.one * SpriteFactory.StarShadowScale;
+                var ssr = shadow.AddComponent<SpriteRenderer>();
+                ssr.sprite = SpriteFactory.StarShadow;
+                ssr.sortingOrder = 2;
                 _stars.Add(sr);
             }
             // Up to 3 stars in a row; 4–5 stars in two rows, as in the prototype.

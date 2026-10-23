@@ -10,12 +10,15 @@ namespace Game.View
     public static class SpriteFactory
     {
         private const int Size = 64;
-        private static Sprite _block, _chestBody, _chestTrim, _star, _panel;
+        private static Sprite _block, _chestBody, _chestTrim, _star, _starShadow, _panel;
 
         public static Sprite Block => _block != null ? _block : _block = Make(BlockPixel);
         public static Sprite ChestBody => _chestBody != null ? _chestBody : _chestBody = Make(ChestBodyPixel);
         public static Sprite ChestTrim => _chestTrim != null ? _chestTrim : _chestTrim = Make(ChestTrimPixel);
         public static Sprite Star => _star != null ? _star : _star = Make(StarPixel);
+        /// <summary>Soft dark blur of the star, drawn under it at <see cref="StarShadowScale"/> for contrast.</summary>
+        public static Sprite StarShadow => _starShadow != null ? _starShadow : _starShadow = Make(StarShadowPixel);
+        public const float StarShadowScale = 1.25f;
         public static Sprite Panel => _panel != null ? _panel : _panel = Make(PanelPixel);
 
         private static readonly string[] ColorNames = { "green", "brown", "gray", "blue", "purple" };
@@ -111,10 +114,43 @@ namespace Game.View
             return Color.clear;
         }
 
+        private static readonly Color StarTop = new Color(1f, 0.96f, 0.6f, 1);
+        private static readonly Color StarBottom = new Color(1f, 0.74f, 0.1f, 1);
+
         private static Color StarPixel(float u, float v)
         {
-            if (InStar(u, v, 1f)) return InStar(u, v, 0.72f) ? new Color(1f, 0.84f, 0.25f, 1) : Dark;
-            return Color.clear;
+            if (!InStar(u, v, 1f)) return Color.clear;
+            if (!InStar(u, v, 0.74f)) return Dark;
+            // Bright gold, lighter at the top, with a small highlight near the top point.
+            var c = Color.Lerp(StarBottom, StarTop, Mathf.InverseLerp(0.25f, 0.85f, v));
+            float hx = u - 0.46f, hy = v - 0.66f;
+            float glint = Mathf.Clamp01(1f - (hx * hx + hy * hy) / 0.012f);
+            return Color.Lerp(c, Color.white, glint * 0.7f);
+        }
+
+        private static Color StarShadowPixel(float u, float v)
+        {
+            // Star shrunk by the shadow's scale so it lines up with the star, then blurred outwards.
+            const float k = 1f / StarShadowScale, blur = 0.1f;
+            float su = 0.5f + (u - 0.5f) / k, sv = 0.5f + (v - 0.5f) / k;
+            float d = InStar(su, sv, 1f) ? 0f : StarDistance(su, sv) * k;
+            float a = 0.6f * Mathf.SmoothStep(0f, 1f, 1f - d / blur);
+            return new Color(0.08f, 0.05f, 0.02f, a);
+        }
+
+        private static float StarDistance(float u, float v)
+        {
+            float best = float.MaxValue;
+            for (int i = 0, j = 9; i < 10; j = i++)
+            {
+                StarVertex(i, 1f, out float xi, out float yi);
+                StarVertex(j, 1f, out float xj, out float yj);
+                float ex = xj - xi, ey = yj - yi;
+                float t = Mathf.Clamp01(((u - xi) * ex + (v - yi) * ey) / (ex * ex + ey * ey));
+                float dx = u - xi - t * ex, dy = v - yi - t * ey;
+                best = Mathf.Min(best, dx * dx + dy * dy);
+            }
+            return Mathf.Sqrt(best);
         }
 
         private static Color PanelPixel(float u, float v) => RoundRect(u, v, 0.5f, 0.06f) > 0 ? Color.clear : Color.white;
