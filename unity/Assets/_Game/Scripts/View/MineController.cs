@@ -9,11 +9,11 @@ namespace Game.View
 {
     /// <summary>
     /// The mine screen: one run on the board. Works on the shared GameSession and saves after every step.
-    /// The HUD is temporary IMGUI so the board can be played; the real UI comes from the wireframe later.
+    /// The HUD (MineController.Hud.cs) is IMGUI with code-drawn panels until the UI art is ready.
     /// </summary>
-    public sealed class MineController : MonoBehaviour
+    public sealed partial class MineController : MonoBehaviour
     {
-        private enum Mode { Play, OutOfMoves, Summary, NoTickets }
+        private enum Mode { Play, OutOfMoves, Summary, NoTickets, ConfirmRestart }
 
         public GameLogic Game => _s.Game;
         public GameState State => _s.State;
@@ -30,7 +30,7 @@ namespace Game.View
         private RunSummary _summary;
         private string _toast;
         private float _toastUntil;
-        private float _lastAspect;
+        private Vector2 _lastScreen;
 
         private void Awake()
         {
@@ -94,21 +94,27 @@ namespace Game.View
 
         private bool _doubled;
 
-        // Board is Cols × Rows units; leave room for the HUD above and the tools below.
+        // The board fills the gap the HUD leaves between the tools row and the «Добыто» panel.
         private void FitCamera()
         {
             if (State.Run == null) return;
             var b = State.Run.Board;
-            float aspect = Mathf.Max(0.1f, _cam.aspect);
-            _lastAspect = aspect;
-            _cam.orthographicSize = Mathf.Max((b.Rows + 5f) / 2f, (b.Cols + 0.8f) / 2f / aspect);
-            _cam.transform.position = new Vector3(0, -0.3f, -10);
+            _lastScreen = new Vector2(Screen.width, Screen.height);
+            var area = Layout().Board;
+            float s = HudScale;
+            // Board tray is (Cols + 0.3) × (Rows + 0.3) units; world units per screen pixel:
+            float u = Mathf.Max((b.Cols + 0.3f) / Mathf.Max(1, area.width * s), (b.Rows + 0.3f) / Mathf.Max(1, area.height * s));
+            _cam.orthographicSize = Screen.height * u / 2f;
+            // GUI y runs down; move the camera so the board centre lands in the middle of the area.
+            float dy = area.center.y * s - Screen.height / 2f;
+            float dx = area.center.x * s - Screen.width / 2f;
+            _cam.transform.position = new Vector3(-dx * u, dy * u, -10);
         }
 
         private void Update()
         {
             if (_s == null) return;
-            if (!Mathf.Approximately(_cam.aspect, _lastAspect)) FitCamera();
+            if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
             if (Busy || _mode != Mode.Play || !Input.GetMouseButtonDown(0)) return;
             if (GUIUtility.hotControl != 0) return;
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
@@ -176,6 +182,29 @@ namespace Game.View
             _s.Save();
         }
 
+        /// <summary>The ↻ button: ask first, since it costs a ticket.</summary>
+        public void AskRestart()
+        {
+            if (Busy || State.Run == null || _mode != Mode.Play) return;
+            if (State.Tickets < 1) { Toast("Билеты кончились, начать заново можно завтра"); return; }
+            _mode = Mode.ConfirmRestart;
+        }
+
+        /// <summary>New board and full moves for one ticket; fallen chests stay. False without a ticket.</summary>
+        public bool Restart()
+        {
+            if (Busy || Game.Restart(State, _rng) == null) return false;
+            Armed = null;
+            _summary = null;
+            _doubled = false;
+            _s.Save();
+            _view.Bind(State.Run.Board, Game.Rules);
+            _mode = Mode.Play;
+            FitCamera();
+            Toast($"Новое поле. Билетов осталось: {State.Tickets}");
+            return true;
+        }
+
         private void Toast(string text)
         {
             _toast = text;
@@ -192,69 +221,6 @@ namespace Game.View
             return many;
         }
 
-        // ---------- temporary HUD ----------
-
-        private GUIStyle _label, _big, _button, _box, _toastStyle;
-        private float _scale;
-
-        private void Styles()
-        {
-            if (_label != null) return;
-            _label = new GUIStyle(GUI.skin.label) { fontSize = 26, alignment = TextAnchor.MiddleCenter };
-            _label.normal.textColor = Palette.MineText;
-            _big = new GUIStyle(_label) { fontSize = 34, fontStyle = FontStyle.Bold, wordWrap = true };
-            _button = new GUIStyle(GUI.skin.button) { fontSize = 26 };
-            _box = new GUIStyle(GUI.skin.box);
-            _toastStyle = new GUIStyle(_label) { wordWrap = true };
-            _toastStyle.normal.textColor = Color.white;
-        }
-
-        private void OnGUI()
-        {
-            if (_s == null) return;
-            Styles();
-            // Layout in a 720-wide virtual screen, scaled to fit.
-            _scale = Mathf.Min(Screen.width / 720f, Screen.height / 1280f);
-            GUI.matrix = Matrix4x4.Scale(new Vector3(_scale, _scale, 1));
-            float w = Screen.width / _scale, h = Screen.height / _scale;
-
-            var run = State.Run;
-            if (run != null)
-            {
-                if (_toBuild != null && !Busy && GUI.Button(new Rect(10, 75, 200, 55), "← Стройка", _button)) _toBuild();
-                GUI.Label(new Rect(0, 20, w / 3, 50), $"Ходы: {run.Moves}", _label);
-                GUI.Label(new Rect(w / 3, 20, w / 3, 50), $"Сундуки: {run.Got.Count}", _label);
-                GUI.Label(new Rect(2 * w / 3, 20, w / 3, 50), $"Билеты: {State.Tickets}", _label);
-
-                float bw = 220, bh = 70, y = h - 150;
-                GUI.color = Armed == Tool.Broom ? Color.yellow : Color.white;
-                if (GUI.Button(new Rect(w / 2 - bw - 10, y, bw, bh), $"Метла ({State.Brooms})", _button)) Arm(Tool.Broom);
-                GUI.color = Armed == Tool.Hammer ? Color.yellow : Color.white;
-                if (GUI.Button(new Rect(w / 2 + 10, y, bw, bh), $"Молоток ({State.Hammers})", _button)) Arm(Tool.Hammer);
-                GUI.color = Color.white;
-                string hint = Armed == Tool.Broom ? "Тапни ряд: все блоки в нём исчезнут. Ход не тратится."
-                    : Armed == Tool.Hammer ? "Тапни блок: он исчезнет. Ход не тратится."
-                    : "Тапни группу из 2+ блоков. Из 4+ получится сундук.";
-                GUI.Label(new Rect(0, y + bh + 5, w, 50), hint, _label);
-            }
-
-            if (_toast != null && Time.time < _toastUntil)
-            {
-                var r = new Rect(40, 90, w - 80, 80);
-                GUI.color = new Color(0, 0, 0, 0.75f);
-                GUI.Box(r, GUIContent.none, _box);
-                GUI.color = Color.white;
-                GUI.Label(r, _toast, _toastStyle);
-            }
-
-            if (_mode == Mode.OutOfMoves) Panel(w, h, "Ходы кончились", OutOfMovesText(), OutOfMovesButtons);
-            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons);
-            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились", "Новые билеты придут завтра.", () =>
-            {
-                if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(70))) _toBuild();
-            });
-        }
-
         private string OutOfMovesText()
         {
             int left = State.Run.Board.ChestsLeft().Count;
@@ -267,14 +233,15 @@ namespace Game.View
 
         private void OutOfMovesButtons()
         {
-            if (!State.Run.ExtraUsed && GUILayout.Button("+5 ходов · реклама", _button, GUILayout.Height(70)))
+            if (!State.Run.ExtraUsed && GUILayout.Button("+5 ходов · реклама", _button, GUILayout.Height(76)))
             {
                 State.Run.Moves += 5;
                 State.Run.ExtraUsed = true;
                 _mode = Mode.Play;
                 _s.Save();
             }
-            if (GUILayout.Button("Закончить", _button, GUILayout.Height(70))) FinishRun();
+            GUILayout.Space(12);
+            if (GUILayout.Button("Закончить", State.Run.ExtraUsed ? _button : _button2, GUILayout.Height(76))) FinishRun();
         }
 
         private string SummaryText()
@@ -293,33 +260,16 @@ namespace Game.View
 
         private void SummaryButtons()
         {
-            if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button("Удвоить · реклама", _button, GUILayout.Height(70)))
+            if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button("Удвоить · реклама", _button, GUILayout.Height(76)))
             {
                 State.Chests.AddRange(_summary.Got);
                 _doubled = true;
                 _s.Save();
             }
-            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(70))) _toBuild();
-            if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button, GUILayout.Height(70))) StartRun();
-        }
-
-        private void Panel(float w, float h, string title, string text, Action buttons)
-        {
-            GUI.color = new Color(0, 0, 0, 0.5f);
-            GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _box);
-            GUI.color = Color.white;
-            var r = new Rect(60, h / 2 - 300, w - 120, 600);
-            GUI.Box(r, GUIContent.none, _box);
-            GUI.Box(r, GUIContent.none, _box);
-            GUILayout.BeginArea(new Rect(r.x + 30, r.y + 30, r.width - 60, r.height - 60));
-            var light = new GUIStyle(_big); light.normal.textColor = Color.white;
-            var body = new GUIStyle(_label) { wordWrap = true }; body.normal.textColor = Color.white;
-            GUILayout.Label(title, light);
-            GUILayout.Space(20);
-            GUILayout.Label(text, body);
-            GUILayout.FlexibleSpace();
-            buttons();
-            GUILayout.EndArea();
+            GUILayout.Space(12);
+            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(76))) _toBuild();
+            GUILayout.Space(12);
+            if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76))) StartRun();
         }
     }
 }

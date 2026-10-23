@@ -61,6 +61,38 @@ namespace Game.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator RestartGivesANewBoardForATicket()
+        {
+            var before = _mine.State.Run.Board;
+            int tickets = _mine.State.Tickets;
+            _mine.AskRestart();
+            Assert.IsTrue(_mine.Restart());
+            yield return null;
+            Assert.AreNotSame(before, _mine.State.Run.Board);
+            Assert.AreEqual(tickets - 1, _mine.State.Tickets);
+            Assert.AreEqual(30, _mine.State.Run.Moves);
+            Assert.AreEqual(100, _mine.CellViewCount);
+        }
+
+        [UnityTest]
+        public IEnumerator BoardFitsBetweenTheToolsAndTheGotPanel()
+        {
+            yield return null;
+            var cam = Camera.main;
+            var b = _mine.State.Run.Board;
+            float s = Mathf.Min(Screen.width / 720f, Screen.height / 1280f);
+            var area = _mine.Layout().Board;
+            // Screen y runs up, GUI y runs down.
+            var topLeft = cam.WorldToScreenPoint(new Vector3(-b.Cols / 2f, b.Rows / 2f, 0));
+            var bottomRight = cam.WorldToScreenPoint(new Vector3(b.Cols / 2f, -b.Rows / 2f, 0));
+            const float eps = 2f;
+            Assert.GreaterOrEqual(topLeft.x, area.xMin * s - eps, "left");
+            Assert.LessOrEqual(bottomRight.x, area.xMax * s + eps, "right");
+            Assert.GreaterOrEqual(Screen.height - topLeft.y, area.yMin * s - eps, "top");
+            Assert.LessOrEqual(Screen.height - bottomRight.y, area.yMax * s + eps, "bottom");
+        }
+
+        [UnityTest]
         public IEnumerator HammerSpendsAToolNotAMove()
         {
             var b = _mine.State.Run.Board;

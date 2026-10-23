@@ -208,6 +208,18 @@ namespace Game.Core
             return summary;
         }
 
+        /// <summary>
+        /// "Start over" during a run: a new board and full moves for one ticket.
+        /// Chests that already fell stay with the player; chests on the board go as at the end of a run.
+        /// Null (and nothing changes) when there is no run or no ticket.
+        /// </summary>
+        public RunState Restart(GameState s, IRandom rng)
+        {
+            if (s.Run == null || s.Tickets < 1) return null;
+            EndRun(s);
+            return NewRun(s, rng);
+        }
+
         /// <summary>Once a day tools and tickets are topped up to the daily amounts. Null if already given today.</summary>
         public DailyGift? DailyGrant(GameState s, string day)
         {

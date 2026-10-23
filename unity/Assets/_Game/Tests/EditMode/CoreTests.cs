@@ -337,6 +337,31 @@ namespace Game.Core.Tests
             Assert.AreEqual(start + 1, s.Chests.Count);
         }
 
+        [Test]
+        public void RestartCostsATicketAndKeepsFallenChests()
+        {
+            var s = _game.NewGame();
+            s.Tickets = 1;
+            var b = NoGroupBoard();
+            b[0, 0] = new Cell { Id = b.NextId++, Kind = CellKind.Chest, Color = 1, Stars = 2 };
+            var fallen = new Chest { Color = 0, Stars = 1 };
+            s.Chests.Add(fallen);
+            s.Run = new RunState { Board = b, Moves = 3 };
+            s.Run.Got.Add(fallen);
+            int chests = s.Chests.Count;
+
+            var run = _game.Restart(s, new XorShift32(3));
+            Assert.IsNotNull(run);
+            Assert.AreSame(run, s.Run);
+            Assert.AreEqual(0, s.Tickets);
+            Assert.AreEqual(s.Opts.Moves, run.Moves);
+            Assert.IsEmpty(run.Got);
+            Assert.AreEqual(chests, s.Chests.Count, "fallen chest stays, board chest burns");
+
+            Assert.IsNull(_game.Restart(s, new XorShift32(3)), "no ticket");
+            Assert.AreSame(run, s.Run, "a refused restart keeps the run");
+        }
+
         // ---------- balance bot ----------
 
         /// <summary>
