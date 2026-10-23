@@ -18,7 +18,10 @@ namespace Game.View
         public static readonly string[] BlockNames = { "зелёный", "коричневый", "серый", "синий", "фиолетовый" };
 
         public static readonly Color32 Background = new Color32(0xf3, 0xea, 0xd8, 0xff);
-        public static readonly Color32 BoardBack = new Color32(0x8a, 0x6a, 0x4c, 0xff);
+        /// <summary>The mine is dark so the blocks stand out: night-violet tray on an even darker screen.</summary>
+        public static readonly Color32 BoardBack = new Color32(0x24, 0x20, 0x36, 0xff);
+        public static readonly Color32 MineBackground = new Color32(0x15, 0x12, 0x21, 0xff);
+        public static readonly Color32 MineText = new Color32(0xf0, 0xe6, 0xd6, 0xff);
 
         /// <summary>Colour of a part tier 1..7 in lists (index 0 unused).</summary>
         public static readonly Color32[] Tiers =

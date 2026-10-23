@@ -43,12 +43,16 @@ namespace Game.View
             }
             _cam.orthographic = true;
             _cam.clearFlags = CameraClearFlags.SolidColor;
-            _cam.backgroundColor = Palette.Background;
+            _cam.backgroundColor = Palette.MineBackground;
             _cam.transform.position = new Vector3(0, 0, -10);
 
             _view = new GameObject("Board").AddComponent<BoardView>();
             _view.transform.SetParent(transform, false);
         }
+
+        // The mine is dark; the build screen keeps the light background.
+        private void OnEnable() { if (_cam != null) _cam.backgroundColor = Palette.MineBackground; }
+        private void OnDisable() { if (_cam != null) _cam.backgroundColor = Palette.Background; }
 
         /// <summary>toBuild: what the "to the build screen" buttons do; null hides them (standalone mine).</summary>
         public void Init(GameSession session, Action toBuild)
@@ -197,7 +201,7 @@ namespace Game.View
         {
             if (_label != null) return;
             _label = new GUIStyle(GUI.skin.label) { fontSize = 26, alignment = TextAnchor.MiddleCenter };
-            _label.normal.textColor = new Color(0.25f, 0.18f, 0.1f);
+            _label.normal.textColor = Palette.MineText;
             _big = new GUIStyle(_label) { fontSize = 34, fontStyle = FontStyle.Bold, wordWrap = true };
             _button = new GUIStyle(GUI.skin.button) { fontSize = 26 };
             _box = new GUIStyle(GUI.skin.box);
