@@ -77,5 +77,12 @@ namespace Game.View.Tests
             Assert.IsNull(_mine.Armed);
             Assert.AreEqual(100, _mine.CellViewCount);
         }
+
+        [Test]
+        public void EveryBlockColourHasArt()
+        {
+            for (int c = 0; c < Palette.Blocks.Length; c++)
+                Assert.IsNotNull(SpriteFactory.BlockArt(c), $"Art/Resources/Board art for colour {c}");
+        }
     }
 }

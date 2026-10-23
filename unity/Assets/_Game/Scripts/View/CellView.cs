@@ -31,8 +31,10 @@ namespace Game.View
         public void Apply(CellKind kind, int color, int stars)
         {
             _kind = kind;
-            _body.sprite = kind == CellKind.Chest ? SpriteFactory.ChestBody : SpriteFactory.Block;
-            _body.color = Palette.Block(color);
+            var art = kind == CellKind.Block ? SpriteFactory.BlockArt(color) : null;
+            _body.sprite = art != null ? art : kind == CellKind.Chest ? SpriteFactory.ChestBody : SpriteFactory.Block;
+            // Drawn blocks already have their colour; placeholders are grey and get tinted.
+            _body.color = art != null ? Color.white : (Color)Palette.Block(color);
             _trim.gameObject.SetActive(kind == CellKind.Chest);
             _chestStars = kind == CellKind.Chest ? stars : 0;
             ShowStars(_chestStars, kind == CellKind.Chest ? -0.22f : 0f);
@@ -42,7 +44,8 @@ namespace Game.View
         public void SetHint(int stars)
         {
             if (_kind != CellKind.Block) return;
-            ShowStars(stars, 0f);
+            // Low on the block, so the emblem stays visible.
+            ShowStars(stars, -0.3f);
         }
 
         private void ShowStars(int n, float y)
