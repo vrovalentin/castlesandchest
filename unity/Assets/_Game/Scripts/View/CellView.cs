@@ -59,7 +59,8 @@ namespace Game.View
                 _stars.Add(sr);
             }
             // Up to 3 stars in a row; 4–5 stars in two rows, as in the prototype.
-            const float size = 0.26f;
+            // Stars are large enough to read on a phone; neighbours overlap a little.
+            const float size = 0.36f, step = 0.29f;
             int top = n <= 3 ? n : 3;
             for (int i = 0; i < _stars.Count; i++)
             {
@@ -69,8 +70,8 @@ namespace Game.View
                 int row = i < top ? 0 : 1;
                 int inRow = row == 0 ? top : n - top;
                 int idx = row == 0 ? i : i - top;
-                float x = (idx - (inRow - 1) / 2f) * size;
-                float yy = y + (n > 3 ? (row == 0 ? size / 2 : -size / 2) : 0);
+                float x = (idx - (inRow - 1) / 2f) * step;
+                float yy = y + (n > 3 ? (row == 0 ? step / 2 : -step / 2) : 0);
                 _stars[i].transform.localPosition = new Vector3(x, yy, 0);
                 _stars[i].transform.localScale = Vector3.one * size;
             }
