@@ -36,7 +36,7 @@ Sprites are placeholders drawn in code (`SpriteFactory`), and the screens are te
 
 Castle art (`CastleArt`) is layered: `Art/Resources/Castles/<castle id>/` holds `c<N>_base.png` (faded blueprint), one `c<N>_<slot>_<part>.png` per slot in slot order, and `<castle id>_full.png`, all on the same canvas. The build screen draws the blueprint and the filled slots over it. A castle without art (castle_2 for now) shows only the slot buttons. Empty slots also get an outline, `c<N>_line_<slot>.png`.
 
-Board blocks come from `Art/Resources/Board/block_<colour>.png` (256 × 256, transparent). Chests are still placeholders. The scripts in `tools/art` cut the art: `cut_blocks.py` removes the white background from block images, `recut_castle_1.py` cuts the castle layers.
+Board blocks and closed chests come from `Art/Resources/Board/block_<colour>.png` and `chest_<colour>.png` (256 × 256, transparent); open chests are `chest_<colour>_open.png` (512). Part icons are `Art/Resources/Parts/part_<part id>.png` (256), screen backgrounds `Art/Resources/UI/bg_mine.png` and `bg_build.png`, the sparkle `Art/Resources/Fx/fx_sparkle.png`. `GameArt` loads them; anything missing falls back to code-drawn shapes. The scripts in `tools/art` cut the art: `cut_blocks.py <in> <out> [prefix] [size]` removes the white background and crops square, `recut_castle_1.py` cuts the castle layers. New drawings arrive unprocessed in `art_source/incoming/`.
 
 Recreate the scene and portrait player settings with the menu **Castles → Setup project**, or
 `Unity.exe -batchmode -projectPath unity -executeMethod Game.EditorTools.ProjectSetup.Run -quit`.

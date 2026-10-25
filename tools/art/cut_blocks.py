@@ -1,10 +1,11 @@
-# Remove the white background from block images, crop to the block and save 256x256 PNGs.
-# Usage: python3 cut_blocks.py <input folder> <output folder> [file prefix, default block_]
+# Remove the white background from images (blocks, chests, part icons), crop square to the object and save PNGs.
+# Usage: python3 cut_blocks.py <input folder> <output folder> [file prefix, default block_] [size, default 256]
 import sys, glob, os, numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 src, out = sys.argv[1], sys.argv[2]
 prefix = sys.argv[3] if len(sys.argv) > 3 else 'block_'
+size = int(sys.argv[4]) if len(sys.argv) > 4 else 256
 for f in sorted(glob.glob(os.path.join(src, prefix + '*.png'))):
     a = np.array(Image.open(f).convert('RGB')).astype(np.float32)
     white = a.min(2)                       # how white a pixel is
@@ -24,5 +25,5 @@ for f in sorted(glob.glob(os.path.join(src, prefix + '*.png'))):
     side = max(y1 - y0, x1 - x0)
     cy, cx = (y0 + y1) // 2, (x0 + x1) // 2
     im = Image.fromarray(rgba).crop((cx - side // 2, cy - side // 2, cx - side // 2 + side, cy - side // 2 + side))
-    im.resize((256, 256), Image.LANCZOS).save(os.path.join(out, os.path.basename(f)))
+    im.resize((size, size), Image.LANCZOS).save(os.path.join(out, os.path.basename(f)))
     print(os.path.basename(f), 'block', x1 - x0, 'x', y1 - y0)

@@ -311,7 +311,7 @@ namespace Game.View
                 var cell = new Rect(area.x + col * (size + gap), area.y + row * (size + gap), size, size);
                 float t = (Time.time - _gotAt[i]) / 0.35f;
                 if (t < 1) cell = Grow(cell, 1 + 0.3f * Mathf.Sin(t * Mathf.PI));
-                DrawChest(cell, got[i]);
+                GameArt.DrawChest(cell, got[i]);
             }
             if (shown < got.Count)
             {
@@ -326,44 +326,6 @@ namespace Game.View
             r.size *= k;
             r.center = c;
             return r;
-        }
-
-        private static void DrawChest(Rect cell, Chest chest)
-        {
-            var art = SpriteFactory.ChestArt(chest.Color);
-            if (art != null) GUI.DrawTexture(cell, art.texture, ScaleMode.ScaleToFit);
-            else
-            {
-                var old = GUI.color;
-                GUI.color = Palette.Block(chest.Color);
-                GUI.DrawTexture(cell, UiArt.Round(Color.white, UiArt.Ink, 12, 3));
-                GUI.color = old;
-            }
-            DrawStars(cell, chest.Stars, -0.22f);
-        }
-
-        /// <summary>Same star layout as CellView.ShowStars, in GUI space (cell = the 0.94-unit chest picture).</summary>
-        private static void DrawStars(Rect cell, int n, float y)
-        {
-            const float size = 0.36f, step = 0.29f;
-            float unit = cell.width / 0.94f, px = size * unit;
-            int top = n <= 3 ? n : 3;
-            for (int pass = 0; pass < 2; pass++)
-                for (int i = 0; i < n; i++)
-                {
-                    int row = i < top ? 0 : 1;
-                    int inRow = row == 0 ? top : n - top;
-                    int idx = row == 0 ? i : i - top;
-                    float x = (idx - (inRow - 1) / 2f) * step;
-                    float yy = y + (n > 3 ? (row == 0 ? step / 2 : -step / 2) : 0);
-                    var c = new Vector2(cell.center.x + x * unit, cell.center.y - yy * unit);
-                    if (pass == 0)
-                    {
-                        float sp = px * SpriteFactory.StarShadowScale;
-                        GUI.DrawTexture(new Rect(c.x + 0.04f * px - sp / 2, c.y + 0.07f * px - sp / 2, sp, sp), SpriteFactory.StarShadow.texture);
-                    }
-                    else GUI.DrawTexture(new Rect(c.x - px / 2, c.y - px / 2, px, px), SpriteFactory.Star.texture);
-                }
         }
 
         // ---------- windows ----------

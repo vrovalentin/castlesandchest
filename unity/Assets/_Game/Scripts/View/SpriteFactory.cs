@@ -21,7 +21,7 @@ namespace Game.View
         public const float StarShadowScale = 1.25f;
         public static Sprite Panel => _panel != null ? _panel : _panel = Make(PanelPixel);
 
-        private static readonly string[] ColorNames = { "green", "brown", "gray", "blue", "purple" };
+        public static readonly string[] ColorNames = { "green", "brown", "gray", "blue", "purple" };
         private static Sprite[] _blockArt, _chestArt;
 
         /// <summary>Drawn block of a colour from Art/Resources/Board, or null when there is no art for it.</summary>
