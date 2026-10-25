@@ -117,7 +117,17 @@ namespace Game.View.Tests
             {
                 Assert.IsNotNull(SpriteFactory.BlockArt(c), $"block art for colour {c}");
                 Assert.IsNotNull(SpriteFactory.ChestArt(c), $"chest art for colour {c}");
+                Assert.IsNotNull(GameArt.ChestOpen(c), $"open chest art for colour {c}");
             }
+        }
+
+        [Test]
+        public void ScreenArtLoads()
+        {
+            Assert.IsNotNull(GameArt.MineBackground);
+            Assert.IsNotNull(GameArt.BuildBackground);
+            Assert.IsNotNull(GameArt.Sparkle);
+            foreach (var id in new[] { "brick", "floor", "tiles" }) Assert.IsNotNull(GameArt.Part(id), id);
         }
     }
 }

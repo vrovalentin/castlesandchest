@@ -48,6 +48,30 @@ namespace Game.View
 
             _view = new GameObject("Board").AddComponent<BoardView>();
             _view.transform.SetParent(transform, false);
+
+            var bg = GameArt.MineBackground;
+            if (bg != null)
+            {
+                _bg = new GameObject("Background").AddComponent<SpriteRenderer>();
+                _bg.transform.SetParent(transform, false);
+                _bg.sprite = Sprite.Create(bg, new Rect(0, 0, bg.width, bg.height), new Vector2(0.5f, 0.5f), bg.width);
+                _bg.sortingOrder = -100;
+                // A little darker than the painting, so the board and the HUD stay in front.
+                _bg.color = new Color(0.78f, 0.78f, 0.78f, 1);
+            }
+        }
+
+        private SpriteRenderer _bg;
+
+        // The mine painting covers the whole view, whatever the screen shape.
+        private void FitBackground()
+        {
+            if (_bg == null) return;
+            float hgt = 2 * _cam.orthographicSize, wid = hgt * _cam.aspect;
+            var p = _cam.transform.position;
+            _bg.transform.position = new Vector3(p.x, p.y, 5);
+            float k = Mathf.Max(wid / _bg.sprite.bounds.size.x, hgt / _bg.sprite.bounds.size.y);
+            _bg.transform.localScale = new Vector3(k, k, 1);
         }
 
         // The mine is dark; the build screen keeps the light background.
@@ -109,6 +133,7 @@ namespace Game.View
             float dy = area.center.y * s - Screen.height / 2f;
             float dx = area.center.x * s - Screen.width / 2f;
             _cam.transform.position = new Vector3(-dx * u, dy * u, -10);
+            FitBackground();
         }
 
         private void Update()

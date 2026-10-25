@@ -44,6 +44,9 @@ namespace Game.View.Tests
             var got = _app.Build.OpenChests();
             Assert.AreEqual(0, s.Chests.Count);
             Assert.GreaterOrEqual(got.Count, 2);
+            Assert.IsTrue(_app.Build.RewardPanel, "the opening shows what fell out");
+            _app.Build.CloseReward();
+            Assert.IsFalse(_app.Build.RewardPanel);
 
             // Give enough clay for the foundation and place it.
             s.Inventory["clay"] = 4;
