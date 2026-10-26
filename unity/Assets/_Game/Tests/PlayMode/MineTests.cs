@@ -127,7 +127,9 @@ namespace Game.View.Tests
             Assert.IsNotNull(GameArt.MineBackground);
             Assert.IsNotNull(GameArt.BuildBackground);
             Assert.IsNotNull(GameArt.Sparkle);
-            foreach (var id in new[] { "brick", "floor", "tiles" }) Assert.IsNotNull(GameArt.Part(id), id);
+            // Every part has an icon except the unicorn, which is still to be drawn.
+            foreach (var p in DemoContent.Create().Parts)
+                if (p.Id != "unicorn") Assert.IsNotNull(GameArt.Part(p.Id), p.Id);
         }
     }
 }

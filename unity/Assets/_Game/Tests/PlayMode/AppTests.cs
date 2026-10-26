@@ -53,6 +53,13 @@ namespace Game.View.Tests
             Assert.GreaterOrEqual(_app.Build.PlaceAll(), 4);
             Assert.GreaterOrEqual(s.Filled.Count(f => f), 4);
 
+            // A tap on «стенка» in «Осталось поставить» places one wall.
+            int filled = s.Filled.Count(f => f);
+            s.Inventory["wall"] = 1;
+            Assert.IsTrue(_app.Build.PlacePart("wall"));
+            Assert.AreEqual(filled + 1, s.Filled.Count(f => f));
+            Assert.IsFalse(_app.Build.PlacePart("wall"), "none left in storage");
+
             // Merge 2 clay into a brick. The starting brown chest may already have given a brick.
             s.Inventory["clay"] = 2;
             s.Inventory["brick"] = 0;

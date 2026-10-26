@@ -78,7 +78,7 @@ namespace Game.View
             _needsTitle.normal.textColor = Gold;
             _chip = UiArt.Style(UiArt.Round(Cream, Cream, 14, 0), 14, 19, UiArt.Ink, TextAnchor.MiddleLeft);
             _chip.wordWrap = false;
-            _chip.padding = new RectOffset(34, 12, 2, 2);
+            _chip.padding = new RectOffset(40, 12, 2, 2);
             _tool = UiArt.Style(UiArt.Round(ToolFill, PanelEdge, 18, 3), 18, 22, Cream, TextAnchor.MiddleLeft);
             _tool.padding = new RectOffset(70, 8, 4, 4);
             _tool.fontStyle = FontStyle.Bold;
@@ -178,22 +178,25 @@ namespace Game.View
         {
             public string Text;
             public Color Swatch;
+            /// <summary>Part whose icon the chip shows.</summary>
+            public string Part;
         }
 
         private List<NeedChip> NeedChips()
         {
             var chips = new List<NeedChip>();
             int decor = 0, figures = 0;
+            string decorPart = null, figurePart = null;
             foreach (var p in Game.Missing(State))
             {
                 int tier = Game.Catalog.TierOf(p.Id);
-                if (tier == 6) { decor += p.N; continue; }
-                if (tier >= 7) { figures += p.N; continue; }
-                chips.Add(new NeedChip { Text = Game.Catalog.NameOf(p.Id).ToLowerInvariant() + Times(p.N), Swatch = Palette.Tier(tier) });
+                if (tier == 6) { decor += p.N; decorPart ??= p.Id; continue; }
+                if (tier >= 7) { figures += p.N; figurePart ??= p.Id; continue; }
+                chips.Add(new NeedChip { Text = Game.Catalog.NameOf(p.Id).ToLowerInvariant() + Times(p.N), Swatch = Palette.Tier(tier), Part = p.Id });
             }
             // Decor and figurines don't drop by block colour, so one chip per tier.
-            if (decor > 0) chips.Add(new NeedChip { Text = "декор" + Times(decor), Swatch = Palette.Tier(6) });
-            if (figures > 0) chips.Add(new NeedChip { Text = "фигурки" + Times(figures), Swatch = Palette.Tier(7) });
+            if (decor > 0) chips.Add(new NeedChip { Text = "декор" + Times(decor), Swatch = Palette.Tier(6), Part = decorPart });
+            if (figures > 0) chips.Add(new NeedChip { Text = "фигурки" + Times(figures), Swatch = Palette.Tier(7), Part = figurePart });
             return chips;
         }
 
@@ -229,9 +232,13 @@ namespace Game.View
                 if (y + ch > r.yMax - 4) break;
                 var cr = new Rect(x, y, Mathf.Min(cw, right - x), ch);
                 GUI.Label(cr, content, _chip);
+                // Part icon with a dot in the colour of the blocks it drops from.
+                var icon = c.Part != null ? GameArt.Part(c.Part) : null;
+                if (icon != null) GUI.DrawTexture(new Rect(cr.x + 4, cr.y + 1, 28, 28), icon, ScaleMode.ScaleToFit);
                 var old = GUI.color;
                 GUI.color = c.Swatch;
-                GUI.DrawTexture(new Rect(cr.x + 10, cr.y + 7, 16, 16), UiArt.Round(Color.white, Color.white, 5, 0));
+                var dot = icon != null ? new Rect(cr.x + 24, cr.y + 18, 11, 11) : new Rect(cr.x + 10, cr.y + 7, 16, 16);
+                GUI.DrawTexture(dot, UiArt.Round(Color.white, Color.white, icon != null ? 31 : 5, 0));
                 GUI.color = old;
                 x += cw + gapX;
             }
