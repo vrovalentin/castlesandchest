@@ -9,10 +9,21 @@ size = int(sys.argv[4]) if len(sys.argv) > 4 else 256
 for f in sorted(glob.glob(os.path.join(src, prefix + '*.png'))):
     a = np.array(Image.open(f).convert('RGB')).astype(np.float32)
     white = a.min(2)                       # how white a pixel is
-    near = white > 232                     # background candidates
-    lab, _ = ndi.label(near)
+    grey = a.max(2) - white                # 0 for white and grey, high for colours
+    # Background candidates: white, or the light grey of a fake transparency checkerboard
+    # that some generators bake into the picture.
+    near = (white > 232) | ((white > 200) & (grey < 12))
+    if os.environ.get('LOOSE'):            # also take soft grey shadows under the object
+        near |= (white > 150) & (grey < 16)
+    lab, n = ndi.label(near)
     border = set(np.unique(np.r_[lab[0], lab[-1], lab[:, 0], lab[:, -1]])) - {0}
     bg = np.isin(lab, list(border))
+    # Enclosed holes (e.g. under an arch) that show the checkerboard: both its light and grey cells.
+    sizes = ndi.sum(np.ones_like(white), lab, index=np.arange(1, n + 1))
+    for k in np.nonzero(sizes > white.size * 0.005)[0] + 1:
+        if k in border: continue
+        v = white[lab == k]
+        if (v > 245).mean() > 0.2 and ((v > 205) & (v < 238)).mean() > 0.2: bg |= lab == k
     # soft edge: alpha ramps over 2 px from the background
     dist = ndi.distance_transform_edt(~bg)
     alpha = np.clip(dist / 2.0, 0, 1)
