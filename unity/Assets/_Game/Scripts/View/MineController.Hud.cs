@@ -110,6 +110,7 @@ namespace Game.View
             _button2.fontStyle = FontStyle.Bold;
             _button2.active.background = UiArt.Round(Frame, Frame, 20, 4);
             _button2.active.textColor = Cream;
+            UiArt.UseGameFont(this);
         }
 
         private void OnGUI()

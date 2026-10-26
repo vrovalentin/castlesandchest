@@ -83,6 +83,55 @@ namespace Game.View
             _name = new GUIStyle { fontSize = 17, alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Bold };
             _name.normal.textColor = Ink;
             _invisible = new GUIStyle();
+            UiArt.UseGameFont(this);
+        }
+
+        private bool _pressInView, _dragging;
+        private Vector2 _pressAt;
+        private float _flingSpeed;
+
+        /// <summary>
+        /// Finger scrolling for the page: IMGUI's scroll view only scrolls with a wheel or its bar.
+        /// A press that moves more than a few points becomes a drag, and its release presses no button.
+        /// </summary>
+        private void DragScroll(Rect view)
+        {
+            var e = Event.current;
+            float max = Mathf.Max(0, _contentH - view.height);
+            switch (e.type)
+            {
+                case EventType.MouseDown when view.Contains(e.mousePosition):
+                    _pressInView = true;
+                    _dragging = false;
+                    _pressAt = e.mousePosition;
+                    _flingSpeed = 0;
+                    break;
+                case EventType.MouseDrag when _pressInView:
+                    if (!_dragging && Mathf.Abs(e.mousePosition.y - _pressAt.y) > 12) _dragging = true;
+                    if (_dragging)
+                    {
+                        _scroll.y = Mathf.Clamp(_scroll.y - e.delta.y, 0, max);
+                        _flingSpeed = Mathf.Lerp(_flingSpeed, -e.delta.y / Mathf.Max(Time.unscaledDeltaTime, 0.008f), 0.5f);
+                        GUIUtility.hotControl = 0;
+                        e.Use();
+                    }
+                    break;
+                case EventType.MouseUp when _pressInView:
+                    _pressInView = false;
+                    if (_dragging)
+                    {
+                        _dragging = false;
+                        GUIUtility.hotControl = 0;
+                        e.Use();
+                    }
+                    else _flingSpeed = 0;
+                    break;
+                case EventType.Repaint when !_pressInView && Mathf.Abs(_flingSpeed) > 20:
+                    _scroll.y = Mathf.Clamp(_scroll.y + _flingSpeed * Time.unscaledDeltaTime, 0, max);
+                    _flingSpeed *= Mathf.Exp(-4f * Time.unscaledDeltaTime);
+                    if (_scroll.y <= 0 || _scroll.y >= max) _flingSpeed = 0;
+                    break;
+            }
         }
 
         private void OnGUI()
@@ -104,6 +153,7 @@ namespace Game.View
 
             float top = 128, bottom = h - 16 - 100 - 12;
             var view = new Rect(x0, top, colW, bottom - top);
+            DragScroll(view);
             _scroll = GUI.BeginScrollView(view, _scroll, new Rect(0, 0, colW - 20, _contentH), false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
             float y = 0;
             y = DrawCastle(pad, y, inner);

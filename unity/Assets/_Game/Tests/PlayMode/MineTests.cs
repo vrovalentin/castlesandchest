@@ -127,6 +127,11 @@ namespace Game.View.Tests
             Assert.IsNotNull(GameArt.MineBackground);
             Assert.IsNotNull(GameArt.BuildBackground);
             Assert.IsNotNull(GameArt.Sparkle);
+            // The browser has no system fonts: the UI font must ship with the game and cover Russian.
+            Assert.IsNotNull(UiArt.TextFont);
+            Assert.IsNotNull(UiArt.BoldFont);
+            Assert.IsTrue(UiArt.TextFont.HasCharacter('Ж'));
+            Assert.IsTrue(UiArt.BoldFont.HasCharacter('ё'));
             // Every part has an icon except the unicorn, which is still to be drawn.
             foreach (var p in DemoContent.Create().Parts)
                 if (p.Id != "unicorn") Assert.IsNotNull(GameArt.Part(p.Id), p.Id);

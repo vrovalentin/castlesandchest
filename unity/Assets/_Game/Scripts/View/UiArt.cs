@@ -42,6 +42,33 @@ namespace Game.View
             return t;
         }
 
+        private static Font _text, _bold;
+
+        /// <summary>Nunito Bold, with Cyrillic. The browser build has no system fonts, so the UI must bring its own.</summary>
+        public static Font TextFont => _text != null ? _text : (_text = Resources.Load<Font>("Fonts/Nunito-Bold"));
+
+        /// <summary>Nunito Black, used where a style asks for bold.</summary>
+        public static Font BoldFont => _bold != null ? _bold : (_bold = Resources.Load<Font>("Fonts/Nunito-Black"));
+
+        /// <summary>
+        /// Puts the game font on the skin and on every GUIStyle field of <paramref name="owner"/>.
+        /// Styles marked bold get the Black weight instead of a faked bold.
+        /// </summary>
+        public static void UseGameFont(object owner)
+        {
+            if (TextFont == null) return;
+            GUI.skin.font = TextFont;
+            const System.Reflection.BindingFlags all = System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic;
+            foreach (var f in owner.GetType().GetFields(all))
+            {
+                if (f.FieldType != typeof(GUIStyle) || !(f.GetValue(owner) is GUIStyle st)) continue;
+                bool bold = st.fontStyle == FontStyle.Bold || st.fontStyle == FontStyle.BoldAndItalic;
+                st.font = bold && BoldFont != null ? BoldFont : TextFont;
+                if (bold) st.fontStyle = FontStyle.Normal;
+            }
+        }
+
         public static GUIStyle Style(Texture2D back, int radius, int fontSize, Color text, TextAnchor align = TextAnchor.MiddleCenter)
         {
             var s = new GUIStyle
