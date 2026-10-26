@@ -79,6 +79,25 @@ namespace Game.View
             GUI.color = old;
         }
 
+        /// <summary>
+        /// Covers the rect with a texture so that the texture row at <paramref name="rowFrac"/> (0 = top)
+        /// lands at screen y <paramref name="atY"/>, zooming in as much as needed. Used to put the
+        /// meadow's horizon under the castle.
+        /// </summary>
+        public static void DrawCoverAnchored(Rect r, Texture2D tex, float rowFrac, float atY)
+        {
+            float tw = tex.width, th = tex.height;
+            float s = Mathf.Max(r.width / tw, r.height / th);
+            // Above the anchor the texture needs rowFrac*th*s ≥ atY - r.y, below it (1-rowFrac)*th*s ≥ r.yMax - atY.
+            if (rowFrac > 0) s = Mathf.Max(s, (atY - r.y) / (rowFrac * th));
+            if (rowFrac < 1) s = Mathf.Max(s, (r.yMax - atY) / ((1 - rowFrac) * th));
+            float dh = th * s, dw = tw * s;
+            var dst = new Rect(r.center.x - dw / 2, atY - rowFrac * dh, dw, dh);
+            GUI.BeginClip(r);
+            GUI.DrawTexture(new Rect(dst.x - r.x, dst.y - r.y, dw, dh), tex);
+            GUI.EndClip();
+        }
+
         /// <summary>Draws a texture so it covers the rect, cropping the overflow (backgrounds).</summary>
         public static void DrawCover(Rect r, Texture2D tex, float alignY = 0.5f)
         {
