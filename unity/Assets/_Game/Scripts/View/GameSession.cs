@@ -36,6 +36,18 @@ namespace Game.View
             if (Persistent) SaveStore.Save(SaveMapper.ToSave(State, Game.Catalog));
         }
 
+        /// <summary>
+        /// Wipes the save and starts from the first castle, with the usual daily tickets and tools.
+        /// The daily gift only tops up to its fixed amounts, so this can't be used to farm them.
+        /// </summary>
+        public void StartOver()
+        {
+            if (Persistent) SaveStore.Clear();
+            State = Game.NewGame();
+            Game.DailyGrant(State, Today);
+            Save();
+        }
+
         /// <summary>Start the demo over. Tickets, tools and the daily gift day stay, so it can't be used to farm them.</summary>
         public void RestartDemo()
         {

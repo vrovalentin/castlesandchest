@@ -30,7 +30,7 @@ namespace Game.View
         private static readonly Color Red = new Color32(0xd9, 0x53, 0x4f, 0xff);
 
         private GUIStyle _pill, _card, _section, _text, _chip, _chipHave, _tile, _tilePicked, _count, _need,
-            _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible;
+            _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible, _roundBtn;
 
         private Vector2 _scroll;
         private float _contentH = 1500;
@@ -83,6 +83,8 @@ namespace Game.View
             _name = new GUIStyle { fontSize = 17, alignment = TextAnchor.UpperCenter, wordWrap = true, fontStyle = FontStyle.Bold };
             _name.normal.textColor = Ink;
             _invisible = new GUIStyle();
+            _roundBtn = UiArt.Style(UiArt.Round(Cream, CardEdge, 22, 3), 22, 1, Ink);
+            _roundBtn.active.background = UiArt.Round(HaveFill, CardEdge, 22, 3);
             UiArt.UseGameFont(this);
         }
 
@@ -148,7 +150,7 @@ namespace Game.View
             if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, 0.6f, 128 + inner * 0.8f * 0.86f);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
 
             float top = 128, bottom = h - 16 - 100 - 12;
@@ -171,6 +173,7 @@ namespace Game.View
 
             if (_reward != null) DrawRewardPanel(w, h);
             else if (_donePanel) DrawDonePanel(w, h);
+            else if (_askStartOver) DrawStartOverPanel(w, h);
         }
 
         // ---------- header ----------
@@ -179,8 +182,10 @@ namespace Game.View
         {
             var castle = Game.CastleOf(State);
             int done = State.Filled.Count(f => f), total = State.Filled.Length;
-            const float progW = 150;
-            GUI.Label(new Rect(r.x, r.y, r.width - progW - 12, 64), $"Замок {State.CastleIndex + 1}: {castle.Name}", _pill);
+            const float progW = 150, btn = 64;
+            if (GUI.Button(new Rect(r.x, r.y, btn, btn), GUIContent.none, _roundBtn)) Later(AskStartOver);
+            GUI.DrawTexture(new Rect(r.x + 13, r.y + 13, btn - 26, btn - 26), UiArt.Restart, ScaleMode.ScaleToFit);
+            GUI.Label(new Rect(r.x + btn + 10, r.y, r.width - progW - btn - 22, 64), $"Замок {State.CastleIndex + 1}: {castle.Name}", _pill);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
             GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#8a5a34>{done}</color> из {total}", center);
 
@@ -427,6 +432,19 @@ namespace Game.View
             GUILayout.FlexibleSpace();
             if (GUILayout.Button(last ? "Пройти демо заново" : "Следующий замок", _green, GUILayout.Height(84))) Later(NextCastle);
             GUILayout.EndArea();
+        }
+
+        private void DrawStartOverPanel(float w, float h)
+        {
+            Dim(w, h);
+            float pw = Mathf.Min(620, w - 60);
+            var r = new Rect((w - pw) / 2, h / 2 - 220, pw, 440);
+            GUI.Box(r, GUIContent.none, _panel);
+            GUI.Label(new Rect(r.x + 36, r.y + 36, r.width - 72, 60), "Начать сначала?", _panelTitle);
+            GUI.Label(new Rect(r.x + 36, r.y + 110, r.width - 72, 120),
+                "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _panelBody);
+            if (GUI.Button(new Rect(r.x + 40, r.yMax - 210, r.width - 80, 84), "Начать сначала", _mineBtn)) Later(StartOver);
+            if (GUI.Button(new Rect(r.x + 40, r.yMax - 112, r.width - 80, 76), "Отмена", _wood)) Later(() => _askStartOver = false);
         }
 
         private void DrawRewardPanel(float w, float h)

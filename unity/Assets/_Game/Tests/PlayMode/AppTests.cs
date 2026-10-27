@@ -86,6 +86,28 @@ namespace Game.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator StartOverGoesBackToTheFirstCastle()
+        {
+            var s = _app.Session.State;
+            foreach (var id in _app.Session.Game.CastleOf(s).Slots) s.Add(id, 1);
+            _app.Build.PlaceAll();
+            _app.Build.NextCastle();
+            Assert.AreEqual(1, _app.Session.State.CastleIndex);
+
+            _app.Build.AskStartOver();
+            Assert.IsTrue(_app.Build.StartOverPanel);
+            _app.Build.StartOver();
+            Assert.IsFalse(_app.Build.StartOverPanel);
+            var fresh = _app.Session.State;
+            Assert.AreEqual(0, fresh.CastleIndex);
+            Assert.AreEqual(0, fresh.Built);
+            Assert.IsFalse(fresh.Filled.Any(f => f));
+            Assert.AreEqual(2, fresh.Chests.Count, "starting gift again");
+            Assert.Greater(fresh.Tickets, 0);
+            yield break;
+        }
+
+        [UnityTest]
         public IEnumerator MineAndBackKeepsTheRun()
         {
             _app.ShowMine();
