@@ -21,6 +21,7 @@ namespace Game.View
         private string _message;
         private float _messageUntil;
         private bool _donePanel;
+        private bool _askStartOver;
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
 
@@ -100,6 +101,23 @@ namespace Game.View
             else { Game.NextCastle(State); _s.Save(); }
             _donePanel = false;
             _pick.Clear();
+        }
+
+        /// <summary>Shows the «Начать сначала?» window.</summary>
+        public void AskStartOver() => _askStartOver = true;
+
+        public bool StartOverPanel => _askStartOver;
+
+        /// <summary>Wipes all progress and goes back to the first castle.</summary>
+        public void StartOver()
+        {
+            _s.StartOver();
+            _askStartOver = false;
+            _donePanel = false;
+            _reward = null;
+            _pick.Clear();
+            _scroll = Vector2.zero;
+            _message = null;
         }
 
         // ---------- helpers ----------
