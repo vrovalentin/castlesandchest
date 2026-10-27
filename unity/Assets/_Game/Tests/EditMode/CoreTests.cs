@@ -201,6 +201,20 @@ namespace Game.Core.Tests
         }
 
         [Test]
+        public void TheCastleIsBuiltBottomUp()
+        {
+            var s = _game.NewGame();
+            s.Inventory["wall"] = 1;
+            Assert.AreEqual(0, _game.NextSlot(s));
+            Assert.IsFalse(_game.Place(s, 4), "a wall can't go up before the foundation");
+            s.Inventory["clay"] = 4;
+            for (int i = 0; i < 4; i++) Assert.IsTrue(_game.Place(s, i));
+            Assert.AreEqual(4, _game.NextSlot(s));
+            Assert.IsTrue(_game.Place(s, 4));
+            Assert.AreEqual("wall", _game.Missing(s)[0].Id, "the next part comes first in what the castle needs");
+        }
+
+        [Test]
         public void PlaceNeedsThePartAndFillsOnce()
         {
             var s = _game.NewGame();

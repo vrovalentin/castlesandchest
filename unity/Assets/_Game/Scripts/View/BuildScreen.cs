@@ -65,24 +65,32 @@ namespace Game.View
 
         public bool PlaceSlot(int slot)
         {
-            var id = Game.CastleOf(State).Slots[slot];
+            var slots = Game.CastleOf(State).Slots;
+            var id = slots[slot];
             if (State.Filled[slot]) return false;
+            int next = Game.NextSlot(State);
+            if (slot != next)
+            {
+                Say($"Замок строится снизу вверх. Сначала: {Game.Catalog.NameOf(slots[next]).ToLowerInvariant()}.");
+                return false;
+            }
             if (!Game.Place(State, slot))
             {
                 Say($"{Game.Catalog.NameOf(id)}: нет на складе. {WhereFrom(id)}");
                 return false;
             }
+            _placedSlot = slot;
+            _placedAt = Time.time;
             _s.Save();
             if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; }
             return true;
         }
 
-        /// <summary>Places every part that is in storage. Returns how many were placed.</summary>
+        /// <summary>Places parts in building order while storage has the next one. Returns how many were placed.</summary>
         public int PlaceAll()
         {
             int n = 0;
-            for (int i = 0; i < State.Filled.Length; i++)
-                if (!State.Filled[i] && State.Count(Game.CastleOf(State).Slots[i]) > 0 && PlaceSlot(i)) n++;
+            for (int i = Game.NextSlot(State); i >= 0 && State.Count(Game.CastleOf(State).Slots[i]) > 0 && PlaceSlot(i); i = Game.NextSlot(State)) n++;
             return n;
         }
 
@@ -118,6 +126,7 @@ namespace Game.View
             _pick.Clear();
             _scroll = Vector2.zero;
             _message = null;
+            _placedSlot = -1;
         }
 
         // ---------- helpers ----------

@@ -69,6 +69,26 @@ namespace Game.View
             }
         }
 
+        /// <summary>A filled circle with a border; stretched over a rect it makes an ellipse.</summary>
+        public static Texture2D Disc(Color fill, Color border, float borderWidth) => Round(fill, border, 32, borderWidth);
+
+        /// <summary>A round soft blob that fades out to the edge, for shadows.</summary>
+        public static Texture2D SoftDisc(Color c)
+        {
+            string key = $"soft{(Color32)c}";
+            if (Cache.TryGetValue(key, out var t) && t != null) return t;
+            const int n = 64;
+            t = Draw(n, (x, y) =>
+            {
+                float d = new Vector2(x - n / 2f, y - n / 2f).magnitude / (n / 2f);
+                var k = c;
+                k.a *= Mathf.SmoothStep(1, 0, Mathf.InverseLerp(0.35f, 1f, d));
+                return k;
+            });
+            Cache[key] = t;
+            return t;
+        }
+
         public static GUIStyle Style(Texture2D back, int radius, int fontSize, Color text, TextAnchor align = TextAnchor.MiddleCenter)
         {
             var s = new GUIStyle
