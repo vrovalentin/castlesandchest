@@ -91,6 +91,19 @@ namespace Game.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator TheBrowserAddressCanOpenACastleToTry()
+        {
+            var session = _app.Session;
+            session.TestStart("http://192.168.1.235:8080/");
+            Assert.AreEqual(0, session.State.CastleIndex, "a plain address changes nothing");
+            session.TestStart("http://192.168.1.235:8080/?castle=2&parts");
+            Assert.AreEqual(1, session.State.CastleIndex);
+            Assert.AreEqual(48, session.State.Filled.Length);
+            Assert.AreEqual(15, session.State.Count("clay"), "every part castle 2 needs is in storage");
+            yield break;
+        }
+
+        [UnityTest]
         public IEnumerator FinishingTheCastleMovesToTheNext()
         {
             var s = _app.Session.State;
@@ -102,7 +115,7 @@ namespace Game.View.Tests
             Assert.AreEqual(1, s.Built);
             _app.Build.NextCastle();
             Assert.AreEqual(1, s.CastleIndex);
-            Assert.AreEqual(36, s.Filled.Length);
+            Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(1, s.Count("dragon"), "figurines stay");
             yield break;
         }
@@ -162,7 +175,13 @@ namespace Game.View.Tests
             Assert.IsTrue(art.Lines.All(t => t != null), "every slot has an outline");
 
             _app.Session.Game.NextCastle(_app.Session.State);
-            Assert.IsNull(_app.Build.Art, "castle_2 has no art yet and keeps the slot grid");
+            art = _app.Build.Art;
+            Assert.IsNotNull(art, "castle_2 layers in Art/Resources/Castles/castle_2");
+            Assert.AreEqual(48, art.Layers.Length);
+            Assert.IsTrue(art.Lines.All(t => t != null), "every slot of castle_2 has an outline");
+            // A tap on the gate finds it, on castle 2's own tap map.
+            var r = new Rect(0, 0, 1000, 1000);
+            Assert.AreEqual(20, art.SlotAt(r, new Vector2(500, 780), _app.Session.State.Filled, 0));
             yield return null;
         }
     }

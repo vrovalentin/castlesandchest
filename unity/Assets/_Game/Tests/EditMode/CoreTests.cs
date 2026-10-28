@@ -54,7 +54,7 @@ namespace Game.Core.Tests
         {
             CollectionAssert.IsEmpty(_cat.Validate());
             Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
-            Assert.AreEqual(36, _cat.Castles[1].Slots.Length);
+            Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
         }
 
         [Test]
@@ -248,7 +248,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Count("window"));
             Assert.AreEqual(1, s.Count("dragon"));
             Assert.AreEqual(0, s.Chests.Count);
-            Assert.AreEqual(36, s.Filled.Length);
+            Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
             Assert.IsTrue(_game.IsLastCastle(s));
         }
@@ -388,13 +388,13 @@ namespace Game.Core.Tests
         {
             var rng = new XorShift32(12345);
             var bot = new BalanceBot(_game, rng);
-            var expected = new[] { new[] { 4, 14, 21, 77, 49 }, new[] { 4, 15, 32, 67, 37 }, new[] { 8, 20, 27, 73, 99 } };
+            var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {
                 var r = bot.PlayGame();
                 CollectionAssert.AreEqual(exp, new[] { r[0].Runs, r[1].Runs, r[0].Chests, r[1].Chests, r[0].Burned });
             }
-            Assert.AreEqual(3407147384u, rng.State);
+            Assert.AreEqual(1681680551u, rng.State);
         }
 
         [Test]
