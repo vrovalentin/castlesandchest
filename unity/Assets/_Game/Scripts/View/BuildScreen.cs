@@ -25,9 +25,9 @@ namespace Game.View
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
 
-        private void Later(Action a)
+        private void Later(Action a, bool click = true)
         {
-            Sfx.Play("click");
+            if (click) Sfx.Play("click");
             _pending += a;
         }
 
@@ -92,6 +92,19 @@ namespace Game.View
             Sfx.Play("place");
             if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; Sfx.Play("fanfare"); }
             return true;
+        }
+
+        /// <summary>A tap on a slot of the castle drawing: a built part says its name, any other is placed if it can be.</summary>
+        public bool TapSlot(int slot)
+        {
+            var slots = Game.CastleOf(State).Slots;
+            if (slot < 0 || slot >= slots.Length) return false;
+            if (State.Filled[slot])
+            {
+                Say($"{Game.Catalog.NameOf(slots[slot])}: уже на месте.");
+                return false;
+            }
+            return PlaceSlot(slot);
         }
 
         /// <summary>Places parts in building order while storage has the next one. Returns how many were placed.</summary>
@@ -187,7 +200,7 @@ namespace Game.View
             for (int i = 0; i < _rewardCells.Count; i++)
                 _flying.Add(new Flight { Id = _rewardCells[i].id, From = _rewardCells[i].at, Start = now + 0.06f * i });
             foreach (var id in _reward.Parts) _pulseAt[id] = now + 0.45f;
-            if (_rewardCells.Count > 0) Sfx.Play("whoosh");
+            if (_rewardCells.Count > 0) Sfx.Play("collect", 0.55f);
             _rewardCells.Clear();
             _reward = null;
         }

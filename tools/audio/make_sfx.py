@@ -89,4 +89,7 @@ save('hammer', mix((0, tone(140, 0.12, 30)), (0, 0.7 * noise(0.05, 60, 0.35)), (
 fan = [(0, 523), (0.12, 659), (0.24, 784), (0.38, 1047)]
 save('fanfare', mix(*[(s, tone(f, 0.9 if i == 3 else 0.35, 3 if i == 3 else 6, 'tri')) for i, (s, f) in enumerate(fan)],
                     (0.38, 0.5 * tone(1319, 0.9, 3, 'tri')), (0.38, 0.4 * tone(1568, 0.9, 3, 'tri'))), 0.75)
+# «Забрать»: a quiet little two-note tinkle
+save('collect', mix((0, tone(2093, 0.28, 14)), (0, 0.3 * tone(4186, 0.18, 22)), (0.07, 0.8 * tone(2637, 0.35, 11)),
+                    (0.07, 0.25 * tone(5274, 0.2, 20))), 0.45)
 print('ok', sorted(os.listdir(out)))

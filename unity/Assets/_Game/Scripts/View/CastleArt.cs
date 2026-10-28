@@ -20,6 +20,9 @@ namespace Game.View
         private int _decorBefore;
         /// <summary>Outline of each slot, drawn while the slot is empty. Entries may be null.</summary>
         public Texture2D[] Lines { get; private set; }
+        /// <summary>Which slots cover each point (c&lt;N&gt;_hit.bytes from tools/art/make_hitmap.py). May be null.</summary>
+        private byte[] _hit;
+        private int _hitSize;
 
         /// <summary>Loads the art of a castle. Null when the castle has no art yet or a layer is missing.</summary>
         public static CastleArt Load(CastleInfo castle)
@@ -35,6 +38,12 @@ namespace Game.View
                 Lines = new Texture2D[castle.Slots.Length],
             };
             if (art.Base == null) return null;
+            var hit = Resources.Load<TextAsset>(dir + prefix + "_hit");
+            if (hit != null)
+            {
+                int size = Mathf.RoundToInt(Mathf.Sqrt(hit.bytes.Length / 3f));
+                if (size * size * 3 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; }
+            }
             int porch = System.Array.IndexOf(castle.Slots, "porch");
             art._decorBefore = porch >= 0 ? porch : castle.Slots.Length;
             for (int i = 0; i < castle.Slots.Length; i++)
@@ -61,6 +70,30 @@ namespace Game.View
                 if (!filled[i] && Lines[i] != null) GUI.DrawTexture(r, Lines[i], ScaleMode.ScaleToFit);
             for (int i = 0; i < Layers.Length; i++)
                 if (filled[i]) GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
+        }
+
+        /// <summary>
+        /// The slot under a point of the picture drawn in <paramref name="r"/>, or -1.
+        /// The glowing next slot wins, then the top built part, then the lowest part still to build.
+        /// </summary>
+        public int SlotAt(Rect r, Vector2 point, bool[] filled, int next)
+        {
+            if (_hit == null || r.width <= 0 || r.height <= 0) return -1;
+            // The picture is square and drawn ScaleToFit.
+            float side = Mathf.Min(r.width, r.height);
+            var pic = new Rect(r.center.x - side / 2, r.center.y - side / 2, side, side);
+            if (!pic.Contains(point)) return -1;
+            int x = Mathf.Clamp((int)((point.x - pic.x) / side * _hitSize), 0, _hitSize - 1);
+            int y = Mathf.Clamp((int)((point.y - pic.y) / side * _hitSize), 0, _hitSize - 1);
+            int k = (y * _hitSize + x) * 3;
+            int mask = _hit[k] | _hit[k + 1] << 8 | _hit[k + 2] << 16;
+            if (mask == 0) return -1;
+            if (next >= 0 && (mask & 1 << next) != 0) return next;
+            for (int i = filled.Length - 1; i >= 0; i--)
+                if (filled[i] && (mask & 1 << i) != 0) return i;
+            for (int i = 0; i < filled.Length; i++)
+                if ((mask & 1 << i) != 0) return i;
+            return -1;
         }
 
         private static readonly Color Glow = new Color32(0xff, 0xc8, 0x3c, 0xff);

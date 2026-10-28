@@ -192,6 +192,7 @@ namespace Game.View
             // Behind an open window the page doesn't take clicks.
             GUI.enabled = _reward == null && !_donePanel && !_askStartOver;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
+            if (GUI.enabled) CastleTap(sceneH - 26);
 
             // The sheet under the scene; only its contents scroll.
             GUI.Box(new Rect(-8, sceneH - 26, w + 16, h - sceneH + 80), GUIContent.none, _sheet);
@@ -267,6 +268,7 @@ namespace Game.View
                 GUI.DrawTexture(new Rect(cx + dx * siteW - 7, groundY + dy * siteH - 4, 14, 8), UiArt.Disc(SiteEdge, SiteEdge, 0));
 
             var pic = new Rect(cx - size / 2, groundY + siteH * 0.05f - size * 0.98f, size, size);
+            _picRect = pic;
             int next = Game.NextSlot(State);
             if (Art != null)
             {
@@ -288,6 +290,30 @@ namespace Game.View
                 if (!State.Filled[i]) GUI.color = new Color(1, 1, 1, i == next ? 0.55f + 0.3f * Mathf.Sin(Time.time * 4f) : 0.18f);
                 GameArt.DrawPart(c, castle.Slots[i], Game.Catalog.TierOf(castle.Slots[i]));
                 GUI.color = old;
+            }
+        }
+
+        private Rect _picRect;
+        private Vector2? _castleDown;
+
+        /// <summary>A tap on a part of the castle drawing: places it, or says why not, or names it.</summary>
+        private void CastleTap(float sheetTop)
+        {
+            if (Art == null) return;
+            var e = Event.current;
+            if (e.type == EventType.MouseDown && e.mousePosition.y < sheetTop &&
+                Art.SlotAt(_picRect, e.mousePosition, State.Filled, Game.NextSlot(State)) >= 0)
+            {
+                _castleDown = e.mousePosition;
+                e.Use();
+            }
+            else if (e.type == EventType.MouseUp && _castleDown.HasValue)
+            {
+                bool tap = (e.mousePosition - _castleDown.Value).magnitude < 24;
+                _castleDown = null;
+                int slot = tap ? Art.SlotAt(_picRect, e.mousePosition, State.Filled, Game.NextSlot(State)) : -1;
+                if (slot >= 0) Later(() => TapSlot(slot));
+                e.Use();
             }
         }
 
@@ -740,7 +766,7 @@ namespace Game.View
             {
                 var b = new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96);
                 bool down = GUIUtility.hotControl != 0 && b.Contains(Event.current.mousePosition);
-                if (GUI.Button(b, GUIContent.none, _gold)) Later(CloseReward);
+                if (GUI.Button(b, GUIContent.none, _gold)) Later(CloseReward, click: false);
                 var face = new Rect(b.x, b.y + (down ? 10 : 0), b.width, b.height - 10);
                 var label = new GUIStyle(_ribbonTitle) { fontSize = 40 };
                 Outlined(face, "Забрать", label, ButtonInk, 3f);
