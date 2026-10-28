@@ -185,6 +185,7 @@ namespace Game.View
             var res = Game.UseTool(State, tool, r, c, _rng, p => frames.Add(BoardView.Capture(board, p)));
             if (res == null) { Toast("Тут нечего убирать"); return false; }
             Armed = null;
+            Sfx.Play(tool == Tool.Broom ? "broom" : "hammer");
             StartCoroutine(PlayThen(frames, () => { if (State.Run.Moves <= 0) _mode = Mode.OutOfMoves; }));
             return true;
         }

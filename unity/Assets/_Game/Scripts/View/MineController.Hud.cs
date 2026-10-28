@@ -168,6 +168,7 @@ namespace Game.View
         private bool IconButton(Rect r, Texture2D icon)
         {
             bool hit = GUI.Button(r, GUIContent.none, _roundBtn);
+            if (hit) Sfx.Play("click");
             float m = r.width * 0.2f;
             GUI.DrawTexture(new Rect(r.x + m, r.y + m, r.width - 2 * m, r.height - 2 * m), icon, ScaleMode.ScaleToFit);
             return hit;
