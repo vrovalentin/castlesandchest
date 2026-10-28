@@ -25,7 +25,11 @@ namespace Game.View
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
 
-        private void Later(Action a) => _pending += a;
+        private void Later(Action a)
+        {
+            Sfx.Play("click");
+            _pending += a;
+        }
 
         private void Update()
         {
@@ -59,7 +63,10 @@ namespace Game.View
             }
             _s.Save();
             if (got.Count > 0)
+            {
                 _reward = new Reward { Color = firstColor, Stars = bestStars, Chests = opened, Parts = got, Since = Time.time };
+                Sfx.Play("rattle");
+            }
             return got;
         }
 
@@ -82,7 +89,8 @@ namespace Game.View
             _placedSlot = slot;
             _placedAt = Time.time;
             _s.Save();
-            if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; }
+            Sfx.Play("place");
+            if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; Sfx.Play("fanfare"); }
             return true;
         }
 
@@ -99,6 +107,7 @@ namespace Game.View
             if (!Game.Merge(State, a, b, target)) return false;
             _pick.Clear();
             _s.Save();
+            Sfx.Play("merge");
             Say($"Собрано: {Game.Catalog.NameOf(target)}");
             return true;
         }
@@ -161,6 +170,8 @@ namespace Game.View
             public int Color, Stars, Chests;
             public List<string> Parts;
             public float Since;
+            /// <summary>How far the show's sounds have got: 0 shaking, 1 opened, 1 + n parts landed.</summary>
+            public int Sounded;
         }
 
         private Reward _reward;
@@ -176,6 +187,7 @@ namespace Game.View
             for (int i = 0; i < _rewardCells.Count; i++)
                 _flying.Add(new Flight { Id = _rewardCells[i].id, From = _rewardCells[i].at, Start = now + 0.06f * i });
             foreach (var id in _reward.Parts) _pulseAt[id] = now + 0.45f;
+            if (_rewardCells.Count > 0) Sfx.Play("whoosh");
             _rewardCells.Clear();
             _reward = null;
         }

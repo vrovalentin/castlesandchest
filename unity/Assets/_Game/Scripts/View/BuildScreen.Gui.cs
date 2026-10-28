@@ -590,6 +590,7 @@ namespace Game.View
                 if (open != null) GUI.DrawTexture(cr, open, ScaleMode.ScaleToFit);
                 else GameArt.DrawChest(cr, new Chest(rw.Color, 0));
             }
+            if (Event.current.type == EventType.Repaint && t >= shakeEnd && rw.Sounded == 0) { rw.Sounded = 1; Sfx.Play("open"); }
             var sp = GameArt.Sparkle;
             if (sp != null && t >= shakeEnd)
             {
@@ -653,6 +654,7 @@ namespace Game.View
                 GameArt.DrawPart(new Rect(p.x - size / 2, p.y - size / 2, size, size), id, Game.Catalog.TierOf(id));
                 if (land >= 1)
                 {
+                    if (Event.current.type == EventType.Repaint && rw.Sounded < 2 + i) { rw.Sounded = 2 + i; Sfx.Play("tick", 0.8f, 1f + 0.06f * i); }
                     if (groups[i].Count() > 1) GUI.Label(new Rect(cell.xMax - 56, cell.yMax - 40, 50, 34), "×" + groups[i].Count(), _count);
                     GUI.Label(new Rect(cell.x - 10, cell.yMax + 4, tile + 20, 60), Game.Catalog.NameOf(id), name);
                 }

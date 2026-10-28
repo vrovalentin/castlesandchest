@@ -161,6 +161,8 @@ namespace Game.View
 
                 float dur = Duration(f.Kind);
                 bool collect = f.Kind == PhaseKind.Collect;
+                if (f.Kind == PhaseKind.Remove && gone.Count > 0) Sfx.Play("pop", 0.9f, 0.9f + Mathf.Min(0.5f, gone.Count * 0.04f));
+                else if (collect && gone.Count > 0) Sfx.Play("chest");
                 for (float t = 0; t < dur; t += Time.deltaTime)
                 {
                     float k = Ease(Mathf.Clamp01(t / dur));
@@ -188,6 +190,7 @@ namespace Game.View
         public IEnumerator Shake(int id)
         {
             if (!_views.TryGetValue(id, out var v)) yield break;
+            Sfx.Play("bonk", 0.7f);
             var basePos = v.transform.localPosition;
             for (float t = 0; t < 0.25f; t += Time.deltaTime)
             {
