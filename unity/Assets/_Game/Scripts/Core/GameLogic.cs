@@ -42,14 +42,17 @@ namespace Game.Core
             return n - s.Count(partId);
         }
 
-        /// <summary>What the castle still lacks after counting storage, in catalog order.</summary>
+        /// <summary>What the castle still lacks after counting storage, in building order: the next part first.</summary>
         public List<PartCount> Missing(GameState s)
         {
             var output = new List<PartCount>();
-            foreach (var p in Catalog.Parts)
+            var slots = CastleOf(s).Slots;
+            var seen = new HashSet<string>();
+            for (int i = 0; i < slots.Length; i++)
             {
-                int n = Need(s, p.Id);
-                if (n > 0) output.Add(new PartCount(p.Id, n));
+                if (s.Filled[i] || !seen.Add(slots[i])) continue;
+                int n = Need(s, slots[i]);
+                if (n > 0) output.Add(new PartCount(slots[i], n));
             }
             return output;
         }
@@ -119,12 +122,16 @@ namespace Game.Core
             return true;
         }
 
+        /// <summary>The castle is built bottom-up: the first empty slot is the only one that can be filled. -1 when done.</summary>
+        public int NextSlot(GameState s) => Array.IndexOf(s.Filled, false);
+
+        /// <summary>Fills a slot from storage. Only the next slot (see <see cref="NextSlot"/>) can be filled.</summary>
         public bool Place(GameState s, int slot)
         {
             var slots = CastleOf(s).Slots;
             if (slot < 0 || slot >= slots.Length) return false;
             var id = slots[slot];
-            if (s.Filled[slot] || s.Count(id) < 1) return false;
+            if (s.Filled[slot] || slot != NextSlot(s) || s.Count(id) < 1) return false;
             s.Add(id, -1);
             s.Filled[slot] = true;
             return true;

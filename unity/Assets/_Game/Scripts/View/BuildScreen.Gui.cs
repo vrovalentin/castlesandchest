@@ -7,8 +7,8 @@ using UnityEngine;
 namespace Game.View
 {
     /// <summary>
-    /// Build screen drawing, laid out like the wireframe: title and progress on top, the castle on the meadow,
-    /// «Осталось поставить», chests, storage, and the big button to the mine at the bottom.
+    /// Build screen drawing: a fixed scene on top (the meadow, the building site and the castle standing on it),
+    /// and a sheet under it whose cards scroll: the next part, the building order, chests and storage.
     /// IMGUI in a 720-wide virtual screen with UiArt panels until the UI art is ready.
     /// </summary>
     public sealed partial class BuildScreen
@@ -29,7 +29,7 @@ namespace Game.View
         private static readonly Color HaveFill = new Color32(0xdc, 0xf2, 0xd6, 0xff);
         private static readonly Color Red = new Color32(0xd9, 0x53, 0x4f, 0xff);
 
-        private GUIStyle _pill, _card, _section, _text, _chip, _chipHave, _tile, _tilePicked, _count, _need,
+        private GUIStyle _pill, _card, _section, _text, _nextCard, _bigName, _sub, _sheet, _tile, _tilePicked, _count, _need,
             _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible, _roundBtn;
 
         private Vector2 _scroll;
@@ -46,12 +46,12 @@ namespace Game.View
             _section.normal.textColor = Brown;
             _text = new GUIStyle { fontSize = 20, wordWrap = true, alignment = TextAnchor.MiddleLeft };
             _text.normal.textColor = Ink;
-            _chip = UiArt.Style(UiArt.Round(Color.white, CardEdge, 16, 2), 16, 19, Ink, TextAnchor.MiddleLeft);
-            _chip.wordWrap = false;
-            _chip.padding = new RectOffset(42, 12, 2, 2);
-            _chipHave = new GUIStyle(_chip);
-            _chipHave.normal.background = UiArt.Round(HaveFill, Green, 16, 3);
-            _chipHave.active.background = UiArt.Round(Green, GreenEdge, 16, 3);
+            _nextCard = UiArt.Style(UiArt.Round(Color.white, Gold, 22, 4), 22, 1, Ink);
+            _bigName = new GUIStyle { fontSize = 34, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = false };
+            _bigName.normal.textColor = Ink;
+            _sub = new GUIStyle { fontSize = 20, wordWrap = true, alignment = TextAnchor.UpperLeft };
+            _sub.normal.textColor = new Color32(0x6e, 0x5a, 0x46, 0xff);
+            _sheet = UiArt.Style(UiArt.Round(new Color32(0xfa, 0xf0, 0xdc, 0xff), new Color32(0xa0, 0x78, 0x50, 0xff), 32, 4), 32, 1, Ink);
             _tile = UiArt.Style(UiArt.Round(Color.white, CardEdge, 16, 2), 16, 1, Ink);
             _tile.active.background = UiArt.Round(HaveFill, CardEdge, 16, 2);
             _tilePicked = new GUIStyle(_tile);
@@ -66,7 +66,7 @@ namespace Game.View
             _wood.fontStyle = FontStyle.Bold;
             _wood.active.background = UiArt.Round(WoodEdge, WoodEdge, 16, 3);
             _wood.active.textColor = Color.white;
-            _green = UiArt.Style(UiArt.Round(Green, GreenEdge, 20, 4), 20, 26, Color.white);
+            _green = UiArt.Style(UiArt.Round(Green, GreenEdge, 20, 4), 20, 28, Color.white);
             _green.fontStyle = FontStyle.Bold;
             _green.active.background = UiArt.Round(GreenEdge, GreenEdge, 20, 4);
             _green.active.textColor = Color.white;
@@ -128,6 +128,11 @@ namespace Game.View
                     }
                     else _flingSpeed = 0;
                     break;
+                case EventType.ScrollWheel when view.Contains(e.mousePosition):
+                    _scroll.y = Mathf.Clamp(_scroll.y + e.delta.y * 24, 0, max);
+                    _flingSpeed = 0;
+                    e.Use();
+                    break;
                 case EventType.Repaint when !_pressInView && Mathf.Abs(_flingSpeed) > 20:
                     _scroll.y = Mathf.Clamp(_scroll.y + _flingSpeed * Time.unscaledDeltaTime, 0, max);
                     _flingSpeed *= Mathf.Exp(-4f * Time.unscaledDeltaTime);
@@ -145,31 +150,44 @@ namespace Game.View
             float w = Screen.width / scale, h = Screen.height / scale;
             float colW = Mathf.Min(w, 760), x0 = (w - colW) / 2, pad = 16, inner = colW - 2 * pad;
 
+            // The scene: meadow, building site and the castle. It never scrolls.
+            float sceneH = Mathf.Round(Mathf.Clamp(h * 0.54f, 600, 840));
+            float groundY = sceneH - 74;
             var bg = GameArt.BuildBackground;
-            // The meadow's horizon (about 60% down the picture) goes under the castle's base.
-            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, 0.6f, 128 + inner * 0.8f * 0.86f);
+            // The meadow's horizon (about 60% down the picture) sits a little behind the building site.
+            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, sceneH + 40), bg, 0.6f, groundY - 150);
+            DrawScene(new Rect(x0, 0, colW, sceneH), groundY);
 
             // Behind an open window the page doesn't take clicks.
             GUI.enabled = _reward == null && !_donePanel && !_askStartOver;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
 
-            float top = 128, bottom = h - 16 - 100 - 12;
-            var view = new Rect(x0, top, colW, bottom - top);
+            // The sheet under the scene; only its contents scroll.
+            GUI.Box(new Rect(-8, sceneH - 26, w + 16, h - sceneH + 80), GUIContent.none, _sheet);
+            GUI.DrawTexture(new Rect(w / 2 - 44, sceneH - 16, 88, 7), UiArt.Round(new Color32(0xc8, 0xaf, 0x8c, 0xff), new Color32(0xc8, 0xaf, 0x8c, 0xff), 3, 0));
+            float bottom = h - 16 - 100 - 8;
+            var view = new Rect(x0, sceneH - 4, colW, bottom - sceneH + 4);
             DragScroll(view);
-            _scroll = GUI.BeginScrollView(view, _scroll, new Rect(0, 0, colW - 20, _contentH), false, false, GUIStyle.none, GUI.skin.verticalScrollbar);
-            float y = 0;
-            y = DrawCastle(pad, y, inner);
-            y = DrawTodo(pad, y + 12, inner);
+            _scroll.y = Mathf.Clamp(_scroll.y, 0, Mathf.Max(0, _contentH - view.height));
+            // Taps outside the sheet must not reach cards scrolled out of sight.
+            var e = Event.current;
+            var hidden = e.isMouse && !view.Contains(e.mousePosition) ? e.type : EventType.Ignore;
+            if (hidden != EventType.Ignore) e.type = EventType.Ignore;
+            GUI.BeginGroup(view);
+            float y = 6 - _scroll.y;
+            y = DrawNext(pad, y, inner);
+            y = DrawOrder(pad, y + 12, inner);
             y = DrawChests(pad, y + 12, inner);
             y = DrawStorage(pad, y + 12, inner);
-            _contentH = y + 16;
-            GUI.EndScrollView();
+            _contentH = y + _scroll.y + 16;
+            GUI.EndGroup();
+            if (hidden != EventType.Ignore && e.type == EventType.Ignore) e.type = hidden;
 
             DrawMineButton(new Rect(x0 + pad, h - 16 - 100, inner, 100));
             GUI.enabled = true;
 
             if (_message != null && Time.time < _messageUntil)
-                GUI.Box(new Rect(x0 + pad + 20, bottom - 120, inner - 40, 110), _message, _toast);
+                GUI.Box(new Rect(x0 + pad + 20, bottom - 118, inner - 40, 110), _message, _toast);
 
             if (_reward != null) DrawRewardPanel(w, h);
             else if (_donePanel) DrawDonePanel(w, h);
@@ -197,87 +215,140 @@ namespace Game.View
 
         // ---------- castle ----------
 
-        private float DrawCastle(float x, float y, float inner)
+        private int _placedSlot = -1;
+        private float _placedAt;
+
+        /// <summary>The building site on the meadow and the castle standing on it, bottom at <paramref name="groundY"/>.</summary>
+        private void DrawScene(Rect r, float groundY)
         {
-            var pic = new Rect(x, y, inner, inner * 0.8f);
-            if (Art != null) Art.Draw(pic, State.Filled);
-            else
+            float size = Mathf.Min(r.width * 0.92f, (groundY - 104) / 0.97f);
+            float cx = r.center.x, siteW = size * 0.8f, siteH = size * 0.13f;
+            // Soft shadow, then a trodden dirt patch with a few stones.
+            GUI.DrawTexture(new Rect(cx - siteW * 0.6f, groundY - siteH * 0.7f, siteW * 1.2f, siteH * 1.75f), UiArt.SoftDisc(new Color(0.15f, 0.1f, 0.05f, 0.45f)));
+            GUI.DrawTexture(new Rect(cx - siteW / 2, groundY - siteH * 0.55f, siteW, siteH), UiArt.Disc(SiteFill, SiteEdge, 2.5f));
+            GUI.DrawTexture(new Rect(cx - siteW * 0.45f, groundY - siteH * 0.47f, siteW * 0.9f, siteH * 0.72f), UiArt.Disc(SiteLight, SiteLight, 0));
+            foreach (var (dx, dy) in Pebbles)
+                GUI.DrawTexture(new Rect(cx + dx * siteW - 7, groundY + dy * siteH - 4, 14, 8), UiArt.Disc(SiteEdge, SiteEdge, 0));
+
+            var pic = new Rect(cx - size / 2, groundY + siteH * 0.05f - size * 0.98f, size, size);
+            int next = Game.NextSlot(State);
+            if (Art != null)
             {
-                // No art for this castle yet: the slots as a grid of icons, filled ones solid.
-                var castle = Game.CastleOf(State);
-                int perRow = 6;
-                float cell = (inner - 40) / perRow;
-                var back = new Rect(x, y, inner, Mathf.Ceil(castle.Slots.Length / (float)perRow) * cell + 40);
-                GUI.Box(back, GUIContent.none, _card);
-                for (int i = 0; i < castle.Slots.Length; i++)
-                {
-                    var c = new Rect(x + 20 + (i % perRow) * cell, y + 20 + (i / perRow) * cell, cell - 6, cell - 6);
-                    var old = GUI.color;
-                    if (!State.Filled[i]) GUI.color = new Color(1, 1, 1, 0.3f);
-                    GameArt.DrawPart(c, castle.Slots[i], Game.Catalog.TierOf(castle.Slots[i]));
-                    GUI.color = old;
-                }
-                return back.yMax;
+                float t = _placedSlot >= 0 ? Mathf.Clamp01((Time.time - _placedAt) / 0.35f) : 1;
+                Art.DrawBuilt(pic, State.Filled, next, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f), _placedSlot, t);
+                return;
             }
-            return pic.yMax;
+            // No art for this castle yet: its slots as a grid of icons on the site, built ones solid.
+            var castle = Game.CastleOf(State);
+            const int perRow = 6;
+            float cell = Mathf.Min(64, r.width * 0.8f / perRow);
+            int rows = Mathf.CeilToInt(castle.Slots.Length / (float)perRow);
+            float gx = cx - perRow * cell / 2, gy = groundY - siteH * 0.3f - rows * cell;
+            for (int i = 0; i < castle.Slots.Length; i++)
+            {
+                // Bottom row first, like the building order.
+                var c = new Rect(gx + (i % perRow) * cell, gy + (rows - 1 - i / perRow) * cell, cell - 4, cell - 4);
+                var old = GUI.color;
+                if (!State.Filled[i]) GUI.color = new Color(1, 1, 1, i == next ? 0.55f + 0.3f * Mathf.Sin(Time.time * 4f) : 0.18f);
+                GameArt.DrawPart(c, castle.Slots[i], Game.Catalog.TierOf(castle.Slots[i]));
+                GUI.color = old;
+            }
         }
 
-        // ---------- what is left to place ----------
+        private static readonly Color SiteFill = new Color32(0xb0, 0x80, 0x52, 0xff);
+        private static readonly Color SiteEdge = new Color32(0x78, 0x54, 0x32, 0xff);
+        private static readonly Color SiteLight = new Color32(0xc4, 0x96, 0x64, 0xff);
+        private static readonly (float, float)[] Pebbles = { (-0.36f, 0.05f), (0.29f, 0.1f), (-0.14f, 0.28f), (0.14f, -0.22f), (0.4f, -0.12f), (-0.42f, -0.16f) };
 
-        /// <summary>Places one part of this kind on its first empty slot. False if none is in storage.</summary>
+        // ---------- the next part ----------
+
+        /// <summary>Places the next part of the castle if it is this one. False otherwise.</summary>
         public bool PlacePart(string id)
         {
-            var slots = Game.CastleOf(State).Slots;
-            for (int i = 0; i < slots.Length; i++)
-                if (slots[i] == id && !State.Filled[i]) return PlaceSlot(i);
-            return false;
+            int next = Game.NextSlot(State);
+            return next >= 0 && Game.CastleOf(State).Slots[next] == id && PlaceSlot(next);
         }
 
-        private float DrawTodo(float x, float y, float inner)
+        /// <summary>How many parts in a row, starting from the next one, storage covers.</summary>
+        private int PlaceableInARow()
         {
             var slots = Game.CastleOf(State).Slots;
-            var left = new List<(string id, int n)>();
-            foreach (var g in Enumerable.Range(0, slots.Length).Where(i => !State.Filled[i]).GroupBy(i => slots[i]))
-                left.Add((g.Key, g.Count()));
-            if (left.Count == 0) return y - 12;
-            int ready = Enumerable.Range(0, slots.Length).Count(i => !State.Filled[i] && State.Count(slots[i]) > 0);
-
-            const float ch = 40, gap = 8, padX = 16, padTop = 12;
-            float rowW = inner - 2 * padX;
-            var title = new GUIContent("ОСТАЛОСЬ ПОСТАВИТЬ");
-            var items = left.Select(l => new GUIContent(Game.Catalog.NameOf(l.id).ToLowerInvariant() + (l.n > 1 ? $" ×{l.n}" : ""))).ToList();
-            var sizes = items.Select(c => _chip.CalcSize(c).x).ToList();
-            int rows = FlowRows(sizes, rowW, gap);
-            float hgt = padTop + 30 + rows * (ch + gap) + (ready > 0 ? 64 : 0) + 8;
-            var card = new Rect(x, y, inner, hgt);
-            GUI.Box(card, GUIContent.none, _card);
-            GUI.Label(new Rect(x + padX, y + padTop, rowW, 26), title, _section);
-
-            float cx = 0, cy = y + padTop + 32;
-            for (int i = 0; i < items.Count; i++)
+            var used = new Dictionary<string, int>();
+            int n = 0;
+            for (int i = Game.NextSlot(State); i >= 0 && i < slots.Length; i++, n++)
             {
-                if (cx + sizes[i] > rowW && cx > 0) { cx = 0; cy += ch + gap; }
-                var r = new Rect(x + padX + cx, cy, Mathf.Min(sizes[i], rowW), ch);
-                bool have = State.Count(left[i].id) > 0;
-                if (GUI.Button(r, items[i], have ? _chipHave : _chip) && have) { string id = left[i].id; Later(() => PlacePart(id)); }
-                GameArt.DrawPart(new Rect(r.x + 6, r.y + 3, 34, 34), left[i].id, Game.Catalog.TierOf(left[i].id));
-                cx += sizes[i] + gap;
+                used.TryGetValue(slots[i], out int u);
+                if (State.Count(slots[i]) <= u) break;
+                used[slots[i]] = u + 1;
             }
-            if (ready > 0 && GUI.Button(new Rect(x + padX, card.yMax - 70, rowW, 58), $"Поставить всё со склада · {ready}", _green))
-                Later(() => PlaceAll());
+            return n;
+        }
+
+        private float DrawNext(float x, float y, float inner)
+        {
+            int next = Game.NextSlot(State);
+            if (next < 0) return y - 12;
+            var slots = Game.CastleOf(State).Slots;
+            string id = slots[next];
+            int tier = Game.Catalog.TierOf(id);
+            int nth = 0, total = 0;
+            for (int i = 0; i < slots.Length; i++)
+                if (slots[i] == id) { total++; if (i <= next) nth++; }
+            int have = State.Count(id), row = PlaceableInARow();
+
+            const float padX = 18, hgt = 196;
+            var card = new Rect(x, y, inner, hgt);
+            GUI.Box(card, GUIContent.none, _nextCard);
+            GUI.Label(new Rect(x + padX, y + 12, 400, 30), "СЛЕДУЮЩАЯ ДЕТАЛЬ", _section);
+            var icon = new Rect(x + padX, y + 52, 124, 124);
+            GUI.Box(icon, GUIContent.none, have > 0 ? _tilePicked : _tile);
+            GameArt.DrawPart(new Rect(icon.x + 12, icon.y + 12, 100, 100), id, tier);
+
+            float tx = icon.xMax + 18, btnW = 210, textW = card.xMax - padX - tx - (have > 0 ? btnW + 12 : 0);
+            GUI.Label(new Rect(tx, y + 56, textW, 44), Game.Catalog.NameOf(id), _bigName);
+            string count = total > 1 ? $"{nth}-я из {total}" : "";
+            string sub = have > 0 ? (count.Length > 0 ? count + " · " : "") + $"на складе {have}"
+                : (count.Length > 0 ? count + ". " : "") + "Нет на складе. " + WhereFrom(id);
+            GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), sub, _sub);
+
+            if (have > 0)
+            {
+                var b = new Rect(card.xMax - padX - btnW, y + 58, btnW, row > 1 ? 66 : 80);
+                if (row <= 1) b.y += 10;
+                if (GUI.Button(b, "Поставить", _green)) Later(() => PlacePart(id));
+                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), $"Подряд · {row}", _wood)) Later(() => PlaceAll());
+            }
             return card.yMax;
         }
 
-        private static int FlowRows(List<float> sizes, float width, float gap)
+        // ---------- building order ----------
+
+        private float DrawOrder(float x, float y, float inner)
         {
-            float x = 0;
-            int rows = sizes.Count > 0 ? 1 : 0;
-            foreach (float s in sizes)
+            var slots = Game.CastleOf(State).Slots;
+            int next = Game.NextSlot(State);
+            const float padX = 14, cell = 42, gap = 4;
+            float rowW = inner - 2 * padX;
+            int perRow = Mathf.Max(1, Mathf.FloorToInt((rowW + gap) / (cell + gap)));
+            int rows = (slots.Length + perRow - 1) / perRow;
+            var card = new Rect(x, y, inner, 52 + rows * (cell + gap) + 8);
+            GUI.Box(card, GUIContent.none, _card);
+            GUI.Label(new Rect(x + padX, y + 10, 400, 30), "ПОРЯДОК СБОРКИ", _section);
+            // Centre the rows of cells in the card.
+            float x0 = x + (inner - (Mathf.Min(perRow, slots.Length) * (cell + gap) - gap)) / 2;
+            for (int i = 0; i < slots.Length; i++)
             {
-                if (x + s > width && x > 0) { x = 0; rows++; }
-                x += s + gap;
+                var c = new Rect(x0 + (i % perRow) * (cell + gap), y + 48 + (i / perRow) * (cell + gap), cell, cell);
+                bool done = State.Filled[i], isNext = i == next;
+                GUI.DrawTexture(c, done ? UiArt.Round(HaveFill, GreenEdge, 10, 2)
+                    : isNext ? UiArt.Round(new Color32(0xff, 0xec, 0xb0, 0xff), Gold, 10, 4)
+                    : UiArt.Round(new Color32(0xf2, 0xe9, 0xda, 0xff), CardEdge, 10, 2));
+                var old = GUI.color;
+                if (!done && !isNext) GUI.color = new Color(1, 1, 1, 0.4f);
+                GameArt.DrawPart(new Rect(c.x + 5, c.y + 5, cell - 10, cell - 10), slots[i], Game.Catalog.TierOf(slots[i]));
+                GUI.color = old;
             }
-            return rows;
+            return card.yMax;
         }
 
         // ---------- chests ----------
