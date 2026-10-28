@@ -16,6 +16,8 @@ namespace Game.View
         public Texture2D[] Layers { get; private set; }
         /// <summary>Bushes and such that stand on the site from the start (c&lt;N&gt;_decor.png). May be null.</summary>
         public Texture2D Decor { get; private set; }
+        /// <summary>Slot the bushes are drawn under (the porch stands in front of them); Layers.Length when none.</summary>
+        private int _decorBefore;
         /// <summary>Outline of each slot, drawn while the slot is empty. Entries may be null.</summary>
         public Texture2D[] Lines { get; private set; }
 
@@ -33,6 +35,8 @@ namespace Game.View
                 Lines = new Texture2D[castle.Slots.Length],
             };
             if (art.Base == null) return null;
+            int porch = System.Array.IndexOf(castle.Slots, "porch");
+            art._decorBefore = porch >= 0 ? porch : castle.Slots.Length;
             for (int i = 0; i < castle.Slots.Length; i++)
             {
                 art.Layers[i] = Resources.Load<Texture2D>($"{dir}{prefix}_{i:00}_{castle.Slots[i]}");
@@ -72,6 +76,7 @@ namespace Game.View
             var old = GUI.color;
             for (int i = 0; i < Layers.Length; i++)
             {
+                if (i == _decorBefore && Decor != null) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
                 if (!filled[i]) continue;
                 if (i == justPlaced && dropT < 1)
                 {
@@ -82,7 +87,7 @@ namespace Game.View
                 }
                 else GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
             }
-            if (Decor != null) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
+            if (_decorBefore >= Layers.Length && Decor != null) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
             if (next < 0 || next >= Layers.Length) return;
             var line = Lines[next];
             if (line == null)
