@@ -50,6 +50,8 @@ namespace Game.View
             {
                 var go = new GameObject("Sfx") { hideFlags = HideFlags.HideInHierarchy };
                 if (Application.isPlaying) Object.DontDestroyOnLoad(go);
+                // Nothing is heard without a listener, and the scene camera has none.
+                if (Object.FindAnyObjectByType<AudioListener>() == null) go.AddComponent<AudioListener>();
                 _pool = new AudioSource[6];
                 for (int i = 0; i < _pool.Length; i++)
                 {
