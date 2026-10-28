@@ -25,6 +25,14 @@ namespace Game.View
         public static Texture2D Part(string id) => Load("Parts/part_" + id);
 
         public static Texture2D Sparkle => Load("Fx/fx_sparkle");
+        /// <summary>Bright golden four-point star without an outline (tools/art/make_reward_ui.py), like the rest below.</summary>
+        public static Texture2D Glint => Load("Fx/fx_glint");
+        public static Texture2D Rays => Load("Fx/fx_rays");
+        public static Texture2D Plate => Load("Fx/fx_plate");
+        public static Texture2D NightPanel => Load("UI/ui_panel_night");
+        public static Texture2D Ribbon => Load("UI/ui_ribbon");
+        public static Texture2D GoldButton => Load("UI/ui_btn_gold");
+        public static Texture2D GoldButtonDown => Load("UI/ui_btn_gold_down");
         public static Texture2D MineBackground => Load("UI/bg_mine");
         public static Texture2D BuildBackground => Load("UI/bg_build");
 

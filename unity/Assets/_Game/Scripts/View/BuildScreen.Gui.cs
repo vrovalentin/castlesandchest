@@ -30,7 +30,8 @@ namespace Game.View
         private static readonly Color Red = new Color32(0xd9, 0x53, 0x4f, 0xff);
 
         private GUIStyle _pill, _card, _section, _text, _nextCard, _bigName, _sub, _sheet, _tile, _tilePicked, _count, _need,
-            _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible, _roundBtn;
+            _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible, _roundBtn,
+            _nightPanel, _gold, _ribbonTitle, _onNight, _badge;
 
         private Vector2 _scroll;
         private float _contentH = 1500;
@@ -85,7 +86,37 @@ namespace Game.View
             _invisible = new GUIStyle();
             _roundBtn = UiArt.Style(UiArt.Round(Cream, CardEdge, 22, 3), 22, 1, Ink);
             _roundBtn.active.background = UiArt.Round(HaveFill, CardEdge, 22, 3);
+            // The chest window: night sky in a wooden frame, a red ribbon title and a gold button.
+            _nightPanel = GameArt.NightPanel != null ? UiArt.Style(GameArt.NightPanel, 56, 1, Color.white) : _panel;
+            _gold = GameArt.GoldButton != null ? UiArt.Style(GameArt.GoldButton, 40, 40, Color.white) : _green;
+            if (GameArt.GoldButton != null)
+            {
+                _gold.border = new RectOffset(40, 40, 40, 44);
+                _gold.active.background = GameArt.GoldButtonDown;
+                _gold.active.textColor = Color.white;
+            }
+            _gold.fontStyle = FontStyle.Bold;
+            _ribbonTitle = new GUIStyle { fontSize = 36, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            _ribbonTitle.normal.textColor = new Color32(0xff, 0xf8, 0xe6, 0xff);
+            _onNight = new GUIStyle(_ribbonTitle) { fontSize = 22, alignment = TextAnchor.UpperCenter, wordWrap = true };
+            _badge = UiArt.Style(UiArt.Disc(Red, new Color32(0xff, 0xf8, 0xe6, 0xff), 3), 32, 20, Color.white);
+            _badge.fontStyle = FontStyle.Bold;
+            _badge.padding = new RectOffset(0, 0, 0, 2);
             UiArt.UseGameFont(this);
+        }
+
+        /// <summary>Text with a dark outline, so it reads on any background.</summary>
+        private static void Outlined(Rect r, string text, GUIStyle style, Color outline, float width = 2.5f)
+        {
+            var main = style.normal.textColor;
+            style.normal.textColor = outline;
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI / 4;
+                GUI.Label(new Rect(r.x + Mathf.Cos(a) * width, r.y + Mathf.Sin(a) * width, r.width, r.height), text, style);
+            }
+            style.normal.textColor = main;
+            GUI.Label(r, text, style);
         }
 
         private bool _pressInView, _dragging;
@@ -550,27 +581,61 @@ namespace Game.View
             }
         }
 
+        private static readonly Color NightInk = new Color32(0x1e, 0x26, 0x4e, 0xff);
+        private static readonly Color RibbonInk = new Color32(0x78, 0x1e, 0x14, 0xff);
+        private static readonly Color ButtonInk = new Color32(0x96, 0x4c, 0x06, 0xff);
+
+        // Where the open chest's glints twinkle, relative to the chest, and how big each one gets.
+        private static readonly Vector2[] GlintAt =
+        {
+            new Vector2(-0.40f, -0.28f), new Vector2(0.36f, -0.36f), new Vector2(0.44f, 0.10f), new Vector2(-0.44f, 0.12f),
+            new Vector2(0.02f, -0.46f), new Vector2(-0.20f, -0.42f), new Vector2(0.24f, 0.20f), new Vector2(-0.30f, 0.26f),
+        };
+        private static readonly float[] GlintSize = { 40, 30, 36, 26, 44, 24, 28, 32 };
+
         private void DrawRewardPanel(float w, float h)
         {
             var rw = _reward;
             Dim(w, h);
             var groups = rw.Parts.GroupBy(x => x).ToList();
             const int perRow = 3;
-            float tile = 150, gap = 14;
+            float tile = 150, gap = 14, rowH = tile + 50;
             int rows = Mathf.Min(2, (groups.Count + perRow - 1) / perRow);
             bool more = groups.Count > perRow * 2;
-            float ph = 410 + rows * (tile + 70) + (more ? 44 : 0) + 130;
+            const float partsTop = 450;
+            float ph = partsTop + rows * rowH + (more ? 44 : 0) + 150;
             float pw = Mathf.Min(620, w - 60);
-            var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
-            GUI.Box(r, GUIContent.none, _panel);
+            var r = new Rect((w - pw) / 2, (h - ph) / 2 + 16, pw, ph);
+            GUI.Box(r, GUIContent.none, _nightPanel);
             float t = Time.time - rw.Since;
             const float shakeEnd = 0.45f, popEnd = 0.65f;
-            GUI.Label(new Rect(r.x, r.y + 24, r.width, 50),
-                t < shakeEnd ? (rw.Chests > 1 ? $"Открываем {rw.Chests} сундука…" : "Открываем…")
-                : rw.Chests > 1 ? $"Открыто сундуков: {rw.Chests}" : "Сундук открыт!", _panelTitle);
+            var chestCenter = new Vector2(r.center.x, r.y + 260);
 
-            // 1) the closed chest shakes, 2) it pops open with a burst of sparkles, 3) the parts fly out to their tiles.
-            var chestCenter = new Vector2(r.center.x, r.y + 240);
+            // Golden rays turning slowly behind the chest; they swell in as the lid opens.
+            if (GameArt.Rays != null)
+            {
+                float k = t < shakeEnd ? 0.35f : Mathf.Lerp(0.35f, 1, Mathf.Clamp01((t - shakeEnd) / 0.3f));
+                float rs = Mathf.Min(r.width - 40, 580) * (0.75f + 0.25f * k);
+                var m = GUI.matrix;
+                GUIUtility.RotateAroundPivot(t * 8f, chestCenter);
+                GUI.color = new Color(1, 1, 1, k);
+                GUI.DrawTexture(new Rect(chestCenter.x - rs / 2, chestCenter.y - rs / 2, rs, rs), GameArt.Rays);
+                GUI.color = Color.white;
+                GUI.matrix = m;
+            }
+
+            // The title on a red ribbon over the top edge of the frame.
+            string title = t < shakeEnd ? (rw.Chests > 1 ? $"Открываем {rw.Chests} сундука…" : "Открываем…")
+                : rw.Chests > 1 ? $"Открыто сундуков: {rw.Chests}" : "Сундук открыт!";
+            var rib = new Rect(r.center.x - 256, r.y - 44, 512, 128);
+            if (GameArt.Ribbon != null)
+            {
+                GUI.DrawTexture(rib, GameArt.Ribbon);
+                Outlined(new Rect(rib.x + 44, rib.y + 14, rib.width - 88, 82), title, _ribbonTitle, RibbonInk);
+            }
+            else GUI.Label(new Rect(r.x, r.y + 24, r.width, 50), title, _panelTitle);
+
+            // 1) the closed chest shakes, 2) it pops open with a burst of glints, 3) the parts fly out to their stands.
             if (t < shakeEnd)
             {
                 float k = t / shakeEnd;
@@ -591,38 +656,36 @@ namespace Game.View
                 else GameArt.DrawChest(cr, new Chest(rw.Color, 0));
             }
             if (Event.current.type == EventType.Repaint && t >= shakeEnd && rw.Sounded == 0) { rw.Sounded = 1; Sfx.Play("open"); }
-            var sp = GameArt.Sparkle;
+            var sp = GameArt.Glint != null ? GameArt.Glint : GameArt.Sparkle;
             if (sp != null && t >= shakeEnd)
             {
                 // A burst outward when the lid opens...
                 float bt = (t - shakeEnd) / 0.7f;
                 if (bt < 1)
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < 12; i++)
                     {
-                        float ang = i * Mathf.PI * 2 / 10 + 0.3f;
+                        float ang = i * Mathf.PI * 2 / 12 + 0.3f;
                         float dist = 60 + 220 * (1 - (1 - bt) * (1 - bt));
-                        float s = 54 * (1 - bt) + 14;
+                        float s = (i % 2 == 0 ? 46 : 32) * (1 - bt) + 12;
                         var c = chestCenter + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang) * 0.8f) * dist;
                         GUI.color = new Color(1, 1, 1, 1 - bt);
                         GUI.DrawTexture(new Rect(c.x - s / 2, c.y - s / 2, s, s), sp);
                     }
-                // ...then a few that keep twinkling around the open chest.
-                Vector2[] at = { new Vector2(-0.42f, -0.30f), new Vector2(0.40f, -0.38f), new Vector2(0.47f, 0.12f), new Vector2(-0.48f, 0.15f), new Vector2(0.02f, -0.50f) };
-                float fadeIn = Mathf.Clamp01((t - popEnd) / 0.4f);
-                for (int i = 0; i < at.Length; i++)
+                // ...then small glints that keep twinkling around the open chest, quick and out of step.
+                float fadeIn = Mathf.Clamp01((t - popEnd) / 0.3f);
+                for (int i = 0; i < GlintAt.Length; i++)
                 {
-                    float k = 0.5f + 0.5f * Mathf.Sin(t * 4f + i * 1.7f);
-                    float s = 36 + 26 * k;
-                    var c = new Vector2(r.center.x + at[i].x * 300, r.y + 240 + at[i].y * 300);
-                    GUI.color = new Color(1, 1, 1, (0.35f + 0.65f * k) * fadeIn);
+                    float k = Mathf.Pow(Mathf.Max(0, Mathf.Sin(t * (8f + i * 0.7f) + i * 1.9f)), 2);
+                    float s = GlintSize[i] * (0.35f + 0.65f * k);
+                    var c = chestCenter + GlintAt[i] * 300;
+                    GUI.color = new Color(1, 1, 1, (0.25f + 0.75f * k) * fadeIn);
                     GUI.DrawTexture(new Rect(c.x - s / 2, c.y - s / 2, s, s), sp);
                 }
                 GUI.color = Color.white;
             }
 
-            // What fell out: each part flies from the chest to its tile, one after another.
-            float y0 = r.y + 410;
-            var name = new GUIStyle(_name) { fontSize = 20 };
+            // What fell out: each part flies from the chest onto its glowing stand, one after another.
+            float y0 = r.y + partsTop;
             _rewardCells.Clear();
             const float flyDur = 0.38f, stagger = 0.13f;
             float lastLand = popEnd;
@@ -631,19 +694,28 @@ namespace Game.View
                 int row = i / perRow, col = i % perRow;
                 int inRow = Mathf.Min(perRow, groups.Count - row * perRow);
                 float x = r.center.x - (inRow * tile + (inRow - 1) * gap) / 2 + col * (tile + gap);
-                var cell = new Rect(x, y0 + row * (tile + 70), tile, tile);
+                var cell = new Rect(x, y0 + row * rowH, tile, tile);
                 string id = groups[i].Key;
-                var iconRect = new Rect(cell.x + 14, cell.y + 10, tile - 28, tile - 28);
+                var iconRect = new Rect(cell.x + 14, cell.y - 6, tile - 28, tile - 28);
                 _rewardCells.Add((id, iconRect));
                 float ft = (t - popEnd - i * stagger) / flyDur;
                 lastLand = popEnd + i * stagger + flyDur;
                 if (ft <= 0) continue;
                 float land = Mathf.Clamp01(ft);
-                var old = GUI.color;
-                GUI.color = new Color(1, 1, 1, Mathf.Clamp01(ft * 3));
-                GUI.Box(Scale(cell, 0.6f + 0.4f * Mathf.Min(1, ft * 1.5f)), GUIContent.none, _tile);
-                GUI.color = old;
-                // the icon arcs up out of the chest and drops onto its tile with a small overshoot
+                var plate = new Rect(cell.center.x - tile * 0.5f, iconRect.yMax - 24, tile, 38);
+                if (GameArt.Plate != null)
+                {
+                    GUI.color = new Color(1, 1, 1, Mathf.Clamp01(ft * 3));
+                    GUI.DrawTexture(Scale(plate, 0.6f + 0.4f * Mathf.Min(1, ft * 1.5f)), GameArt.Plate);
+                    GUI.color = Color.white;
+                }
+                else
+                {
+                    GUI.color = new Color(1, 1, 1, Mathf.Clamp01(ft * 3));
+                    GUI.Box(Scale(cell, 0.6f + 0.4f * Mathf.Min(1, ft * 1.5f)), GUIContent.none, _tile);
+                    GUI.color = Color.white;
+                }
+                // the icon arcs up out of the chest and drops onto its stand with a small overshoot
                 var from = chestCenter;
                 var to = iconRect.center;
                 var mid = new Vector2((from.x + to.x) / 2, Mathf.Min(from.y, to.y) - 120);
@@ -655,17 +727,23 @@ namespace Game.View
                 if (land >= 1)
                 {
                     if (Event.current.type == EventType.Repaint && rw.Sounded < 2 + i) { rw.Sounded = 2 + i; Sfx.Play("tick", 0.8f, 1f + 0.06f * i); }
-                    if (groups[i].Count() > 1) GUI.Label(new Rect(cell.xMax - 56, cell.yMax - 40, 50, 34), "×" + groups[i].Count(), _count);
-                    GUI.Label(new Rect(cell.x - 10, cell.yMax + 4, tile + 20, 60), Game.Catalog.NameOf(id), name);
+                    if (groups[i].Count() > 1) GUI.Label(new Rect(cell.xMax - 50, cell.y - 10, 46, 46), "×" + groups[i].Count(), _badge);
+                    Outlined(new Rect(cell.x - 10, plate.yMax + 2, tile + 20, 60), Game.Catalog.NameOf(id), _onNight, NightInk, 2f);
                 }
             }
             if (more && t > lastLand)
-                GUI.Label(new Rect(r.x, y0 + 2 * (tile + 70), r.width, 40), "и ещё: " + Describe(rw.Parts.Where(p => groups.Skip(perRow * 2).Any(g => g.Key == p)).ToList()), new GUIStyle(name) { alignment = TextAnchor.MiddleCenter });
+                Outlined(new Rect(r.x + 30, y0 + 2 * rowH, r.width - 60, 40),
+                    "и ещё: " + Describe(rw.Parts.Where(p => groups.Skip(perRow * 2).Any(g => g.Key == p)).ToList()), _onNight, NightInk, 2f);
 
             // «Забрать» shows up once everything has landed; a tap on the window before that skips the show.
             if (t > lastLand)
             {
-                if (GUI.Button(new Rect(r.x + 40, r.yMax - 116, r.width - 80, 84), "Забрать", _green)) Later(CloseReward);
+                var b = new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96);
+                bool down = GUIUtility.hotControl != 0 && b.Contains(Event.current.mousePosition);
+                if (GUI.Button(b, GUIContent.none, _gold)) Later(CloseReward);
+                var face = new Rect(b.x, b.y + (down ? 10 : 0), b.width, b.height - 10);
+                var label = new GUIStyle(_ribbonTitle) { fontSize = 40 };
+                Outlined(face, "Забрать", label, ButtonInk, 3f);
             }
             else if (GUI.Button(r, GUIContent.none, _invisible)) rw.Since = Time.time - lastLand - 0.01f;
         }
