@@ -127,6 +127,14 @@ namespace Game.View.Tests
             Assert.IsNotNull(GameArt.MineBackground);
             Assert.IsNotNull(GameArt.BuildBackground);
             Assert.IsNotNull(GameArt.Sparkle);
+            // The chest window's art.
+            Assert.IsNotNull(GameArt.Glint);
+            Assert.IsNotNull(GameArt.Rays);
+            Assert.IsNotNull(GameArt.Plate);
+            Assert.IsNotNull(GameArt.NightPanel);
+            Assert.IsNotNull(GameArt.Ribbon);
+            Assert.IsNotNull(GameArt.GoldButton);
+            Assert.IsNotNull(GameArt.GoldButtonDown);
             // The browser has no system fonts: the UI font must ship with the game and cover Russian.
             Assert.IsNotNull(UiArt.TextFont);
             Assert.IsNotNull(UiArt.BoldFont);
