@@ -168,6 +168,7 @@ slot('princess', princess, 'full')
 Cu, Fu = C.astype(np.uint8), F.astype(np.uint8)
 def rgba(img, mask, alpha):
     o = np.zeros((H, W, 4), np.uint8); o[..., :3] = img; o[..., 3] = (np.where(mask, alpha, 0) * 255).astype(np.uint8)
+    o[o[..., 3] == 0, :3] = 0   # clear colour under full transparency: much smaller files
     return o
 GRAY = 0
 for f in os.listdir(out):

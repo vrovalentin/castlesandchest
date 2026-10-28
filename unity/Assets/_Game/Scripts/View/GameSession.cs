@@ -27,8 +27,25 @@ namespace Game.View
             if (persistent) s.State = SaveStore.Load(s.Game.Catalog);
             if (s.State == null) s.State = s.Game.NewGame();
             s.Game.DailyGrant(s.State, Today);
+            if (persistent) s.TestStart(Application.absoluteURL);
             s.Save();
             return s;
+        }
+
+        /// <summary>
+        /// For trying castles out in the browser: «?castle=2» opens a new game on that castle,
+        /// and «&amp;parts» also puts every part it needs in storage. Without them nothing changes.
+        /// </summary>
+        public void TestStart(string url)
+        {
+            if (string.IsNullOrEmpty(url)) return;
+            var m = System.Text.RegularExpressions.Regex.Match(url, @"[?&]castle=(\d+)");
+            if (!m.Success || !int.TryParse(m.Groups[1].Value, out int n)) return;
+            State = Game.NewGame();
+            Game.DailyGrant(State, Today);
+            for (int i = 1; i < n && State.CastleIndex < Game.Catalog.Castles.Count - 1; i++) Game.NextCastle(State);
+            if (System.Text.RegularExpressions.Regex.IsMatch(url, @"[?&]parts\b"))
+                foreach (var id in Game.CastleOf(State).Slots) State.Add(id, 1);
         }
 
         public void Save()

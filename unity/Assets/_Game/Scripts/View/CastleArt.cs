@@ -41,8 +41,8 @@ namespace Game.View
             var hit = Resources.Load<TextAsset>(dir + prefix + "_hit");
             if (hit != null)
             {
-                int size = Mathf.RoundToInt(Mathf.Sqrt(hit.bytes.Length / 3f));
-                if (size * size * 3 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; }
+                int size = Mathf.RoundToInt(Mathf.Sqrt(hit.bytes.Length / 8f));
+                if (size * size * 8 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; }
             }
             int porch = System.Array.IndexOf(castle.Slots, "porch");
             art._decorBefore = porch >= 0 ? porch : castle.Slots.Length;
@@ -85,14 +85,14 @@ namespace Game.View
             if (!pic.Contains(point)) return -1;
             int x = Mathf.Clamp((int)((point.x - pic.x) / side * _hitSize), 0, _hitSize - 1);
             int y = Mathf.Clamp((int)((point.y - pic.y) / side * _hitSize), 0, _hitSize - 1);
-            int k = (y * _hitSize + x) * 3;
-            int mask = _hit[k] | _hit[k + 1] << 8 | _hit[k + 2] << 16;
+            ulong mask = System.BitConverter.ToUInt64(_hit, (y * _hitSize + x) * 8);
             if (mask == 0) return -1;
-            if (next >= 0 && (mask & 1 << next) != 0) return next;
+            bool Has(int i) => i < 64 && (mask & 1UL << i) != 0;
+            if (next >= 0 && Has(next)) return next;
             for (int i = filled.Length - 1; i >= 0; i--)
-                if (filled[i] && (mask & 1 << i) != 0) return i;
+                if (filled[i] && Has(i)) return i;
             for (int i = 0; i < filled.Length; i++)
-                if ((mask & 1 << i) != 0) return i;
+                if (Has(i)) return i;
             return -1;
         }
 

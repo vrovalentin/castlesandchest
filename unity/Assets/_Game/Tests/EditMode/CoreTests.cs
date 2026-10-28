@@ -54,7 +54,7 @@ namespace Game.Core.Tests
         {
             CollectionAssert.IsEmpty(_cat.Validate());
             Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
-            Assert.AreEqual(36, _cat.Castles[1].Slots.Length);
+            Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
         }
 
         [Test]
@@ -248,7 +248,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Count("window"));
             Assert.AreEqual(1, s.Count("dragon"));
             Assert.AreEqual(0, s.Chests.Count);
-            Assert.AreEqual(36, s.Filled.Length);
+            Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
             Assert.IsTrue(_game.IsLastCastle(s));
         }

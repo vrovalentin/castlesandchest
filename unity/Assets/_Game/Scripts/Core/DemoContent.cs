@@ -39,12 +39,17 @@ namespace Game.Core
                     "porch", "spire", "lantern",
                 }, AllTiers());
 
+            // In building order, like the layers in Art/Resources/Castles/castle_2 (tools/art/cut_castle_2.py).
             var slots2 = new List<string>();
-            slots2.AddRange(Repeat("clay", 10));
-            slots2.AddRange(Repeat("wall", 8));
-            slots2.AddRange(Repeat("floor", 3));
-            slots2.AddRange(Repeat("window", 6));
-            slots2.AddRange(new[] { "porch", "porch", "roof", "roof", "spire", "spire", "lantern", "princess", "knight" });
+            slots2.AddRange(Repeat("clay", 15));                        // grey foundation
+            slots2.AddRange(Repeat("wall", 5));                         // lower walls of the five towers
+            slots2.AddRange(new[] { "door", "window", "window" });     // gate, lower windows
+            slots2.AddRange(Repeat("floor", 3));                        // battlements and the balcony
+            slots2.AddRange(Repeat("wall", 3));                         // upper walls
+            slots2.AddRange(Repeat("window", 3));                       // upper windows
+            slots2.AddRange(Repeat("roof", 5));
+            slots2.AddRange(Repeat("spire", 5));
+            slots2.AddRange(new[] { "porch", "porch", "lantern", "lantern", "knight", "princess" });
             var castle2 = new CastleInfo("castle_2", "Замок с башнями", 30, 0.25, 0.2, slots2.ToArray(), AllTiers());
 
             return new Catalog(new Rules(), Parts, new[] { castle1, castle2 });
