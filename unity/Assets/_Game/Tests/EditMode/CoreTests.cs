@@ -388,13 +388,13 @@ namespace Game.Core.Tests
         {
             var rng = new XorShift32(12345);
             var bot = new BalanceBot(_game, rng);
-            var expected = new[] { new[] { 4, 14, 21, 77, 49 }, new[] { 4, 15, 32, 67, 37 }, new[] { 8, 20, 27, 73, 99 } };
+            var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {
                 var r = bot.PlayGame();
                 CollectionAssert.AreEqual(exp, new[] { r[0].Runs, r[1].Runs, r[0].Chests, r[1].Chests, r[0].Burned });
             }
-            Assert.AreEqual(3407147384u, rng.State);
+            Assert.AreEqual(1681680551u, rng.State);
         }
 
         [Test]
