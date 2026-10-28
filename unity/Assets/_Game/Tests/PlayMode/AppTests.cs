@@ -69,6 +69,28 @@ namespace Game.View.Tests
         }
 
         [UnityTest]
+        public IEnumerator TappingTheCastleDrawingFindsItsParts()
+        {
+            var s = _app.Session.State;
+            var art = CastleArt.Load(_app.Session.Game.CastleOf(s));
+            Assert.IsNotNull(art);
+            var r = new Rect(0, 0, 1000, 1000);
+            // The foundation at the bottom left, a window in the middle, the spire on top, nothing in the corner.
+            Assert.AreEqual(0, art.SlotAt(r, new Vector2(338, 904), s.Filled, 0));
+            Assert.AreEqual(12, art.SlotAt(r, new Vector2(499, 447), s.Filled, 0));
+            Assert.AreEqual(15, art.SlotAt(r, new Vector2(500, 92), s.Filled, 0));
+            Assert.AreEqual(-1, art.SlotAt(r, new Vector2(20, 20), s.Filled, 0));
+
+            // A tap places the next part when storage has it; a later part or a built one stays as is.
+            s.Inventory["clay"] = 1;
+            Assert.IsFalse(_app.Build.TapSlot(12));
+            Assert.IsTrue(_app.Build.TapSlot(0));
+            Assert.IsTrue(s.Filled[0]);
+            Assert.IsFalse(_app.Build.TapSlot(0));
+            yield break;
+        }
+
+        [UnityTest]
         public IEnumerator FinishingTheCastleMovesToTheNext()
         {
             var s = _app.Session.State;
