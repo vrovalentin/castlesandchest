@@ -96,6 +96,10 @@ for m in win.values():
 
 # foundation: the stone band at the bottom; under the gate it starts at the steps
 fy = np.where((X > 380) & (X < 646), 918, 872)
+# drop stray specks (a few pixels in the picture's corners) so no part reaches into them
+_lab, _n = ndi.label(rest)
+_sz = ndi.sum(rest, _lab, range(1, _n + 1))
+rest &= np.isin(_lab, 1 + np.where(_sz >= 10)[0])
 found = rest & (Y >= fy)
 # battlements of the outer towers and the keep's balcony
 batt = {0: rest & (T == 0) & (Y >= 530) & (Y < 652), 4: rest & (T == 4) & (Y >= 530) & (Y < 652),
