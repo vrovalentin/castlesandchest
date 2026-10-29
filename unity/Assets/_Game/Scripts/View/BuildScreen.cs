@@ -142,6 +142,7 @@ namespace Game.View
         public void StartOver()
         {
             _s.StartOver();
+            Hints.Reset();
             _askStartOver = false;
             _donePanel = false;
             _reward = null;

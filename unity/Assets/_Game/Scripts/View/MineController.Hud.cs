@@ -110,6 +110,26 @@ namespace Game.View
             _button2.fontStyle = FontStyle.Bold;
             _button2.active.background = UiArt.Round(Frame, Frame, 20, 4);
             _button2.active.textColor = Cream;
+            // Windows in the chest window's look when its art is there: night sky, ribbon title, gold and wood buttons.
+            if (GameArt.NightPanel != null)
+            {
+                _panel = UiArt.Style(GameArt.NightPanel, 56, 1, Color.white);
+                _panelTitle.normal.textColor = new Color32(0xff, 0xf8, 0xe6, 0xff);
+                _panelBody.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
+            }
+            if (GameArt.GoldButton != null)
+            {
+                _button = UiArt.Style(GameArt.GoldButton, 40, 28, new Color32(0x5a, 0x2e, 0x04, 0xff));
+                _button.border = new RectOffset(40, 40, 40, 44);
+                _button.padding = new RectOffset(16, 16, 4, 14);
+                _button.fontStyle = FontStyle.Bold;
+                _button.active.background = GameArt.GoldButtonDown;
+                _button.active.textColor = new Color32(0x5a, 0x2e, 0x04, 0xff);
+                _button2 = UiArt.Style(UiArt.Round(new Color32(0xa8, 0x70, 0x3f, 0xff), new Color32(0x6b, 0x44, 0x23, 0xff), 20, 4), 20, 26, Cream);
+                _button2.fontStyle = FontStyle.Bold;
+                _button2.active.background = UiArt.Round(new Color32(0x6b, 0x44, 0x23, 0xff), new Color32(0x6b, 0x44, 0x23, 0xff), 20, 4);
+                _button2.active.textColor = Cream;
+            }
             UiArt.UseGameFont(this);
         }
 
@@ -123,6 +143,9 @@ namespace Game.View
             var L = Layout();
 
             var run = State.Run;
+            if (run != null && _mode == Mode.Play && !Busy)
+                Hints.Want("board", new Rect(L.Board.x + 20, L.Board.center.y - 150, L.Board.width - 40, 300),
+                    "Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!");
             if (run != null)
             {
                 GUI.enabled = !Busy && _mode == Mode.Play;
@@ -143,6 +166,7 @@ namespace Game.View
             {
                 if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(76))) _toBuild();
             });
+            Hints.Draw();
         }
 
         // ---------- top bar ----------
@@ -363,8 +387,21 @@ namespace Game.View
             float pw = Mathf.Min(600, w - 80);
             var r = new Rect((w - pw) / 2, h / 2 - 350, pw, 700);
             GUI.Box(r, GUIContent.none, _panel);
-            GUILayout.BeginArea(new Rect(r.x + 36, r.y + 36, r.width - 72, r.height - 72));
-            GUILayout.Label(title, _panelTitle);
+            bool ribbon = GameArt.Ribbon != null;
+            if (ribbon)
+            {
+                var rib = new Rect(r.center.x - 256, r.y - 44, 512, 128);
+                GUI.DrawTexture(rib, GameArt.Ribbon);
+                var t = new Rect(rib.x + 44, rib.y + 14, rib.width - 88, 82);
+                var col = _panelTitle.normal.textColor;
+                _panelTitle.normal.textColor = new Color32(0x78, 0x1e, 0x14, 0xff);
+                for (int i = 0; i < 8; i++)
+                    GUI.Label(new Rect(t.x + Mathf.Cos(i * Mathf.PI / 4) * 2.5f, t.y + Mathf.Sin(i * Mathf.PI / 4) * 2.5f, t.width, t.height), title, _panelTitle);
+                _panelTitle.normal.textColor = col;
+                GUI.Label(t, title, _panelTitle);
+            }
+            GUILayout.BeginArea(new Rect(r.x + 40, r.y + (ribbon ? 100 : 36), r.width - 80, r.height - (ribbon ? 136 : 72)));
+            if (!ribbon) GUILayout.Label(title, _panelTitle);
             GUILayout.Space(20);
             GUILayout.Label(text, _panelBody);
             GUILayout.FlexibleSpace();

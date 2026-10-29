@@ -140,7 +140,7 @@ namespace Game.View
         {
             if (_s == null) return;
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
-            if (Busy || _mode != Mode.Play || !Input.GetMouseButtonDown(0)) return;
+            if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
             if (GUIUtility.hotControl != 0) return;
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
             if (_view.TryGetCell(world, out int r, out int c)) TryTap(r, c);

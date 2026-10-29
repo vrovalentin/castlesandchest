@@ -105,20 +105,35 @@ namespace Game.View
             return s;
         }
 
-        public static Texture2D Back => Icon("back", 96, (u, v) => Min(
+        private static Texture2D Drawn(string name)
+        {
+            string key = "drawn:" + name;
+            if (!Cache.TryGetValue(key, out var t)) Cache[key] = t = Resources.Load<Texture2D>("UI/icon_" + name);
+            return t;
+        }
+
+        // Icons drawn by tools/art/make_icons.py; the shapes below stand in if one is missing.
+        public static Texture2D Back => Drawn("back") ?? BackShape;
+        public static Texture2D Restart => Drawn("restart") ?? RestartShapeIcon;
+        public static Texture2D Hammer => Drawn("hammer") ?? HammerShape;
+        public static Texture2D Broom => Drawn("broom") ?? BroomShape;
+        public static Texture2D SoundOn => Drawn("sound_on") ?? BackShape;
+        public static Texture2D SoundOff => Drawn("sound_off") ?? BackShape;
+
+        private static Texture2D BackShape => Icon("back", 96, (u, v) => Min(
             Seg(u, v, 0.24f, 0.5f, 0.78f, 0.5f),
             Seg(u, v, 0.24f, 0.5f, 0.47f, 0.73f),
             Seg(u, v, 0.24f, 0.5f, 0.47f, 0.27f)) - 0.055f, Ink);
 
-        public static Texture2D Restart => Icon("restart", 96, RestartShape, Ink);
+        private static Texture2D RestartShapeIcon => Icon("restart", 96, RestartShape, Ink);
 
-        public static Texture2D Hammer => Layered("hammer", 96, new (Func<float, float, float>, Color)[]
+        private static Texture2D HammerShape => Layered("hammer", 96, new (Func<float, float, float>, Color)[]
         {
             ((u, v) => Seg(u, v, 0.26f, 0.18f, 0.58f, 0.58f) - 0.06f, Wood),
             ((u, v) => Seg(u, v, 0.43f, 0.79f, 0.79f, 0.49f) - 0.12f, Steel),
         });
 
-        public static Texture2D Broom => Layered("broom", 96, new (Func<float, float, float>, Color)[]
+        private static Texture2D BroomShape => Layered("broom", 96, new (Func<float, float, float>, Color)[]
         {
             ((u, v) => Seg(u, v, 0.78f, 0.88f, 0.5f, 0.46f) - 0.045f, Wood),
             ((u, v) => Min(Seg(u, v, 0.48f, 0.44f, 0.16f, 0.2f), Seg(u, v, 0.48f, 0.44f, 0.27f, 0.12f),
