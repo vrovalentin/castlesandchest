@@ -31,7 +31,7 @@ namespace Game.View
 
         private GUIStyle _pill, _card, _section, _text, _nextCard, _bigName, _sub, _sheet, _tile, _tilePicked, _count, _need,
             _wood, _green, _mineBtn, _toast, _panel, _panelTitle, _panelBody, _name, _invisible, _roundBtn,
-            _nightPanel, _gold, _ribbonTitle, _onNight, _badge;
+            _nightPanel, _gold, _ribbonTitle, _onNight, _badge, _nightBody;
 
         private Vector2 _scroll;
         private float _contentH = 1500;
@@ -99,6 +99,8 @@ namespace Game.View
             _ribbonTitle = new GUIStyle { fontSize = 36, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             _ribbonTitle.normal.textColor = new Color32(0xff, 0xf8, 0xe6, 0xff);
             _onNight = new GUIStyle(_ribbonTitle) { fontSize = 22, alignment = TextAnchor.UpperCenter, wordWrap = true };
+            _nightBody = new GUIStyle { fontSize = 23, alignment = TextAnchor.UpperCenter, wordWrap = true };
+            _nightBody.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
             _badge = UiArt.Style(UiArt.Disc(Red, new Color32(0xff, 0xf8, 0xe6, 0xff), 3), 32, 20, Color.white);
             _badge.fontStyle = FontStyle.Bold;
             _badge.padding = new RectOffset(0, 0, 0, 2);
@@ -184,6 +186,7 @@ namespace Game.View
             // The scene: meadow, building site and the castle. It never scrolls.
             float sceneH = Mathf.Round(Mathf.Clamp(h * 0.54f, 600, 840));
             float groundY = sceneH - 74;
+            AskHint(new Rect(x0 + 40, sceneH * 0.3f, colW - 80, 300));
             var bg = GameArt.BuildBackground;
             // The meadow's horizon (about 60% down the picture) sits a little behind the building site.
             if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, sceneH + 40), bg, 0.6f, groundY - 150);
@@ -229,6 +232,22 @@ namespace Game.View
             if (_reward != null) DrawRewardPanel(w, h);
             else if (_donePanel) DrawDonePanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
+            Hints.Draw();
+        }
+
+        /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
+        private void AskHint(Rect bubble)
+        {
+            if (_reward != null || _donePanel || _askStartOver || _flying.Count > 0) return;
+            int next = Game.NextSlot(State);
+            if (next < 0) return;
+            bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
+            if (State.Chests.Count > 0 && !have)
+                Hints.Want("chests", bubble, "Замок строится из деталей, снизу вверх.\nДетали лежат в сундуках: открой их на карточке «Сундуки» ниже.");
+            else if (have)
+                Hints.Want("place", bubble, "Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».");
+            else if (State.Chests.Count == 0)
+                Hints.Want("mine", bubble, "Деталей не хватает.\nСундуки с деталями добывают в шахте: жми оранжевую кнопку внизу.");
         }
 
         // ---------- header ----------
@@ -239,8 +258,14 @@ namespace Game.View
             int done = State.Filled.Count(f => f), total = State.Filled.Length;
             const float progW = 150, btn = 64;
             if (GUI.Button(new Rect(r.x, r.y, btn, btn), GUIContent.none, _roundBtn)) Later(AskStartOver);
-            GUI.DrawTexture(new Rect(r.x + 13, r.y + 13, btn - 26, btn - 26), UiArt.Restart, ScaleMode.ScaleToFit);
-            GUI.Label(new Rect(r.x + btn + 10, r.y, r.width - progW - btn - 22, 64), $"Замок {State.CastleIndex + 1}: {castle.Name}", _pill);
+            GUI.DrawTexture(new Rect(r.x + 11, r.y + 11, btn - 22, btn - 22), UiArt.Restart, ScaleMode.ScaleToFit);
+            // Sound on/off; the click sounds only when turning it on.
+            var snd = new Rect(r.x + btn + 8, r.y, btn, btn);
+            if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
+            GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
+            float px = snd.xMax + 10;
+            var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
+            GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"Замок {State.CastleIndex + 1}: {castle.Name}", title);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
             GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#8a5a34>{done}</color> из {total}", center);
 
@@ -540,20 +565,50 @@ namespace Game.View
             GUI.color = Color.white;
         }
 
+        /// <summary>The night-sky window with its title on a red ribbon, like the chest window.</summary>
+        private void NightWindow(Rect r, string title)
+        {
+            GUI.Box(r, GUIContent.none, _nightPanel);
+            if (GameArt.Ribbon == null) { GUI.Label(new Rect(r.x, r.y + 24, r.width, 50), title, _panelTitle); return; }
+            var rib = new Rect(r.center.x - 256, r.y - 44, 512, 128);
+            GUI.DrawTexture(rib, GameArt.Ribbon);
+            Outlined(new Rect(rib.x + 44, rib.y + 14, rib.width - 88, 82), title, _ribbonTitle, RibbonInk);
+        }
+
+        /// <summary>A chunky gold button with an outlined label that sinks when pressed.</summary>
+        private bool GoldButton(Rect b, string text, int fontSize = 38)
+        {
+            bool down = GUIUtility.hotControl != 0 && b.Contains(Event.current.mousePosition);
+            bool hit = GUI.Button(b, GUIContent.none, _gold);
+            var face = new Rect(b.x, b.y + (down ? 10 : 0), b.width, b.height - 10);
+            Outlined(face, text, new GUIStyle(_ribbonTitle) { fontSize = fontSize }, ButtonInk, 3f);
+            return hit;
+        }
+
+        private void DrawRays(Vector2 c, float size)
+        {
+            if (GameArt.Rays == null) return;
+            var m = GUI.matrix;
+            GUIUtility.RotateAroundPivot(Time.time * 8f, c);
+            GUI.DrawTexture(new Rect(c.x - size / 2, c.y - size / 2, size, size), GameArt.Rays);
+            GUI.matrix = m;
+        }
+
         private void DrawDonePanel(float w, float h)
         {
             Dim(w, h);
-            float pw = Mathf.Min(620, w - 60);
-            var r = new Rect((w - pw) / 2, h / 2 - 330, pw, 660);
-            GUI.Box(r, GUIContent.none, _panel);
-            GUILayout.BeginArea(new Rect(r.x + 36, r.y + 36, r.width - 72, r.height - 72));
             bool last = Game.IsLastCastle(State);
-            GUILayout.Label($"{Game.CastleOf(State).Name}: построено!", _panelTitle);
-            GUILayout.Space(12);
+            float pw = Mathf.Min(620, w - 60);
+            var r = new Rect((w - pw) / 2, h / 2 - 380, pw, 760);
+            NightWindow(r, "Построено!");
+            var pic = new Rect(r.center.x - 170, r.y + 70, 340, 340);
+            DrawRays(pic.center, 540);
             var full = Art?.Full;
-            if (full != null) GUILayout.Label(full, new GUIStyle { alignment = TextAnchor.MiddleCenter }, GUILayout.Height(220));
-            GUILayout.Space(12);
-            GUILayout.Label($"Забегов на этот замок: {State.Runs}." + (last ? " Это последний замок демоверсии." : ""), _panelBody);
+            if (full != null) GUI.DrawTexture(pic, full, ScaleMode.ScaleToFit);
+            float y = pic.yMax + 6;
+            Outlined(new Rect(r.x + 30, y, r.width - 60, 44), Game.CastleOf(State).Name, new GUIStyle(_ribbonTitle) { fontSize = 30 }, NightInk, 2.5f);
+            y += 52;
+            string text = $"Забегов на этот замок: {State.Runs}." + (last ? " Это последний замок демоверсии." : "");
             if (!last)
             {
                 var bp = Game.PreviewBurn(State);
@@ -561,26 +616,24 @@ namespace Game.View
                 if (bp.Parts > 0) lost.Add($"деталей: {bp.Parts}");
                 if (bp.Chests > 0) lost.Add($"закрытых сундуков: {bp.Chests}");
                 string kept = string.Join(", ", bp.Kept.Select(k => Game.Catalog.NameOf(k.Id).ToLowerInvariant() + (k.N > 1 ? $" ×{k.N}" : "")));
-                GUILayout.Space(8);
-                GUILayout.Label((lost.Count > 0 ? $"При переходе сгорят {string.Join(", ", lost)}." : "Склад пуст, сгорать нечему.")
-                    + " " + (kept.Length > 0 ? $"Фигурки остаются: {kept}." : "С собой переходят только фигурки."), _panelBody);
+                text += "\n" + (lost.Count > 0 ? $"При переходе сгорят {string.Join(", ", lost)}." : "Склад пуст, сгорать нечему.")
+                    + " " + (kept.Length > 0 ? $"Фигурки остаются: {kept}." : "С собой переходят только фигурки.");
             }
-            GUILayout.FlexibleSpace();
-            if (GUILayout.Button(last ? "Пройти демо заново" : "Следующий замок", _green, GUILayout.Height(84))) Later(NextCastle);
-            GUILayout.EndArea();
+            GUI.Label(new Rect(r.x + 40, y, r.width - 80, r.yMax - 150 - y), text, _nightBody);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96), last ? "Пройти заново" : "Следующий замок", 34))
+                Later(NextCastle, click: false);
         }
 
         private void DrawStartOverPanel(float w, float h)
         {
             Dim(w, h);
             float pw = Mathf.Min(620, w - 60);
-            var r = new Rect((w - pw) / 2, h / 2 - 220, pw, 440);
-            GUI.Box(r, GUIContent.none, _panel);
-            GUI.Label(new Rect(r.x + 36, r.y + 36, r.width - 72, 60), "Начать сначала?", _panelTitle);
-            GUI.Label(new Rect(r.x + 36, r.y + 110, r.width - 72, 120),
-                "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _panelBody);
-            if (GUI.Button(new Rect(r.x + 40, r.yMax - 210, r.width - 80, 84), "Начать сначала", _mineBtn)) Later(StartOver);
-            if (GUI.Button(new Rect(r.x + 40, r.yMax - 112, r.width - 80, 76), "Отмена", _wood)) Later(() => _askStartOver = false);
+            var r = new Rect((w - pw) / 2, h / 2 - 230, pw, 460);
+            NightWindow(r, "Начать сначала?");
+            GUI.Label(new Rect(r.x + 44, r.y + 96, r.width - 88, 110),
+                "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _nightBody);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 228, r.width - 140, 96), "Начать сначала", 34)) Later(StartOver);
+            if (GUI.Button(new Rect(r.x + 110, r.yMax - 116, r.width - 220, 72), "Отмена", _wood)) Later(() => _askStartOver = false);
         }
 
         private static Rect Scale(Rect r, float k) =>
@@ -764,12 +817,7 @@ namespace Game.View
             // «Забрать» shows up once everything has landed; a tap on the window before that skips the show.
             if (t > lastLand)
             {
-                var b = new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96);
-                bool down = GUIUtility.hotControl != 0 && b.Contains(Event.current.mousePosition);
-                if (GUI.Button(b, GUIContent.none, _gold)) Later(CloseReward, click: false);
-                var face = new Rect(b.x, b.y + (down ? 10 : 0), b.width, b.height - 10);
-                var label = new GUIStyle(_ribbonTitle) { fontSize = 40 };
-                Outlined(face, "Забрать", label, ButtonInk, 3f);
+                if (GoldButton(new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96), "Забрать", 40)) Later(CloseReward, click: false);
             }
             else if (GUI.Button(r, GUIContent.none, _invisible)) rw.Since = Time.time - lastLand - 0.01f;
         }
