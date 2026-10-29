@@ -24,6 +24,12 @@ namespace Game.View
         private byte[] _hit;
         private int _hitSize;
 
+        /// <summary>Where the castle stands in its picture, as fractions of the side: left and right edges and the bottom.
+        /// Read from the tap map; the defaults fit castle 1.</summary>
+        public float FootLeft { get; private set; } = 0.28f;
+        public float FootRight { get; private set; } = 0.74f;
+        public float FootBottom { get; private set; } = 0.98f;
+
         /// <summary>Loads the art of a castle. Null when the castle has no art yet or a layer is missing.</summary>
         public static CastleArt Load(CastleInfo castle)
         {
@@ -42,7 +48,7 @@ namespace Game.View
             if (hit != null)
             {
                 int size = Mathf.RoundToInt(Mathf.Sqrt(hit.bytes.Length / 8f));
-                if (size * size * 8 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; }
+                if (size * size * 8 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; art.MeasureFoot(); }
             }
             int porch = System.Array.IndexOf(castle.Slots, "porch");
             art._decorBefore = porch >= 0 ? porch : castle.Slots.Length;
@@ -57,6 +63,23 @@ namespace Game.View
                 art.Lines[i] = Resources.Load<Texture2D>($"{dir}{prefix}_line_{i:00}");
             }
             return art;
+        }
+
+        private void MeasureFoot()
+        {
+            int x0 = _hitSize, x1 = -1, y1 = -1;
+            for (int y = 0; y < _hitSize; y++)
+                for (int x = 0; x < _hitSize; x++)
+                    if (System.BitConverter.ToUInt64(_hit, (y * _hitSize + x) * 8) != 0)
+                    {
+                        if (x < x0) x0 = x;
+                        if (x > x1) x1 = x;
+                        if (y > y1) y1 = y;
+                    }
+            if (x1 < 0) return;
+            FootLeft = (float)x0 / _hitSize;
+            FootRight = (x1 + 1f) / _hitSize;
+            FootBottom = (y1 + 1f) / _hitSize;
         }
 
         /// <summary>Draws the blueprint, outlines of empty slots and the filled slots. When every slot is filled, only the full picture.</summary>

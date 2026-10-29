@@ -284,7 +284,9 @@ namespace Game.View
         private void DrawScene(Rect r, float groundY)
         {
             float size = Mathf.Min(r.width * 0.92f, (groundY - 104) / 0.97f);
-            float cx = r.center.x, siteW = size * 0.8f, siteH = size * 0.13f;
+            // The dirt site is a little wider than the castle standing on it (castle 2 is much wider than castle 1).
+            float foot = Art != null ? Art.FootRight - Art.FootLeft : 0.46f;
+            float cx = r.center.x, siteW = Mathf.Min(r.width * 0.98f, Mathf.Max(size * 0.8f, size * foot * 1.08f)), siteH = size * 0.13f;
             // Soft shadow, then a trodden dirt patch with a few stones.
             GUI.DrawTexture(new Rect(cx - siteW * 0.6f, groundY - siteH * 0.7f, siteW * 1.2f, siteH * 1.75f), UiArt.SoftDisc(new Color(0.15f, 0.1f, 0.05f, 0.45f)));
             GUI.DrawTexture(new Rect(cx - siteW / 2, groundY - siteH * 0.55f, siteW, siteH), UiArt.Disc(SiteFill, SiteEdge, 2.5f));
@@ -292,7 +294,7 @@ namespace Game.View
             foreach (var (dx, dy) in Pebbles)
                 GUI.DrawTexture(new Rect(cx + dx * siteW - 7, groundY + dy * siteH - 4, 14, 8), UiArt.Disc(SiteEdge, SiteEdge, 0));
 
-            var pic = new Rect(cx - size / 2, groundY + siteH * 0.05f - size * 0.98f, size, size);
+            var pic = new Rect(cx - size / 2, groundY + siteH * 0.05f - size * (Art != null ? Art.FootBottom - 0.01f : 0.98f), size, size);
             _picRect = pic;
             int next = Game.NextSlot(State);
             if (Art != null)
