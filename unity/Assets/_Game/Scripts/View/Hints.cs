@@ -77,7 +77,7 @@ namespace Game.View
             GUI.color = new Color(1, 1, 1, k);
             GUI.Box(r, GUIContent.none, _box);
             GUI.Label(new Rect(r.x + 34, r.y + 26, r.width - 68, r.height - 80), _text, _body);
-            float blink = 0.6f + 0.4f * Mathf.Sin(Time.time * 4f);
+            float blink = 0.8f + 0.2f * Mathf.Sin(Time.time * 4f);
             GUI.color = new Color(1, 1, 1, k * blink);
             GUI.Label(new Rect(r.x, r.yMax - 52, r.width, 30), "тапни, чтобы продолжить", _small);
             GUI.color = old;

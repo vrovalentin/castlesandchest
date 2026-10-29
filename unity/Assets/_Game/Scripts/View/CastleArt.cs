@@ -107,9 +107,12 @@ namespace Game.View
             bool all = next < 0;
             if (all && Full != null && dropT >= 1) { GUI.DrawTexture(r, Full, ScaleMode.ScaleToFit); return; }
             var old = GUI.color;
+            // Flower pots and bushes appear only once the castle in front of them is built.
+            int last = Mathf.Min(_decorBefore, Layers.Length) - 1;
+            bool decor = Decor != null && (last < 0 || filled[last]);
             for (int i = 0; i < Layers.Length; i++)
             {
-                if (i == _decorBefore && Decor != null) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
+                if (i == _decorBefore && decor) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
                 if (!filled[i]) continue;
                 if (i == justPlaced && dropT < 1)
                 {
@@ -120,7 +123,7 @@ namespace Game.View
                 }
                 else GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
             }
-            if (_decorBefore >= Layers.Length && Decor != null) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
+            if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
             if (next < 0 || next >= Layers.Length) return;
             var line = Lines[next];
             if (line == null)
