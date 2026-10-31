@@ -44,3 +44,5 @@ crashlytics-build.properties
 # OS
 .DS_Store
 Thumbs.db
+# Unity Android build temp (IL2CPP/CMake)
+.utmp/
