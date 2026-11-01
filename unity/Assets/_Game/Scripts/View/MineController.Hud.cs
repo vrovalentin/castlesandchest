@@ -397,6 +397,7 @@ namespace Game.View
                 if (Mathf.CeilToInt(groups.Count / (float)perRow) <= 3) break;
             }
             int rows = Mathf.CeilToInt(groups.Count / (float)perRow);
+            _contentH = rows * (size + gap) + 8;
             var area = GUILayoutUtility.GetRect(width, rows * (size + gap) + 8, GUILayout.ExpandWidth(true));
             for (int i = 0; i < groups.Count; i++)
             {
@@ -412,6 +413,8 @@ namespace Game.View
         }
 
         private float _panelInnerW = 520;
+        /// <summary>Height the panel's content took last frame, so the window fits it without a gap.</summary>
+        private float _contentH = 140;
 
         private void Panel(float w, float h, string title, string text, Action buttons, Action content = null)
         {
@@ -420,7 +423,7 @@ namespace Game.View
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            float ph = Mathf.Min(h - 160, content != null ? 1000 : 700);
+            float ph = Mathf.Min(h - 160, content != null ? 640 + _contentH : 700);
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
