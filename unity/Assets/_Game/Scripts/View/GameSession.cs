@@ -65,7 +65,7 @@ namespace Game.View
             Save();
         }
 
-        /// <summary>Start the demo over. Tickets, tools and the daily gift day stay, so it can't be used to farm them.</summary>
+        /// <summary>Start the demo over. Tickets, tools, the daily gift day and the points stay, so it can't be used to farm them.</summary>
         public void RestartDemo()
         {
             var old = State;
@@ -76,6 +76,9 @@ namespace Game.View
             State.Hammers = old.Hammers;
             State.DailyDay = old.DailyDay;
             State.Opts = old.Opts;
+            State.Score = old.Score;
+            State.BestRun = old.BestRun;
+            State.Built = old.Built;
             Save();
         }
     }

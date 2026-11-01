@@ -3,3 +3,4 @@ node_modules/
 
 # WebGL and other player builds
 /Builds/
+__pycache__/

@@ -273,6 +273,8 @@ namespace Game.View
         private string SummaryText()
         {
             var lines = new List<string>();
+            lines.Add(_summary.NewRecord ? $"Очки за забег: {_summary.Score}. Новый рекорд!"
+                : $"Очки за забег: {_summary.Score}. Рекорд: {Mathf.Max(_summary.PrevBest, _summary.Score)}.");
             if (_summary.Got.Count == 0) lines.Add("Ни один сундук не упал за край.");
             if (_summary.Left > 0) lines.Add(_summary.Kept ? $"Из них {_summary.Left} с поля, они достались тебе." : $"Сгорело на поле: {_summary.Left}.");
             lines.Add($"Всего сундуков ждёт на Стройке: {State.Chests.Count}");

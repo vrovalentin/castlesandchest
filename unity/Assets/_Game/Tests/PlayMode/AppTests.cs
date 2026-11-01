@@ -182,6 +182,16 @@ namespace Game.View.Tests
             // A tap on the gate finds it, on castle 2's own tap map.
             var r = new Rect(0, 0, 1000, 1000);
             Assert.AreEqual(20, art.SlotAt(r, new Vector2(500, 780), _app.Session.State.Filled, 0));
+
+            // The gingerbread house and the windmill have their layers too.
+            foreach (int n in new[] { 23, 24 })
+            {
+                _app.Session.Game.NextCastle(_app.Session.State);
+                art = _app.Build.Art;
+                Assert.IsNotNull(art, $"building with {n} layers");
+                Assert.AreEqual(n, art.Layers.Length);
+                Assert.IsTrue(art.Lines.All(t => t != null));
+            }
             yield return null;
         }
     }

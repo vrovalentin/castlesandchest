@@ -7,7 +7,7 @@ namespace Game.Core
     [Serializable]
     public sealed class GameState
     {
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 3;
 
         public int Version = CurrentVersion;
         public int CastleIndex;
@@ -26,6 +26,10 @@ namespace Game.Core
         /// <summary>Day of the last daily gift, like "2026-10-20". Null if never.</summary>
         public string DailyDay;
         public int Built;
+        /// <summary>All points ever earned: in the mine and on the building site.</summary>
+        public int Score;
+        /// <summary>Most points earned in one run.</summary>
+        public int BestRun;
         public Options Opts = new Options();
 
         public int Count(string partId) => Inventory.TryGetValue(partId, out var n) ? n : 0;
@@ -41,6 +45,8 @@ namespace Game.Core
         public List<Chest> Got = new List<Chest>();
         /// <summary>The "+5 moves" offer was used this run.</summary>
         public bool ExtraUsed;
+        /// <summary>Points earned in this run so far.</summary>
+        public int Score;
     }
 
     /// <summary>Balance switches for playtests (game-design.md 3.1).</summary>
@@ -71,6 +77,11 @@ namespace Game.Core
         public List<Chest> Got;
         public int Left;
         public bool Kept;
+        /// <summary>Points for this run.</summary>
+        public int Score;
+        /// <summary>Best run before this one.</summary>
+        public int PrevBest;
+        public bool NewRecord => Score > 0 && Score > PrevBest;
     }
 
     public struct DailyGift

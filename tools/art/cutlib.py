@@ -1,0 +1,91 @@
+# Shared helpers for cutting a building picture into its layers (see cut_house_3.py).
+import os
+import numpy as np
+from PIL import Image
+from scipy import ndimage as ndi
+
+
+def cutout(img):
+    """Alpha from the white background: flood from the border over near-white, then a soft edge."""
+    mn, mx = img.min(2), img.max(2)
+    white = (mn > 236) & (mx - mn < 22)
+    lab, _ = ndi.label(white)
+    border = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
+    bg = np.isin(lab, border[border > 0])
+    bg = ndi.binary_opening(bg, iterations=1)
+    fg = ~bg
+    fg = ndi.binary_fill_holes(fg) & fg | ndi.binary_fill_holes(fg) & ~ndi.binary_dilation(bg, iterations=1)
+    a = ndi.gaussian_filter(fg.astype(float), 0.7)
+    a[ndi.binary_erosion(fg, iterations=1)] = 1
+    return np.clip(a, 0, 1)
+
+
+def arch(X, Y, x0, x1, y0, y1):
+    """A door or window shape: a rectangle with a round top."""
+    cx, half = (x0 + x1) / 2, (x1 - x0) / 2
+    ac = y0 + half
+    return ((Y >= ac) & (np.abs(X - cx) <= half) & (Y <= y1)) | ((X - cx) ** 2 + (Y - ac) ** 2 <= half ** 2)
+
+
+def _rgba(img, mask, alpha):
+    H, W = mask.shape
+    o = np.zeros((H, W, 4), np.uint8)
+    o[..., :3] = img
+    o[..., 3] = (np.where(mask, alpha, 0) * 255).astype(np.uint8)
+    o[o[..., 3] == 0, :3] = 0
+    return o
+
+
+def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True):
+    """Writes <prefix>_NN_<part>.png layers, outlines, base, decor and the full picture.
+    slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False."""
+    os.makedirs(out, exist_ok=True)
+    H, W = on.shape
+    for f in os.listdir(out):
+        if f.startswith(prefix + '_') and f.endswith('.png'):
+            os.remove(os.path.join(out, f))
+    Cu, Fu = C.astype(np.uint8), F.astype(np.uint8)
+    comp = Image.new('RGBA', (W, H))
+    taken = np.zeros((H, W), bool)
+    first_porch = next((i for i, s in enumerate(slots) if s[0] == 'porch'), None)
+    decor = decor if decor is not None else np.zeros((H, W), bool)
+    for i, (part, m, src) in enumerate(slots):
+        img, al = (Cu, aC) if src == 'clean' else (Fu, aF)
+        if part == 'clay' and grey_clay:
+            lum = 0.3 * img[..., 0] + 0.59 * img[..., 1] + 0.11 * img[..., 2]
+            img = np.clip(np.stack([lum * 0.78, lum * 0.8, lum * 0.84], -1), 0, 255).astype(np.uint8)
+        if src == 'clean':
+            m = m & ~taken
+        taken |= m
+        draw = m
+        if src == 'clean':
+            grow = ndi.binary_dilation(m, iterations=2) & on
+            if part != 'clay':
+                grow &= ~found
+            draw = m | grow
+        layer = Image.fromarray(_rgba(img, draw, al))
+        layer.save(f'{out}/{prefix}_{i:02d}_{part}.png', optimize=True)
+        rim = m & ~ndi.binary_erosion(m, iterations=3)
+        o = np.zeros((H, W, 4), np.uint8)
+        o[rim] = [70, 110, 170, 220]
+        Image.fromarray(o).save(f'{out}/{prefix}_line_{i:02d}.png', optimize=True)
+        if i == first_porch:
+            comp.alpha_composite(Image.fromarray(_rgba(Fu, decor, aF)))
+        comp.alpha_composite(layer)
+    Image.fromarray(_rgba(Fu, decor, aF)).save(f'{out}/{prefix}_decor.png', optimize=True)
+    base = _rgba(Cu, on, aC)
+    base[..., 3] = (base[..., 3] * 0.25).astype(np.uint8)
+    Image.fromarray(base).save(f'{out}/{prefix}_base.png', optimize=True)
+    comp.save(f'{out}/{castle_id}_full.png', optimize=True)
+    left = on & ~taken
+    print('slots', len(slots), 'unassigned px', int(left.sum()))
+    print(' '.join(s[0] for s in slots))
+    if preview:
+        rng = np.random.default_rng(3)
+        pal = rng.integers(60, 255, (len(slots), 3))
+        vis = np.full((H, W, 3), 255, np.uint8)
+        for i, (part, m, src) in enumerate(slots):
+            a = np.array(Image.open(f'{out}/{prefix}_{i:02d}_{part}.png'))[..., 3] > 60
+            vis[a] = pal[i]
+        vis[left & (aC > 0.5)] = [255, 0, 255]
+        Image.fromarray(vis).save(preview)

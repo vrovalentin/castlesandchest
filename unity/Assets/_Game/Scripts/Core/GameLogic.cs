@@ -134,6 +134,8 @@ namespace Game.Core
             if (s.Filled[slot] || slot != NextSlot(s) || s.Count(id) < 1) return false;
             s.Add(id, -1);
             s.Filled[slot] = true;
+            s.Score += Scoring.Place(Catalog.TierOf(id));
+            if (IsComplete(s)) s.Score += Scoring.Building(s.CastleIndex);
             return true;
         }
 
@@ -183,6 +185,7 @@ namespace Game.Core
             var res = s.Run.Board.Tap(r, c, CastleOf(s), rng, onPhase);
             if (res == null) return null;
             s.Run.Moves--;
+            Earn(s, Scoring.Pop(res.Size));
             Collect(s, res.Chests);
             return res;
         }
@@ -195,6 +198,7 @@ namespace Game.Core
             var res = s.Run.Board.UseTool(tool, r, c, CastleOf(s), rng, onPhase);
             if (res == null) return null;
             if (tool == Tool.Broom) s.Brooms--; else s.Hammers--;
+            Earn(s, Scoring.Pop(res.Size));
             Collect(s, res.Chests);
             return res;
         }
@@ -203,14 +207,23 @@ namespace Game.Core
         {
             s.Chests.AddRange(chests);
             s.Run.Got.AddRange(chests);
+            foreach (var ch in chests) Earn(s, Scoring.Chest(ch));
+        }
+
+        /// <summary>Points earned in the mine count for the run and for the total.</summary>
+        private static void Earn(GameState s, int points)
+        {
+            s.Run.Score += points;
+            s.Score += points;
         }
 
         /// <summary>End of a run. Chests left on the board burn unless Opts.KeepOnEnd.</summary>
         public RunSummary EndRun(GameState s)
         {
             var left = s.Run.Board.ChestsLeft();
-            if (s.Opts.KeepOnEnd) { s.Chests.AddRange(left); s.Run.Got.AddRange(left); }
-            var summary = new RunSummary { Got = s.Run.Got, Left = left.Count, Kept = s.Opts.KeepOnEnd };
+            if (s.Opts.KeepOnEnd) Collect(s, left);
+            var summary = new RunSummary { Got = s.Run.Got, Left = left.Count, Kept = s.Opts.KeepOnEnd, Score = s.Run.Score, PrevBest = s.BestRun };
+            s.BestRun = Math.Max(s.BestRun, s.Run.Score);
             s.Run = null;
             return summary;
         }

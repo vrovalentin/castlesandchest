@@ -131,6 +131,7 @@ namespace Game.View
             else { Game.NextCastle(State); _s.Save(); }
             _donePanel = false;
             _storageOpen = false;
+            _chestsOpen = false;
             _pick.Clear();
         }
 
@@ -146,6 +147,7 @@ namespace Game.View
             Hints.Reset();
             _askStartOver = false;
             _storageOpen = false;
+            _chestsOpen = false;
             _donePanel = false;
             _reward = null;
             _pick.Clear();

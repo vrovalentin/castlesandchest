@@ -23,6 +23,8 @@ namespace Game.Core
         public int tickets;
         public string dailyDay;
         public int built;
+        public int score;
+        public int bestRun;
         public int optMoves;
         public bool keepOnEnd;
         public bool hasRun;
@@ -34,6 +36,7 @@ namespace Game.Core
     {
         public int moves;
         public bool extraUsed;
+        public int score;
         public int[] gotColors = Array.Empty<int>();
         public int[] gotStars = Array.Empty<int>();
         public int rows;
@@ -62,6 +65,8 @@ namespace Game.Core
                 tickets = s.Tickets,
                 dailyDay = s.DailyDay ?? "",
                 built = s.Built,
+                score = s.Score,
+                bestRun = s.BestRun,
                 optMoves = s.Opts.Moves,
                 keepOnEnd = s.Opts.KeepOnEnd,
                 hasRun = s.Run != null,
@@ -84,6 +89,7 @@ namespace Game.Core
             {
                 moves = run.Moves,
                 extraUsed = run.ExtraUsed,
+                score = run.Score,
                 rows = b.Rows,
                 cols = b.Cols,
                 nextId = b.NextId,
@@ -141,6 +147,8 @@ namespace Game.Core
                 Tickets = d.tickets,
                 DailyDay = string.IsNullOrEmpty(d.dailyDay) ? null : d.dailyDay,
                 Built = d.built,
+                Score = Math.Max(0, d.score),
+                BestRun = Math.Max(0, d.bestRun),
             };
             s.Opts.Moves = d.optMoves > 0 ? d.optMoves : cat.Castles[castle].Moves;
             s.Opts.KeepOnEnd = d.keepOnEnd;
@@ -187,6 +195,7 @@ namespace Game.Core
                 Board = b,
                 Moves = Math.Max(0, r.moves),
                 ExtraUsed = r.extraUsed,
+                Score = Math.Max(0, r.score),
                 Got = JoinChests(r.gotColors, r.gotStars, rules.ColorCount),
             };
         }

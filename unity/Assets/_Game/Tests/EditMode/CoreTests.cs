@@ -55,6 +55,9 @@ namespace Game.Core.Tests
             CollectionAssert.IsEmpty(_cat.Validate());
             Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
             Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
+            Assert.AreEqual(23, _cat.Castles[2].Slots.Length);
+            Assert.AreEqual(24, _cat.Castles[3].Slots.Length);
+            CollectionAssert.DoesNotContain(_cat.Castles[0].PartsOfTier(7), "baker", "a building's own parts stay in that building");
         }
 
         [Test]
@@ -214,6 +217,51 @@ namespace Game.Core.Tests
             Assert.AreEqual("wall", _game.Missing(s)[0].Id, "the next part comes first in what the castle needs");
         }
 
+        // ---------- points ----------
+
+        [Test]
+        public void TapsAndChestsScoreForTheRunAndTheTotal()
+        {
+            var s = _game.NewGame();
+            var b = NoGroupBoard();
+            for (int c = 0; c < 4; c++) b[9, c].Color = 0; // a group of 4 in the bottom row: one ★1 chest at once
+            s.Run = new RunState { Board = b, Moves = 5 };
+            var res = _game.Tap(s, 9, 0, new XorShift32(1));
+            int expected = Scoring.Pop(4) + res.Chests.Sum(Scoring.Chest);
+            Assert.AreEqual(4 * 4 * 5 + 100, expected);
+            Assert.AreEqual(expected, s.Run.Score);
+            Assert.AreEqual(expected, s.Score);
+
+            var sum = _game.EndRun(s);
+            Assert.AreEqual(expected, sum.Score);
+            Assert.IsTrue(sum.NewRecord);
+            Assert.AreEqual(expected, s.BestRun);
+
+            s.Run = new RunState { Board = NoGroupBoard(), Moves = 5 };
+            sum = _game.EndRun(s);
+            Assert.AreEqual(0, sum.Score);
+            Assert.IsFalse(sum.NewRecord);
+            Assert.AreEqual(expected, s.BestRun, "a worse run keeps the record");
+            Assert.AreEqual(expected, s.Score);
+        }
+
+        [Test]
+        public void PlacingPartsAndFinishingABuildingScore()
+        {
+            var s = _game.NewGame();
+            var slots = _castle1.Slots;
+            foreach (var id in slots) s.Add(id, 1);
+            int expected = 0;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                Assert.IsTrue(_game.Place(s, i));
+                expected += Scoring.Place(_cat.TierOf(slots[i]));
+            }
+            expected += Scoring.Building(0);
+            Assert.AreEqual(expected, s.Score);
+            Assert.AreEqual(0, s.BestRun, "the building site doesn't touch the run record");
+        }
+
         [Test]
         public void PlaceNeedsThePartAndFillsOnce()
         {
@@ -250,7 +298,9 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Chests.Count);
             Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
-            Assert.IsTrue(_game.IsLastCastle(s));
+            Assert.IsFalse(_game.IsLastCastle(s));
+            while (!_game.IsLastCastle(s)) _game.NextCastle(s);
+            Assert.AreEqual(_cat.Castles.Count - 1, s.CastleIndex);
         }
 
         // ---------- runs, tools, daily gift ----------
@@ -387,7 +437,7 @@ namespace Game.Core.Tests
         public void BotPlaysTheSameGamesAsThePrototype()
         {
             var rng = new XorShift32(12345);
-            var bot = new BalanceBot(_game, rng);
+            var bot = new BalanceBot(new GameLogic(DemoContent.Create(castles: 2)), rng);
             var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {
