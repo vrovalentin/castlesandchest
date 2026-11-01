@@ -427,7 +427,7 @@ namespace Game.View
             }
             GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 26, chests.xMax - chestIcon.xMax - 16, 44), "Сундуки", _tileTitle);
             GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - (n > 1 ? 106 : 16), 56),
-                n > 1 ? "тапни: один" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
+                n > 1 ? "открыть" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
             if (n > 0) Badge(new Vector2(chestIcon.xMax - 6, chestIcon.y + 4), n);
             if (n > 1 && GUI.Button(new Rect(chests.xMax - 96, chests.yMax - 50, 86, 40), "все", _wood)) Later(() => OpenChests());
 
