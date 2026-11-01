@@ -55,6 +55,9 @@ namespace Game.Core.Tests
             CollectionAssert.IsEmpty(_cat.Validate());
             Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
             Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
+            Assert.AreEqual(23, _cat.Castles[2].Slots.Length);
+            Assert.AreEqual(24, _cat.Castles[3].Slots.Length);
+            CollectionAssert.DoesNotContain(_cat.Castles[0].PartsOfTier(7), "baker", "a building's own parts stay in that building");
         }
 
         [Test]
@@ -432,7 +435,7 @@ namespace Game.Core.Tests
         public void BotPlaysTheSameGamesAsThePrototype()
         {
             var rng = new XorShift32(12345);
-            var bot = new BalanceBot(_game, rng);
+            var bot = new BalanceBot(new GameLogic(DemoContent.Create(castles: 2)), rng);
             var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {

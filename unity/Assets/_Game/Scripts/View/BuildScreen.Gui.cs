@@ -257,7 +257,7 @@ namespace Game.View
             GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
             float px = snd.xMax + 10;
             var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
-            GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"Замок {State.CastleIndex + 1}: {castle.Name}", title);
+            GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"{State.CastleIndex + 1}. {castle.Name}", title);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
             GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#8a5a34>{done}</color> из {total}", center);
 
