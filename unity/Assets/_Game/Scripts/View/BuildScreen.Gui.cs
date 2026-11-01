@@ -109,7 +109,7 @@ namespace Game.View
             _onNight = new GUIStyle(_ribbonTitle) { fontSize = 22, alignment = TextAnchor.UpperCenter, wordWrap = true };
             _nightBody = new GUIStyle { fontSize = 23, alignment = TextAnchor.UpperCenter, wordWrap = true };
             _nightBody.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
-            _badge = UiArt.Style(UiArt.Disc(Red, new Color32(0xff, 0xf8, 0xe6, 0xff), 3), 32, 20, Color.white);
+            _badge = UiArt.Style(UiArt.Round(Red, new Color32(0xff, 0xf8, 0xe6, 0xff), 18, 3), 18, 20, Color.white);
             _badge.fontStyle = FontStyle.Bold;
             _badge.padding = new RectOffset(0, 0, 0, 2);
             UiArt.UseGameFont(this);
@@ -274,10 +274,12 @@ namespace Game.View
         /// <summary>The building site on the meadow and the castle standing on it, bottom at <paramref name="groundY"/>.</summary>
         private void DrawScene(Rect r, float groundY)
         {
-            float size = Mathf.Min(r.width * 0.92f, (groundY - 104) / 0.97f);
-            // The dirt site is a little wider than the castle standing on it (castle 2 is much wider than castle 1).
+            // As big as the space allows: the castle's own width fits the screen, its top stays under the header.
             float foot = Art != null ? Art.FootRight - Art.FootLeft : 0.46f;
-            float cx = r.center.x, siteW = Mathf.Min(r.width * 0.98f, Mathf.Max(size * 0.8f, size * foot * 1.08f)), siteH = size * 0.13f;
+            float bottomFrac = Art != null ? Art.FootBottom : 0.98f;
+            float size = Mathf.Min(r.width * 0.96f / Mathf.Max(0.3f, foot), (groundY - 128) / bottomFrac, r.width * 1.6f);
+            // The dirt site is a little wider than the castle standing on it (castle 2 is much wider than castle 1).
+            float cx = r.center.x, siteW = Mathf.Min(r.width * 0.98f, Mathf.Max(size * 0.5f, size * foot * 1.15f)), siteH = Mathf.Min(size, 760) * 0.13f;
             // Soft shadow, then a trodden dirt patch with a few stones.
             GUI.DrawTexture(new Rect(cx - siteW * 0.6f, groundY - siteH * 0.7f, siteW * 1.2f, siteH * 1.75f), UiArt.SoftDisc(new Color(0.15f, 0.1f, 0.05f, 0.45f)));
             GUI.DrawTexture(new Rect(cx - siteW / 2, groundY - siteH * 0.55f, siteW, siteH), UiArt.Disc(SiteFill, SiteEdge, 2.5f));
@@ -424,8 +426,8 @@ namespace Game.View
                 GUI.color = old;
             }
             GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 26, chests.xMax - chestIcon.xMax - 16, 44), "Сундуки", _tileTitle);
-            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - 16, 50),
-                n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
+            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - (n > 1 ? 106 : 16), 56),
+                n > 1 ? "тапни: один" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
             if (n > 0) Badge(new Vector2(chestIcon.xMax - 6, chestIcon.y + 4), n);
             if (n > 1 && GUI.Button(new Rect(chests.xMax - 96, chests.yMax - 50, 86, 40), "все", _wood)) Later(() => OpenChests());
 
@@ -458,6 +460,7 @@ namespace Game.View
         // ---------- storage window ----------
 
         private bool _storageOpen;
+        private GUIStyle _strip;
 
         /// <summary>True while the storage window is open.</summary>
         public bool StorageOpen => _storageOpen;
@@ -465,12 +468,15 @@ namespace Game.View
         private void DrawStorageWindow(float w, float h)
         {
             Dim(w, h);
-            float pw = Mathf.Min(680, w - 40);
-            var r = new Rect((w - pw) / 2, 110, pw, h - 150);
-            NightWindow(r, "Склад");
             var rules = Game.Rules;
             var castle = Game.CastleOf(State);
             var parts = Game.Catalog.Parts.Where(p => State.Count(p.Id) > 0).OrderBy(p => p.Tier).Select(p => p.Id).ToList();
+            float pw = Mathf.Min(680, w - 40);
+            // As tall as the parts need: header 176, the grid, the «Собрать» strip and the close button.
+            int gridRows = Mathf.Max(1, Mathf.CeilToInt(parts.Count / 4f));
+            float ph = Mathf.Min(h - 150, 176 + gridRows * 174 + 20 + 190 + 30 + 96 + 50);
+            var r = new Rect((w - pw) / 2, Mathf.Max(110, (h - ph) / 2), pw, ph);
+            NightWindow(r, "Склад");
             bool choosing = _pick.Count == 2;
             bool fresh = _message != null && Time.time < _messageUntil;
             string hint = parts.Count == 0 ? "Пусто. Детали выпадают из сундуков."
@@ -511,8 +517,9 @@ namespace Game.View
             }
 
             // What is being merged: two picked parts, an arrow and what they can become.
-            var strip = new Rect(r.x + 30, r.yMax - 380, r.width - 60, 190);
-            GUI.DrawTexture(strip, UiArt.Round(new Color32(0x3c, 0x18, 0x56, 0xff), new Color32(0xaa, 0x78, 0xd2, 0xff), 24, 3));
+            var strip = new Rect(r.x + 30, r.yMax - 176 - 190, r.width - 60, 190);
+            _strip ??= UiArt.Style(UiArt.Round(new Color32(0x3c, 0x18, 0x56, 0xff), new Color32(0xaa, 0x78, 0xd2, 0xff), 24, 3), 24, 1, Color.white);
+            GUI.Box(strip, GUIContent.none, _strip);
             var stripTitle = new GUIStyle(_onNight) { fontSize = 26, alignment = TextAnchor.MiddleCenter };
             stripTitle.normal.textColor = new Color32(0xff, 0xd6, 0x6e, 0xff);
             GUI.Label(new Rect(strip.x, strip.y + 10, strip.width, 36), "Собрать", stripTitle);
