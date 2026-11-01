@@ -1,4 +1,4 @@
-# Art for the chest window: night-sky panel in a wooden frame, golden rays, glints, part stands,
+# Art for the chest window: deep purple panel in a wooden frame, golden rays, glints, part stands,
 # a red title ribbon and a gold button. Everything is drawn here so it can be tuned and redrawn.
 # Usage: python3 make_reward_ui.py <Art/Resources folder>
 import sys, os
@@ -31,7 +31,7 @@ def panel():
     # vertical gradient inside
     g = np.zeros((n * SS, n * SS, 4), np.uint8)
     t = np.linspace(0, 1, n * SS)[:, None]
-    top, bot = np.array([62, 92, 158]), np.array([34, 46, 96])
+    top, bot = np.array([96, 50, 132]), np.array([44, 18, 72])   # deep royal purple
     g[..., :3] = (top * (1 - t[..., None]) + bot * t[..., None]).astype(np.uint8)
     g[..., 3] = 255
     mask = Image.new('L', im.size, 0)
