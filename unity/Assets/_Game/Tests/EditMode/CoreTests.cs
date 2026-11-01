@@ -298,7 +298,9 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Chests.Count);
             Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
-            Assert.IsTrue(_game.IsLastCastle(s));
+            Assert.IsFalse(_game.IsLastCastle(s));
+            while (!_game.IsLastCastle(s)) _game.NextCastle(s);
+            Assert.AreEqual(_cat.Castles.Count - 1, s.CastleIndex);
         }
 
         // ---------- runs, tools, daily gift ----------
