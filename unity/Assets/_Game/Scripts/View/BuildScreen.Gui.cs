@@ -521,7 +521,7 @@ namespace Game.View
             for (int k = 0; k < 2; k++)
             {
                 var c = new Rect(strip.x + 20 + k * (st + 34), sy, st, st);
-                GUI.DrawTexture(c, UiArt.Round(new Color32(0xfb, 0xf4, 0xe6, k < _pick.Count ? 0xff : 0x55), Gold, 18, k < _pick.Count ? 4 : 2));
+                GUI.DrawTexture(c, UiArt.Round(new Color32(0xfb, 0xf4, 0xe6, (byte)(k < _pick.Count ? 0xff : 0x55)), Gold, 18, k < _pick.Count ? 4 : 2));
                 if (k < _pick.Count)
                 {
                     GameArt.DrawPart(new Rect(c.x + 12, c.y + 12, st - 24, st - 24), _pick[k], Game.Catalog.TierOf(_pick[k]));
