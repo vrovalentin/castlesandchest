@@ -385,7 +385,7 @@ namespace Game.View
             var groups = _summary.Got.GroupBy(ch => (ch.Color, ch.Stars))
                 .OrderByDescending(g => g.Key.Stars).ThenBy(g => g.Key.Color)
                 .Select(g => (chest: g.First(), n: g.Count() * (_doubled ? 2 : 1))).ToList();
-            if (groups.Count == 0) return;
+            if (groups.Count == 0) { _contentH = 0; return; }
             float width = _panelInnerW;
             // Largest chest that keeps the grid within 3 rows (and at most 112 px).
             const float gap = 18;
@@ -423,7 +423,7 @@ namespace Game.View
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            float ph = Mathf.Min(h - 160, content != null ? 640 + _contentH : 700);
+            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 700);
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
