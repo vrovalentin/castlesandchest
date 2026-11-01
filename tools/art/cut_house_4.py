@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import cutout, arch, write_castle
+from cutlib import cutout, arch, write_castle, split_even
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -49,14 +49,20 @@ decor = on & (((green & (Y > 740)) | box(280, 476, 784, 928)) & (Y < 940))
 found = on & (Y >= 905) & ~decor
 tower = on & ~sails & ~spire & ~roof & ~upper_win & ~low_win & ~balcony & ~decor & ~found
 upper = tower & (Y < 484)
+# loose bits of the upper tower (brackets under the eaves, between the sails) go with the roof
+_lab, _n = ndi.label(upper)
+if _n > 1:
+    _main = _lab == 1 + int(np.argmax(ndi.sum(upper, _lab, range(1, _n + 1))))
+    roofL |= upper & ~_main & (X < 516); roofR |= upper & ~_main & (X >= 516)
+    upper = _main
 lower = tower & (Y >= 484)
+# the sacks, barrels and bushes go up with the lower walls on their side
+lower |= decor
 wallL, wallR = lower & (X < 500), lower & (X >= 500)
 
 SLOTS = []
-fx = np.where(found.any(0))[0]
-edges = np.linspace(fx.min(), fx.max() + 1, 7).round().astype(int)
-for k in range(6):
-    SLOTS.append(('clay', found & (X >= edges[k]) & (X < edges[k + 1]), 'clean'))
+for m in split_even(found, X, 6):
+    SLOTS.append(('clay', m, 'clean'))
 SLOTS += [('wall', wallL, 'clean'), ('wall', wallR, 'clean'), ('window', low_win, 'clean'),
           ('floor', balcony, 'clean'), ('wall', upper, 'clean'), ('window', upper_win, 'clean'),
           ('roof', roofL, 'clean'), ('tiles', roofR, 'clean'), ('spire', spire, 'clean')]
@@ -70,7 +76,7 @@ lantL = diff & box(436, 500, 664, 772)
 miller = diff & (X >= 618) & (Y >= 646) & ~lantR
 Fr, Fg, Fb = F[..., 0], F[..., 1], F[..., 2]
 # the porch's post and roof edge next to him are not the miller
-miller &= ~((X < 648) & (Y < 762)) & ~((Fr > 150) & (Fr - Fg > 70) & (Y < 700) & (X < 690))
+miller &= ~((X < 650) & ((Y < 762) | (Y > 832))) & ~((Fr > 150) & (Fr - Fg > 70) & (Y < 700) & (X < 690))
 porch_all = diff & box(424, 700, 570, 935) & ~miller & ~lantL & ~lantR
 door = porch_all & arch(X, Y, 504, 602, 688, 846)
 porch = porch_all & ~door
@@ -78,4 +84,4 @@ SLOTS += [('door', door, 'full'), ('porch', porch, 'full'), ('lantern', lantL, '
           ('miller', miller, 'full')]
 
 write_castle(out, 'c4', 'castle_4', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None,
-             decor=decor, grey_clay=False)
+             grey_clay=False)

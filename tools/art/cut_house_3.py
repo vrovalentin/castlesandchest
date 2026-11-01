@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import cutout, arch, write_castle
+from cutlib import cutout, arch, write_castle, split_even
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -55,10 +55,8 @@ gable_wall = body & (Y < 470)
 wallL, wallR = lower & (X < 516), lower & (X >= 516)
 
 SLOTS = []
-fx = np.where(found.any(0))[0]
-edges = np.linspace(fx.min(), fx.max() + 1, 7).round().astype(int)
-for k in range(6):
-    SLOTS.append(('clay', found & (X >= edges[k]) & (X < edges[k + 1]), 'clean'))
+for m in split_even(found, X, 6):
+    SLOTS.append(('clay', m, 'clean'))
 SLOTS += [('wall', wallL, 'clean'), ('wall', wallR, 'clean'),
           ('brick', pillarL, 'clean'), ('brick', pillarR, 'clean'),
           ('door', door, 'clean'), ('window', winL, 'clean'), ('window', winR, 'clean'),
@@ -72,7 +70,7 @@ diff = (np.abs(F - C).sum(2) > 60) & aFm
 diff = ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(diff, iterations=2), iterations=4)) & aFm
 lantL = diff & box(100, 215, 430, 620)
 lantR = diff & box(810, 925, 430, 620)
-baker = diff & box(225, 446, 460, 845) & ~lantL
+baker = (diff & box(225, 446, 460, 845) | diff & box(446, 492, 600, 760)) & ~lantL
 Fr, Fg, Fb = F[..., 0], F[..., 1], F[..., 2]
 # the window shutter, the bush and the ground beside him changed a little too: not the baker
 baker &= ~((Fr > 180) & (Fr - Fg > 60) & (Fb > 120)) & ~((Fg > Fr + 15) & (Fg > Fb + 15)) & (Y < 838)

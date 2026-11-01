@@ -20,7 +20,7 @@ namespace Game.Core
             new PartInfo("spire", 6, "Шпиль"), new PartInfo("porch", 6, "Крыльцо"), new PartInfo("lantern", 6, "Фонарик"),
             new PartInfo("princess", 7, "Принцесса"), new PartInfo("knight", 7, "Рыцарь"), new PartInfo("dragon", 7, "Дракон"), new PartInfo("unicorn", 7, "Единорог"),
             // Parts of one building only: each is offered by its own building alone (see Create).
-            new PartInfo("sails", 5, "Крыло мельницы"),
+            new PartInfo("sails", 5, "Крыло"),
             new PartInfo("chimney", 6, "Труба"),
             new PartInfo("baker", 7, "Пекарь"), new PartInfo("miller", 7, "Мельник"),
         };

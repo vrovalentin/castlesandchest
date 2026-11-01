@@ -9,6 +9,10 @@ def cutout(img):
     """Alpha from the white background: flood from the border over near-white, then a soft edge."""
     mn, mx = img.min(2), img.max(2)
     white = (mn > 236) & (mx - mn < 22)
+    # the soft grey-white shadow under the base counts as background too, so no light fringe stays there
+    H = img.shape[0]
+    low = np.zeros_like(white); low[int(H * 0.8):] = True
+    white |= low & (mn > 214) & (mx - mn < 16)
     lab, _ = ndi.label(white)
     border = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
     bg = np.isin(lab, border[border > 0])
@@ -36,8 +40,15 @@ def _rgba(img, mask, alpha):
     return o
 
 
+def split_even(found, X, pieces):
+    """Masks of `pieces` foundation pieces, left to right, each with about the same number of pixels."""
+    cols = np.cumsum(found.sum(0))
+    edges = [0] + [int(np.searchsorted(cols, cols[-1] * k / pieces)) for k in range(1, pieces)] + [found.shape[1]]
+    return [found & (X >= edges[k]) & (X < edges[k + 1]) for k in range(pieces)]
+
+
 def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True):
-    """Writes <prefix>_NN_<part>.png layers, outlines, base, decor and the full picture.
+    """Writes <prefix>_NN_<part>.png layers, outlines, base, decor (from the clean picture) and the full picture.
     slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False."""
     os.makedirs(out, exist_ok=True)
     H, W = on.shape
@@ -59,7 +70,7 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
         taken |= m
         draw = m
         if src == 'clean':
-            grow = ndi.binary_dilation(m, iterations=2) & on
+            grow = ndi.binary_dilation(m, iterations=3) & on
             if part != 'clay':
                 grow &= ~found
             draw = m | grow
@@ -70,9 +81,9 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
         o[rim] = [70, 110, 170, 220]
         Image.fromarray(o).save(f'{out}/{prefix}_line_{i:02d}.png', optimize=True)
         if i == first_porch:
-            comp.alpha_composite(Image.fromarray(_rgba(Fu, decor, aF)))
+            comp.alpha_composite(Image.fromarray(_rgba(Cu, decor, aC)))
         comp.alpha_composite(layer)
-    Image.fromarray(_rgba(Fu, decor, aF)).save(f'{out}/{prefix}_decor.png', optimize=True)
+    Image.fromarray(_rgba(Cu, decor, aC)).save(f'{out}/{prefix}_decor.png', optimize=True)
     base = _rgba(Cu, on, aC)
     base[..., 3] = (base[..., 3] * 0.25).astype(np.uint8)
     Image.fromarray(base).save(f'{out}/{prefix}_base.png', optimize=True)
