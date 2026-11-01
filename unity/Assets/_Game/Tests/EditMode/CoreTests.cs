@@ -214,6 +214,51 @@ namespace Game.Core.Tests
             Assert.AreEqual("wall", _game.Missing(s)[0].Id, "the next part comes first in what the castle needs");
         }
 
+        // ---------- points ----------
+
+        [Test]
+        public void TapsAndChestsScoreForTheRunAndTheTotal()
+        {
+            var s = _game.NewGame();
+            var b = NoGroupBoard();
+            for (int c = 0; c < 4; c++) b[9, c].Color = 0; // a group of 4 in the bottom row: one ★1 chest at once
+            s.Run = new RunState { Board = b, Moves = 5 };
+            var res = _game.Tap(s, 9, 0, new XorShift32(1));
+            int expected = Scoring.Pop(4) + res.Chests.Sum(Scoring.Chest);
+            Assert.AreEqual(4 * 4 * 5 + 100, expected);
+            Assert.AreEqual(expected, s.Run.Score);
+            Assert.AreEqual(expected, s.Score);
+
+            var sum = _game.EndRun(s);
+            Assert.AreEqual(expected, sum.Score);
+            Assert.IsTrue(sum.NewRecord);
+            Assert.AreEqual(expected, s.BestRun);
+
+            s.Run = new RunState { Board = NoGroupBoard(), Moves = 5 };
+            sum = _game.EndRun(s);
+            Assert.AreEqual(0, sum.Score);
+            Assert.IsFalse(sum.NewRecord);
+            Assert.AreEqual(expected, s.BestRun, "a worse run keeps the record");
+            Assert.AreEqual(expected, s.Score);
+        }
+
+        [Test]
+        public void PlacingPartsAndFinishingABuildingScore()
+        {
+            var s = _game.NewGame();
+            var slots = _castle1.Slots;
+            foreach (var id in slots) s.Add(id, 1);
+            int expected = 0;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                Assert.IsTrue(_game.Place(s, i));
+                expected += Scoring.Place(_cat.TierOf(slots[i]));
+            }
+            expected += Scoring.Building(0);
+            Assert.AreEqual(expected, s.Score);
+            Assert.AreEqual(0, s.BestRun, "the building site doesn't touch the run record");
+        }
+
         [Test]
         public void PlaceNeedsThePartAndFillsOnce()
         {

@@ -51,6 +51,9 @@ namespace Game.Core.Tests
             Assert.AreEqual(s.Brooms, t.Brooms);
             Assert.AreEqual("2026-10-21", t.DailyDay);
             Assert.AreEqual(s.Run.Moves, t.Run.Moves);
+            Assert.Greater(s.Score, 0);
+            Assert.AreEqual(s.Score, t.Score);
+            Assert.AreEqual(s.Run.Score, t.Run.Score);
             CollectionAssert.AreEqual(s.Run.Got, t.Run.Got);
             var a = s.Run.Board; var b = t.Run.Board;
             for (int r = 0; r < a.Rows; r++)
@@ -67,10 +70,26 @@ namespace Game.Core.Tests
         [Test]
         public void GameWithoutRunAndNeverGiftedLoads()
         {
-            var t = RoundTrip(_game.NewGame());
+            var g = _game.NewGame();
+            g.BestRun = 1234;
+            var t = RoundTrip(g);
+            Assert.AreEqual(1234, t.BestRun);
             Assert.IsNull(t.Run);
             Assert.IsNull(t.DailyDay);
             Assert.AreEqual(2, t.Chests.Count);
+        }
+
+        [Test]
+        public void OldSavesWithoutPointsLoadWithZero()
+        {
+            var d = SaveMapper.ToSave(_game.NewGame(), _cat);
+            string json = JsonUtility.ToJson(d).Replace("\"score\":0,", "").Replace("\"bestRun\":0,", "");
+            var old = JsonUtility.FromJson<SaveData>(json);
+            old.version = 2;
+            var s = SaveMapper.FromSave(old, _cat);
+            Assert.IsNotNull(s);
+            Assert.AreEqual(0, s.Score);
+            Assert.AreEqual(0, s.BestRun);
         }
 
         [Test]

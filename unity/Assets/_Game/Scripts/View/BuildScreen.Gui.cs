@@ -204,7 +204,7 @@ namespace Game.View
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
             if (GUI.enabled) CastleTap(cardsTop - 8);
             if (hasNext) DrawNext(x0 + pad, cardsTop, inner);
@@ -213,8 +213,8 @@ namespace Game.View
             GUI.enabled = true;
 
             // Short messages show over the sky, under the header, where they cover nothing.
-            if (_message != null && Time.time < _messageUntil && !_storageOpen)
-                GUI.Box(new Rect(x0 + pad + 20, 130, inner - 40, 96), _message, _toast);
+            if (_message != null && Time.time < _messageUntil && !_storageOpen && !_chestsOpen)
+                GUI.Box(new Rect(x0 + pad + 20, 172, inner - 40, 96), _message, _toast);
 
             // Parts from the last opening fly down to the storage tile.
             DrawFlights(storageTile.center);
@@ -223,13 +223,14 @@ namespace Game.View
             else if (_donePanel) DrawDonePanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
+            else if (_chestsOpen) DrawChestsWindow(w, h);
             Hints.Draw();
         }
 
         /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
         private void AskHint(Rect bubble)
         {
-            if (_reward != null || _donePanel || _askStartOver || _flying.Count > 0) return;
+            if (_reward != null || _donePanel || _askStartOver || _storageOpen || _chestsOpen || _flying.Count > 0) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -264,7 +265,22 @@ namespace Game.View
             GUI.DrawTexture(bar, UiArt.Round(new Color(1, 1, 1, 0.75f), CardEdge, 8, 2));
             float fw = Mathf.Max(16, bar.width * done / Mathf.Max(1, total));
             if (done > 0) GUI.DrawTexture(new Rect(bar.x, bar.y, fw, bar.height), UiArt.Round(Green, GreenEdge, 8, 2));
+
+            // Total points under the bar, on the right; it swells a little when points come in.
+            if (State.Score != _shownScore) { if (_shownScore >= 0) _scoreAt = Time.time; _shownScore = State.Score; }
+            float k = 1 + 0.15f * Mathf.Clamp01(1 - (Time.time - _scoreAt) / 0.35f);
+            var score = new GUIStyle(center) { fontSize = 22, wordWrap = false };
+            string text = $"Очки: <color=#8a5a34>{State.Score}</color>";
+            float sw = Mathf.Max(170, score.CalcSize(new GUIContent($"Очки: {State.Score}")).x + 34);
+            var sr = new Rect(r.xMax - sw, bar.yMax + 10, sw, 46);
+            var m = GUI.matrix;
+            GUIUtility.ScaleAroundPivot(new Vector2(k, k), sr.center);
+            GUI.Label(sr, text, score);
+            GUI.matrix = m;
         }
+
+        private int _shownScore = -1;
+        private float _scoreAt = -10;
 
         // ---------- castle ----------
 
@@ -416,7 +432,13 @@ namespace Game.View
             var store = new Rect(r.x + tw + gap, r.y, tw, r.height);
             int n = State.Chests.Count;
 
-            if (GUI.Button(chests, GUIContent.none, _card) && n > 0) Later(() => OpenChests(State.Chests.Count - 1));
+            // The tile's card first, then the «все» button, then the tile's own (invisible) button:
+            // IMGUI gives a click to the first button drawn under it, so «все» must come before the tile.
+            GUI.Box(chests, GUIContent.none, _card);
+            var all = new Rect(chests.xMax - 112, chests.yMax - 62, 102, 54);
+            if (n > 1 && SmallGoldButton(all, "все", 34)) Later(() => OpenChests());
+            if (GUI.Button(chests, GUIContent.none, _invisible) && n > 0)
+                Later(() => { if (State.Chests.Count == 1) OpenChests(0); else _chestsOpen = true; });
             var chestIcon = new Rect(chests.x + 12, chests.y + 14, 112, 112);
             if (n > 0) GameArt.DrawChest(chestIcon, State.Chests[n - 1]);
             else
@@ -426,10 +448,9 @@ namespace Game.View
                 GUI.color = old;
             }
             GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 26, chests.xMax - chestIcon.xMax - 16, 44), "Сундуки", _tileTitle);
-            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - (n > 1 ? 106 : 16), 56),
-                n > 1 ? "открыть" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
+            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - (n > 1 ? 122 : 16), 56),
+                n > 1 ? "выбрать" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
             if (n > 0) Badge(new Vector2(chestIcon.xMax - 6, chestIcon.y + 4), n);
-            if (n > 1 && GUI.Button(new Rect(chests.xMax - 96, chests.yMax - 50, 86, 40), "все", _wood)) Later(() => OpenChests());
 
             int parts = Game.Catalog.Parts.Sum(p => State.Count(p.Id));
             if (GUI.Button(store, GUIContent.none, _card)) Later(() => { _storageOpen = true; _pick.Clear(); });
@@ -455,6 +476,55 @@ namespace Game.View
             string t = n.ToString();
             float bw = t.Length > 1 ? 50 : 40;
             GUI.Label(new Rect(center.x - bw / 2, center.y - 20, bw, 40), t, _badge);
+        }
+
+        // ---------- chests window ----------
+
+        private bool _chestsOpen;
+
+        /// <summary>True while the chests window is open.</summary>
+        public bool ChestsOpen => _chestsOpen;
+
+        /// <summary>All chests on hand, alike ones grouped with a count. Tap one to open it, or open them all.</summary>
+        private void DrawChestsWindow(float w, float h)
+        {
+            var groups = State.Chests.Select((ch, i) => (ch, i)).GroupBy(x => (x.ch.Color, x.ch.Stars))
+                .OrderByDescending(g => g.Key.Stars).ThenBy(g => g.Key.Color)
+                .Select(g => (chest: g.First().ch, last: g.Max(x => x.i), n: g.Count())).ToList();
+            if (groups.Count == 0) { _chestsOpen = false; return; }
+            Dim(w, h);
+            float pw = Mathf.Min(680, w - 40);
+            const float gap = 22;
+            float size = 132;
+            int perRow = 1;
+            // The biggest chests that keep the grid within 4 rows.
+            for (; size > 72; size -= 4)
+            {
+                perRow = Mathf.Max(1, Mathf.FloorToInt((pw - 80 + gap) / (size + gap)));
+                if (Mathf.CeilToInt(groups.Count / (float)perRow) <= 4) break;
+            }
+            int rows = Mathf.CeilToInt(groups.Count / (float)perRow);
+            float ph = Mathf.Min(h - 150, 170 + rows * (size + gap) + 30 + 96 + 24 + 72 + 46);
+            var r = new Rect((w - pw) / 2, Mathf.Max(110, (h - ph) / 2), pw, ph);
+            NightWindow(r, "Сундуки");
+            GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), $"Всего: {State.Chests.Count}. Тапни сундук, чтобы открыть его, или открой все сразу.", _nightBody);
+            float gy = r.y + 170;
+            for (int i = 0; i < groups.Count; i++)
+            {
+                int row = i / perRow, col = i % perRow;
+                int inRow = Mathf.Min(perRow, groups.Count - row * perRow);
+                float rowW = inRow * size + (inRow - 1) * gap;
+                var cell = new Rect(r.center.x - rowW / 2 + col * (size + gap), gy + row * (size + gap), size, size);
+                bool over = cell.Contains(Event.current.mousePosition);
+                GameArt.DrawChest(over ? Scale(cell, 1.06f) : cell, groups[i].chest);
+                if (groups[i].n > 1) Badge(new Vector2(cell.xMax - 12, cell.y + 8), groups[i].n);
+                int idx = groups[i].last;
+                if (GUI.Button(cell, GUIContent.none, _invisible)) Later(() => OpenChests(idx));
+            }
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 238, r.width - 140, 96), "Открыть все", 34))
+                Later(() => { _chestsOpen = false; OpenChests(); }, click: false);
+            if (GUI.Button(new Rect(r.x + 130, r.yMax - 122, r.width - 260, 72), "Закрыть", new GUIStyle(_wood) { fontSize = 28 }))
+                Later(() => _chestsOpen = false);
         }
 
         // ---------- storage window ----------
@@ -605,6 +675,16 @@ namespace Game.View
             return hit;
         }
 
+        /// <summary>The gold button drawn smaller: the art is 9-sliced at full size and then scaled down as a whole.</summary>
+        private bool SmallGoldButton(Rect b, string text, int fontSize, float k = 0.6f)
+        {
+            var m = GUI.matrix;
+            GUI.matrix = m * Matrix4x4.TRS(new Vector3(b.x, b.y, 0), Quaternion.identity, new Vector3(k, k, 1));
+            bool hit = GoldButton(new Rect(0, 0, b.width / k, b.height / k), text, Mathf.RoundToInt(fontSize / k));
+            GUI.matrix = m;
+            return hit;
+        }
+
         private void DrawRays(Vector2 c, float size)
         {
             if (GameArt.Rays == null) return;
@@ -628,7 +708,7 @@ namespace Game.View
             float y = pic.yMax + 6;
             Outlined(new Rect(r.x + 30, y, r.width - 60, 44), Game.CastleOf(State).Name, new GUIStyle(_ribbonTitle) { fontSize = 30 }, NightInk, 2.5f);
             y += 52;
-            string text = $"Забегов на этот замок: {State.Runs}." + (last ? " Это последний замок демоверсии." : "");
+            string text = $"Бонус за постройку: +{Scoring.Building(State.CastleIndex)} очков. Всего: {State.Score}.\nЗабегов на этот замок: {State.Runs}." + (last ? " Это последний замок демоверсии." : "");
             if (!last)
             {
                 var bp = Game.PreviewBurn(State);

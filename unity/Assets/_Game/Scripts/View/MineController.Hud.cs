@@ -178,17 +178,31 @@ namespace Game.View
             if (_toBuild != null && IconButton(new Rect(r.x, r.y, b, b), UiArt.Back)) _toBuild();
             if (IconButton(new Rect(r.xMax - b, r.y, b, b), UiArt.Restart)) AskRestart();
 
-            const float movesW = 200, chestsW = 236, gap = 14;
-            float x = r.center.x - (movesW + gap + chestsW) / 2f, y = r.y + 8, ph = b - 16;
+            // Moves, chests and points in three pills between the back and restart buttons.
+            const float movesW = 150, chestsW = 116, scoreW = 226, gap = 10;
+            float x = r.center.x - (movesW + chestsW + scoreW + 2 * gap) / 2f, y = r.y + 8, ph = b - 16;
+            var small = new GUIStyle(_pill) { fontSize = 24, wordWrap = false, padding = new RectOffset(14, 10, 6, 6), alignment = TextAnchor.MiddleCenter };
             string movesCol = run.Moves <= 5 ? "#d9534f" : "#8a5a34";
-            GUI.Label(new Rect(x, y, movesW, ph), $"Ходы: <color={movesCol}>{run.Moves}</color>", _pill);
+            GUI.Label(new Rect(x, y, movesW, ph), $"Ходы: <color={movesCol}>{run.Moves}</color>", small);
 
             var chestRect = new Rect(x + movesW + gap, y, chestsW, ph);
-            var pill = new GUIStyle(_pill) { padding = new RectOffset(56, 14, 6, 6) };
-            GUI.Label(chestRect, $"Сундуки: <color=#8a5a34>{run.Got.Count}</color>", pill);
+            var pill = new GUIStyle(small) { padding = new RectOffset(52, 10, 6, 6) };
+            GUI.Label(chestRect, $"<color=#8a5a34>{run.Got.Count}</color>", pill);
             var icon = SpriteFactory.ChestArt(1);
-            if (icon != null) GUI.DrawTexture(new Rect(chestRect.x + 10, chestRect.y + 4, ph - 8, ph - 8), icon.texture, ScaleMode.ScaleToFit);
+            if (icon != null) GUI.DrawTexture(new Rect(chestRect.x + 8, chestRect.y + 4, ph - 8, ph - 8), icon.texture, ScaleMode.ScaleToFit);
+
+            // The points pill swells a little when points come in.
+            if (run.Score != _shownScore) { _shownScore = run.Score; _scoreAt = Time.time; }
+            float k = 1 + 0.12f * Mathf.Clamp01(1 - (Time.time - _scoreAt) / 0.3f);
+            var sr = new Rect(chestRect.xMax + gap, y, scoreW, ph);
+            var m = GUI.matrix;
+            GUIUtility.ScaleAroundPivot(new Vector2(k, k), sr.center);
+            GUI.Label(sr, $"Очки: <color=#8a5a34>{run.Score}</color>", small);
+            GUI.matrix = m;
         }
+
+        private int _shownScore = -1;
+        private float _scoreAt = -10;
 
         private bool IconButton(Rect r, Texture2D icon)
         {
