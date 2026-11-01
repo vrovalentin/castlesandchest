@@ -130,6 +130,7 @@ namespace Game.View
             if (Game.IsLastCastle(State)) _s.RestartDemo();
             else { Game.NextCastle(State); _s.Save(); }
             _donePanel = false;
+            _storageOpen = false;
             _pick.Clear();
         }
 
@@ -144,6 +145,7 @@ namespace Game.View
             _s.StartOver();
             Hints.Reset();
             _askStartOver = false;
+            _storageOpen = false;
             _donePanel = false;
             _reward = null;
             _pick.Clear();
@@ -193,7 +195,7 @@ namespace Game.View
         /// <summary>True while the window with what the chests gave is shown.</summary>
         public bool RewardPanel => _reward != null;
 
-        /// <summary>Closes the window; what it showed flies down to the storage card.</summary>
+        /// <summary>Closes the window; what it showed flies down to the storage tile.</summary>
         public void CloseReward()
         {
             if (_reward == null) return;

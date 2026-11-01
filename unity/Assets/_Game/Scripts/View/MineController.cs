@@ -274,11 +274,6 @@ namespace Game.View
         {
             var lines = new List<string>();
             if (_summary.Got.Count == 0) lines.Add("Ни один сундук не упал за край.");
-            else
-                lines.AddRange(_summary.Got
-                    .GroupBy(ch => (ch.Color, ch.Stars))
-                    .OrderByDescending(g => g.Key.Stars)
-                    .Select(g => $"{Palette.BlockNames[g.Key.Color]} ★{g.Key.Stars} × {g.Count()}"));
             if (_summary.Left > 0) lines.Add(_summary.Kept ? $"Из них {_summary.Left} с поля, они достались тебе." : $"Сгорело на поле: {_summary.Left}.");
             lines.Add($"Всего сундуков ждёт на Стройке: {State.Chests.Count}");
             return string.Join("\n", lines);

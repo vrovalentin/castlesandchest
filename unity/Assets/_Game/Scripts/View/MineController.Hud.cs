@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Game.Core;
 using UnityEngine;
 
@@ -160,7 +161,7 @@ namespace Game.View
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
             if (_mode == Mode.OutOfMoves) Panel(w, h, "Ходы кончились", OutOfMovesText(), OutOfMovesButtons);
-            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons);
+            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons, SummaryChests);
             else if (_mode == Mode.ConfirmRestart) Panel(w, h, "Начать заново?", RestartText(), RestartButtons);
             else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились", "Новые билеты придут завтра.", () =>
             {
@@ -378,14 +379,52 @@ namespace Game.View
             if (GUILayout.Button("Отмена", _button2, GUILayout.Height(76))) _mode = Mode.Play;
         }
 
-        private void Panel(float w, float h, string title, string text, Action buttons)
+        /// <summary>The chests of the finished run as pictures, one per kind, with a count badge top-right.</summary>
+        private void SummaryChests()
+        {
+            var groups = _summary.Got.GroupBy(ch => (ch.Color, ch.Stars))
+                .OrderByDescending(g => g.Key.Stars).ThenBy(g => g.Key.Color)
+                .Select(g => (chest: g.First(), n: g.Count() * (_doubled ? 2 : 1))).ToList();
+            if (groups.Count == 0) { _contentH = 0; return; }
+            float width = _panelInnerW;
+            // Largest chest that keeps the grid within 3 rows (and at most 112 px).
+            const float gap = 18;
+            float size = 112;
+            int perRow = 1;
+            for (; size > 56; size -= 4)
+            {
+                perRow = Mathf.Max(1, Mathf.FloorToInt((width + gap) / (size + gap)));
+                if (Mathf.CeilToInt(groups.Count / (float)perRow) <= 3) break;
+            }
+            int rows = Mathf.CeilToInt(groups.Count / (float)perRow);
+            _contentH = rows * (size + gap) + 8;
+            var area = GUILayoutUtility.GetRect(width, rows * (size + gap) + 8, GUILayout.ExpandWidth(true));
+            for (int i = 0; i < groups.Count; i++)
+            {
+                int row = i / perRow, col = i % perRow;
+                int inRow = Mathf.Min(perRow, groups.Count - row * perRow);
+                float rowW = inRow * size + (inRow - 1) * gap;
+                var cell = new Rect(area.center.x - rowW / 2 + col * (size + gap), area.y + 12 + row * (size + gap), size, size);
+                GameArt.DrawChest(cell, groups[i].chest);
+                string n = groups[i].n.ToString();
+                float bw = n.Length > 1 ? 44 : 36;
+                GUI.Label(new Rect(cell.xMax - bw + 8, cell.y - 10, bw, 36), n, _badge);
+            }
+        }
+
+        private float _panelInnerW = 520;
+        /// <summary>Height the panel's content took last frame, so the window fits it without a gap.</summary>
+        private float _contentH = 140;
+
+        private void Panel(float w, float h, string title, string text, Action buttons, Action content = null)
         {
             var old = GUI.color;
             GUI.color = new Color(0, 0, 0, 0.55f);
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            var r = new Rect((w - pw) / 2, h / 2 - 350, pw, 700);
+            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 700);
+            var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
             if (ribbon)
@@ -400,10 +439,12 @@ namespace Game.View
                 _panelTitle.normal.textColor = col;
                 GUI.Label(t, title, _panelTitle);
             }
+            _panelInnerW = r.width - 80;
             GUILayout.BeginArea(new Rect(r.x + 40, r.y + (ribbon ? 100 : 36), r.width - 80, r.height - (ribbon ? 136 : 72)));
             if (!ribbon) GUILayout.Label(title, _panelTitle);
-            GUILayout.Space(20);
-            GUILayout.Label(text, _panelBody);
+            GUILayout.Space(content != null ? 8 : 20);
+            content?.Invoke();
+            if (!string.IsNullOrEmpty(text)) GUILayout.Label(text, _panelBody);
             GUILayout.FlexibleSpace();
             buttons();
             GUILayout.EndArea();
