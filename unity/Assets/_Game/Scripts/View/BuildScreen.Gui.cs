@@ -611,18 +611,24 @@ namespace Game.View
             float tx = ax + 46;
             if (choosing)
             {
-                foreach (var target in castle.PartsOfTier(Game.Catalog.TierOf(_pick[0]) + 1))
+                // Every possible target fits in the strip (smaller when there are many), the ones the castle needs first.
+                var targets = castle.PartsOfTier(Game.Catalog.TierOf(_pick[0]) + 1)
+                    .OrderByDescending(t => Game.Need(State, t) > 0).ThenByDescending(t => Game.Need(State, t)).ToList();
+                const float tg = 8;
+                float ts = Mathf.Min(st, (strip.xMax - 14 - tx - tg * (targets.Count - 1)) / Mathf.Max(1, targets.Count));
+                float ty = sy + (st - ts) / 2;
+                foreach (var target in targets)
                 {
-                    if (tx + st > strip.xMax - 10) break;
-                    var c = new Rect(tx, sy, st, st);
+                    var c = new Rect(tx, ty, ts, ts);
                     bool needed = Game.Need(State, target) > 0;
                     if (GUI.Button(c, GUIContent.none, needed ? _tilePicked : _tile))
                     {
                         string pa = _pick[0], pb = _pick[1], to = target;
                         Later(() => Merge(pa, pb, to), click: false);
                     }
-                    GameArt.DrawPart(new Rect(c.x + 12, c.y + 12, st - 24, st - 24), target, Game.Catalog.TierOf(target));
-                    tx += st + 12;
+                    float pad = ts * 0.13f;
+                    GameArt.DrawPart(new Rect(c.x + pad, c.y + pad, ts - 2 * pad, ts - 2 * pad), target, Game.Catalog.TierOf(target));
+                    tx += ts + tg;
                 }
             }
             else
