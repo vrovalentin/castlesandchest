@@ -23,6 +23,10 @@ namespace Game.Core
             new PartInfo("sails", 5, "Крыло"),
             new PartInfo("chimney", 6, "Труба"),
             new PartInfo("baker", 7, "Пекарь"), new PartInfo("miller", 7, "Мельник"),
+            new PartInfo("ladder", 5, "Лестница"), new PartInfo("vines", 5, "Лоза"),
+            new PartInfo("beacon", 6, "Огонь"), new PartInfo("sign", 6, "Вывеска"), new PartInfo("telescope", 6, "Телескоп"),
+            new PartInfo("squirrel", 7, "Белка"), new PartInfo("catsailor", 7, "Кот-моряк"), new PartInfo("fairy", 7, "Фея"),
+            new PartInfo("innkeeper", 7, "Трактирщик"), new PartInfo("wizard", 7, "Волшебник"),
         };
 
         /// <summary>The parts every castle offers; the rest belong to one building each.</summary>
@@ -35,6 +39,12 @@ namespace Game.Core
                 .GroupBy(p => p.Tier).ToDictionary(g => g.Key, g => g.Select(p => p.Id).ToArray());
 
         private static string[] Repeat(string id, int n) => Enumerable.Repeat(id, n).ToArray();
+
+        /// <summary>Slots written as "clay*6 wall door", in building order.</summary>
+        private static string[] Slots(string list) =>
+            list.Split(new[] { ' ', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .SelectMany(s => s.Contains("*") ? Repeat(s.Split('*')[0], int.Parse(s.Split('*')[1])) : new[] { s })
+                .ToArray();
 
         /// <summary>The demo catalog. <paramref name="castles"/> limits it to the first buildings (the prototype has two).</summary>
         public static Catalog Create(int castles = int.MaxValue)
@@ -81,7 +91,27 @@ namespace Game.Core
             slots4.AddRange(new[] { "door", "porch", "lantern", "lantern", "miller" });
             var castle4 = new CastleInfo("castle_4", "Мельница", 30, 0.25, 0.2, slots4.ToArray(), AllTiers("sails", "miller"));
 
-            var all = new[] { castle1, castle2, castle3, castle4 };
+            // Buildings 5-10, cut by tools/art/cut_house_N.py; the slots follow their layers.
+            var castle5 = new CastleInfo("castle_5", "Домик на дереве", 30, 0.25, 0.2, Slots(
+                "clay*6 wall*4 roof tiles roof floor*3 brick door window window roof chimney " +
+                "brick door window tiles spire ladder porch lantern lantern squirrel"), AllTiers("ladder", "chimney", "squirrel"));
+            var castle6 = new CastleInfo("castle_6", "Маяк", 30, 0.25, 0.2, Slots(
+                "clay*8 wall wall window brick door window wall wall window tiles chimney floor floor " +
+                "beacon roof spire porch lantern lantern catsailor"), AllTiers("beacon", "chimney", "catsailor"));
+            var castle7 = new CastleInfo("castle_7", "Тыквенный домик", 30, 0.25, 0.2, Slots(
+                "clay*8 wall wall door window wall wall window window wall window vines roof tiles spire chimney " +
+                "brick window roof spire vines vines porch lantern lantern fairy"), AllTiers("vines", "chimney", "fairy"));
+            var castle8 = new CastleInfo("castle_8", "Трактир", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall door window tiles sign floor wall wall window*3 roof tiles wall window*3 chimney " +
+                "porch lantern innkeeper"), AllTiers("sign", "chimney", "innkeeper"));
+            var castle9 = new CastleInfo("castle_9", "Башня волшебника", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall door wall floor window wall window wall window floor wall window " +
+                "roof spire tiles spire roof spire telescope lantern lantern wizard"), AllTiers("telescope", "wizard"));
+            var castle10 = new CastleInfo("castle_10", "Ледяной дворец", 30, 0.25, 0.2, Slots(
+                "clay*6 wall*4 door window*4 wall*5 floor*3 wall window*5 roof roof tiles tiles roof spire*5 " +
+                "porch lantern lantern princess"), AllTiers());
+
+            var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10 };
             return new Catalog(new Rules(), Parts, all.Take(Math.Max(1, Math.Min(castles, all.Length))).ToArray());
         }
     }

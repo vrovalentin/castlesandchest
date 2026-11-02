@@ -56,7 +56,8 @@ for part, spec in icons.items():
         a[~keep] = 0
         im = Image.fromarray(a)
     im = im.crop(im.getchannel('A').point(lambda a: 255 if a > 40 else 0).getbbox())
-    im.thumbnail((244, 244), Image.LANCZOS)
+    k = 244 / max(im.size)  # small pictures are scaled up too, so every icon fills its square
+    im = im.resize((max(1, round(im.width * k)), max(1, round(im.height * k))), Image.LANCZOS)
     out = Image.new('RGBA', (256, 256))
     out.paste(im, ((256 - im.width) // 2, 256 - im.height - 4))
     t = os.path.join(root, 'Parts', f'part_{part}.png')

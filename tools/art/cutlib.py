@@ -5,17 +5,24 @@ from PIL import Image
 from scipy import ndimage as ndi
 
 
-def cutout(img):
-    """Alpha from the white background: flood from the border over near-white, then a soft edge."""
+def cutout(img, snow=False, open_holes=0):
+    """Alpha from the white background: flood from the border over near-white, then a soft edge.
+    snow=True is for white snowy buildings: only near-pure white is background, and no shadow band.
+    open_holes=N: closed patches of white bigger than N pixels (sky seen through a tree crown) are background too."""
     mn, mx = img.min(2), img.max(2)
-    white = (mn > 236) & (mx - mn < 22)
+    white = (mn > (247 if snow else 236)) & (mx - mn < (8 if snow else 22))
     # the soft grey-white shadow under the base counts as background too, so no light fringe stays there
     H = img.shape[0]
     low = np.zeros_like(white); low[int(H * 0.8):] = True
-    white |= low & (mn > 214) & (mx - mn < 16)
+    if not snow:
+        white |= low & (mn > 214) & (mx - mn < 16)
     lab, _ = ndi.label(white)
     border = np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))
     bg = np.isin(lab, border[border > 0])
+    if open_holes:
+        sizes = ndi.sum(np.ones_like(lab), lab, range(1, lab.max() + 1))
+        big = 1 + np.flatnonzero(sizes > open_holes)
+        bg |= np.isin(lab, big)
     bg = ndi.binary_opening(bg, iterations=1)
     fg = ~bg
     fg = ndi.binary_fill_holes(fg) & fg | ndi.binary_fill_holes(fg) & ~ndi.binary_dilation(bg, iterations=1)
@@ -100,3 +107,55 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
             vis[a] = pal[i]
         vis[left & (aC > 0.5)] = [255, 0, 255]
         Image.fromarray(vis).save(preview)
+
+
+class Shapes:
+    """Shape masks on an H×W picture, in picture pixels."""
+
+    def __init__(self, H, W):
+        self.Y, self.X = np.mgrid[0:H, 0:W]
+
+    def box(self, x0, x1, y0, y1):
+        X, Y = self.X, self.Y
+        return (X >= x0) & (X <= x1) & (Y >= y0) & (Y <= y1)
+
+    def ell(self, cx, cy, rx, ry):
+        return ((self.X - cx) / rx) ** 2 + ((self.Y - cy) / ry) ** 2 <= 1
+
+    def arch(self, x0, x1, y0, y1):
+        return arch(self.X, self.Y, x0, x1, y0, y1)
+
+    def poly(self, *pts):
+        """Inside a convex polygon given as (x, y) points in order."""
+        X, Y = self.X, self.Y
+        m = np.ones(X.shape, bool)
+        n = len(pts)
+        sign = None
+        for i in range(n):
+            (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
+            c = (x1 - x0) * (Y - y0) - (y1 - y0) * (X - x0)
+            m &= c >= 0
+        if not m.any():   # other winding
+            m = np.ones(X.shape, bool)
+            for i in range(n):
+                (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
+                m &= (x1 - x0) * (Y - y0) - (y1 - y0) * (X - x0) <= 0
+        return m
+
+
+def claim(on, regions):
+    """regions: (name, mask) in priority order; each pixel of `on` goes to the first region holding it.
+    Returns {name: mask} (names may repeat: their masks are OR-ed) and what is left."""
+    out, left = {}, on.copy()
+    for name, m in regions:
+        got = m & left
+        out[name] = out.get(name, np.zeros_like(on)) | got
+        left &= ~got
+    return out, left
+
+
+def full_only(F, C, aF, close=4):
+    """Pixels that the full picture adds over the clean one (people, lanterns, steps)."""
+    aFm = aF > 0.5
+    d = (np.abs(F - C).sum(2) > 60) & aFm
+    return ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(d, iterations=2), iterations=close)) & aFm
