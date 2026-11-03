@@ -76,9 +76,9 @@ namespace Game.Core
             // Building 3, the gingerbread house (tools/art/cut_house_3.py).
             var slots3 = new List<string>();
             slots3.AddRange(Repeat("clay", 6));                                       // cookie stones
-            slots3.AddRange(new[] { "wall", "wall", "brick", "brick" });             // lower walls, candy-cane pillars
+            slots3.AddRange(new[] { "brick", "brick", "wall", "wall" });             // candy-cane pillars, lower walls
             slots3.AddRange(new[] { "door", "window", "window", "wall", "window" }); // door, windows, gable
-            slots3.AddRange(new[] { "chimney", "roof", "tiles", "spire" });          // chimney, icing roof, lollipop
+            slots3.AddRange(new[] { "roof", "tiles", "chimney", "spire" });          // icing roof, chimney, lollipop
             slots3.AddRange(new[] { "porch", "lantern", "lantern", "baker" });       // jelly steps, lanterns, the baker
             var castle3 = new CastleInfo("castle_3", "Пряничный домик", 30, 0.25, 0.2, slots3.ToArray(), AllTiers("chimney", "baker"));
 
@@ -86,17 +86,18 @@ namespace Game.Core
             var slots4 = new List<string>();
             slots4.AddRange(Repeat("clay", 6));                                       // stone base
             slots4.AddRange(new[] { "wall", "wall", "window", "floor" });            // lower tower, window, balcony
-            slots4.AddRange(new[] { "wall", "window", "roof", "tiles", "spire" });   // upper tower, window, roof, spire
-            slots4.AddRange(Repeat("sails", 4));
+            slots4.AddRange(new[] { "window", "wall" });                              // upper window, upper tower
+            slots4.AddRange(Repeat("sails", 4));                                      // the sails hold the roof up in the picture
+            slots4.AddRange(new[] { "roof", "tiles", "spire" });
             slots4.AddRange(new[] { "door", "porch", "lantern", "lantern", "miller" });
             var castle4 = new CastleInfo("castle_4", "Мельница", 30, 0.25, 0.2, slots4.ToArray(), AllTiers("sails", "miller"));
 
             // Buildings 5-10, cut by tools/art/cut_house_N.py; the slots follow their layers.
             var castle5 = new CastleInfo("castle_5", "Домик на дереве", 30, 0.25, 0.2, Slots(
-                "clay*6 wall*4 roof tiles roof floor*3 brick door window window roof chimney " +
-                "brick door window tiles spire ladder porch lantern lantern squirrel"), AllTiers("ladder", "chimney", "squirrel"));
+                "clay*6 wall*4 floor floor brick door window window roof chimney " +
+                "brick floor door window tiles spire roof tiles roof ladder porch lantern lantern squirrel"), AllTiers("ladder", "chimney", "squirrel"));
             var castle6 = new CastleInfo("castle_6", "Маяк", 30, 0.25, 0.2, Slots(
-                "clay*8 wall wall window brick door window wall wall window tiles chimney floor floor " +
+                "clay*8 wall wall window brick door wall wall window tiles window chimney floor floor " +
                 "beacon roof spire porch lantern lantern catsailor"), AllTiers("beacon", "chimney", "catsailor"));
             var castle7 = new CastleInfo("castle_7", "Тыквенный домик", 30, 0.25, 0.2, Slots(
                 "clay*8 wall wall door window wall wall window window wall window vines roof tiles spire chimney " +
@@ -108,7 +109,7 @@ namespace Game.Core
                 "clay*6 wall wall door wall floor window wall window wall window floor wall window " +
                 "roof spire tiles spire roof spire telescope lantern lantern wizard"), AllTiers("telescope", "wizard"));
             var castle10 = new CastleInfo("castle_10", "Ледяной дворец", 30, 0.25, 0.2, Slots(
-                "clay*6 wall*4 door window*4 wall*5 floor*3 wall window*5 roof roof tiles tiles roof spire*5 " +
+                "clay*6 wall*4 door window*4 wall floor*3 wall*5 window*5 roof roof tiles tiles roof spire*5 " +
                 "porch lantern lantern princess"), AllTiers());
 
             var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10 };

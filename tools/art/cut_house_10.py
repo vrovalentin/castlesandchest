@@ -27,7 +27,7 @@ regions = [
     ('wl5', S.box(810, 858, 652, 758)),
     ('wu1', S.box(180, 224, 452, 562)), ('wu2', S.box(332, 372, 348, 422)), ('wu3', S.box(448, 578, 262, 378)),
     ('wu4', S.box(652, 694, 366, 432)), ('wu5', S.box(806, 852, 488, 592)),
-    ('cone1', S.box(126, 286, 280, 462)), ('cone2', S.box(292, 416, 190, 338)), ('cone3', S.box(412, 610, 70, 282)),
+    ('cone1', S.box(126, 286, 280, 462) | S.box(126, 160, 455, 500)), ('cone2', S.box(292, 416, 190, 338)), ('cone3', S.box(412, 610, 70, 282)),
     ('cone4', S.box(596, 750, 184, 402)), ('cone5', S.box(760, 902, 300, 498)),
     ('bat2', S.box(296, 410, 414, 472)), ('bat3', S.box(406, 616, 366, 446)), ('bat4', S.box(598, 758, 426, 508)),
     ('gable', S.box(380, 642, 446, 540)),
@@ -41,9 +41,10 @@ SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 6)]
 SLOTS += [('wall', R['lowA'], 'clean'), ('wall', R['lowD'], 'clean'), ('wall', R['lowB'], 'clean'),
           ('wall', R['lowC'], 'clean'), ('door', R['gate'], 'clean')]
 SLOTS += [('window', R[k], 'clean') for k in ('wl1', 'wl2', 'wl4', 'wl5')]
+# the gable and the battlements first, so the upper tower walls have something to stand on
+SLOTS += [('wall', R['gable'], 'clean'),
+          ('floor', R['bat2'], 'clean'), ('floor', R['bat4'], 'clean'), ('floor', R['bat3'], 'clean')]
 SLOTS += [('wall', R[f'up{i}'], 'clean') for i in (1, 5, 2, 4, 3)]
-SLOTS += [('floor', R['bat2'], 'clean'), ('floor', R['bat4'], 'clean'), ('floor', R['bat3'], 'clean'),
-          ('wall', R['gable'], 'clean')]
 SLOTS += [('window', R[k], 'clean') for k in ('wu1', 'wu5', 'wu2', 'wu4', 'wu3')]
 SLOTS += [('roof', R['cone1'], 'clean'), ('roof', R['cone5'], 'clean'), ('tiles', R['cone2'], 'clean'),
           ('tiles', R['cone4'], 'clean'), ('roof', R['cone3'], 'clean')]

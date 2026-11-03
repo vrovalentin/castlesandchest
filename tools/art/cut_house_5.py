@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import cutout, write_castle, split_even, Shapes, claim, full_only
+from cutlib import settle, cutout, write_castle, split_even, Shapes, claim, full_only
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -37,7 +37,8 @@ R, rest = claim(on, [
     ('roof2', S.poly((688, 418), (810, 306), (972, 418), (950, 425), (810, 330), (705, 425))),
     ('wall2', S.box(696, 950, 360, 492)),
     ('deck2', S.box(676, 945, 488, 532)),
-    ('bridge', S.poly((540, 370), (580, 370), (745, 430), (745, 510), (580, 505), (540, 470))),
+    # the bridge and the branch stub above its left end, which would hang in the air until the bridge is built
+    ('bridge', S.poly((540, 370), (580, 370), (745, 430), (745, 510), (580, 505), (540, 470)) | S.box(520, 612, 320, 402)),
     # the crown: left, top and right, and the trunk below it
     ('crownL', (Y < 565) & (X < 330)),
     ('crownR', (Y < 600) & (X >= 650)),
@@ -46,17 +47,32 @@ R, rest = claim(on, [
     ('trunkL_hi', (X < 512)), ('trunkR_hi', np.ones_like(on)),
 ])
 found = R['found']
+# leaves inside the houses' boxes that grow on from the crown outside them go with the crown,
+# so the houses don't show up as rectangles cut out of the foliage
+house = ['wall1', 'roof1', 'win_left', 'chimney1', 'deck1', 'wall2', 'roof2', 'deck2', 'bridge']
+inside = np.zeros_like(on)
+for k in house: inside |= R[k]
+lab, _ = ndi.label(leafy & on, structure=np.ones((3, 3), bool))
+outer = np.isin(lab, np.unique(lab[leafy & on & ~inside & (lab > 0)])) & (lab > 0)
+for k in house:
+    moved = R[k] & outer
+    moved &= ~ndi.binary_fill_holes(ndi.binary_closing(R[k] & ~moved, iterations=6))   # ivy on the walls stays
+    R[k] &= ~moved
+    R['crownL'] |= moved & (X < 330); R['crownR'] |= moved & (X >= 650); R['crownT'] |= moved & (X >= 330) & (X < 650)
 SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 6)]
 SLOTS += [('wall', R['trunkL_lo'], 'clean'), ('wall', R['trunkR_lo'], 'clean'),
           ('wall', R['trunkL_hi'], 'clean'), ('wall', R['trunkR_hi'], 'clean'),
-          ('roof', R['crownL'], 'clean'), ('tiles', R['crownT'], 'clean'), ('roof', R['crownR'], 'clean'),
-          ('floor', R['deck1'], 'clean'), ('floor', R['deck2'], 'clean'), ('floor', R['bridge'], 'clean'),
+          ('floor', R['deck1'], 'clean'), ('floor', R['bridge'], 'clean'),
           ('brick', R['wall1'], 'clean'), ('door', R['door1'], 'clean'),
           ('window', R['win_left'], 'clean'), ('window', R['win_round'], 'clean'),
           ('roof', R['roof1'], 'clean'), ('chimney', R['chimney1'], 'clean'),
-          ('brick', R['wall2'], 'clean'), ('door', R['door2'], 'clean'), ('window', R['win2'], 'clean'),
+          ('brick', R['wall2'], 'clean'), ('floor', R['deck2'], 'clean'), ('door', R['door2'], 'clean'), ('window', R['win2'], 'clean'),
           ('tiles', R['roof2'], 'clean'), ('spire', R['spire2'], 'clean'),
+          # the crown last, so the houses don't stand in holes of sky for half the build
+          ('roof', R['crownL'], 'clean'), ('tiles', R['crownT'], 'clean'), ('roof', R['crownR'], 'clean'),
           ('ladder', R['ladder'], 'clean')]
+
+SLOTS = settle(SLOTS, found)
 
 D = full_only(F, C, aF)
 squirrel = D & S.box(415, 545, 296, 425) & ~S.box(400, 560, 345, 425) | D & S.box(455, 512, 345, 418)

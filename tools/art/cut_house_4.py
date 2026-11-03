@@ -64,9 +64,10 @@ SLOTS = []
 for m in split_even(found, X, 6):
     SLOTS.append(('clay', m, 'clean'))
 SLOTS += [('wall', wallL, 'clean'), ('wall', wallR, 'clean'), ('window', low_win, 'clean'),
-          ('floor', balcony, 'clean'), ('wall', upper, 'clean'), ('window', upper_win, 'clean'),
-          ('roof', roofL, 'clean'), ('tiles', roofR, 'clean'), ('spire', spire, 'clean')]
+          ('floor', balcony, 'clean'), ('window', upper_win, 'clean'), ('wall', upper, 'clean')]
+# the sails before the roof: they cover the top of the tower, so the roof would otherwise hang in the air
 SLOTS += [('sails', blades[k], 'clean') for k in range(4)]
+SLOTS += [('roof', roofL, 'clean'), ('tiles', roofR, 'clean'), ('spire', spire, 'clean')]
 
 aFm = aF > 0.5
 diff = (np.abs(F - C).sum(2) > 60) & aFm

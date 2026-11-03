@@ -6,7 +6,7 @@ import sys, os
 import numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import cutout, write_castle, split_even, Shapes, claim, full_only
+from cutlib import settle, cutout, write_castle, split_even, Shapes, claim, full_only
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -45,6 +45,8 @@ SLOTS += [('wall', R['lowL'], 'clean'), ('wall', R['lowR'], 'clean'), ('door', R
           ('roof', R['coneL'], 'clean'), ('spire', R['spL'], 'clean'),
           ('tiles', R['coneR'], 'clean'), ('spire', R['spR'], 'clean'),
           ('roof', R['dome'], 'clean'), ('spire', R['finial'], 'clean'), ('telescope', R['scope'], 'clean')]
+
+SLOTS = settle(SLOTS, found)
 
 D = full_only(F, C, aF)
 lantL = D & (S.box(170, 335, 430, 655) | S.box(460, 522, 676, 795))
