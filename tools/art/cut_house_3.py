@@ -43,7 +43,7 @@ pillarR = on & box(762, 824, 448, 792) & ~green
 door = arch(X, Y, 414, 618, 462, 770) & on
 winL = on & box(248, 432, 518, 702) & ~green
 winR = on & box(596, 792, 518, 702) & ~green & ~pillarR
-holly = on & ((box(290, 390, 650, 700)) | box(640, 745, 650, 700)) & ~green
+holly = on & ((box(290, 390, 650, 700)) | box(640, 745, 650, 700))   # window boxes with their leaves
 winL |= holly & (X < 512); winR |= holly & (X >= 512)
 
 # cookie-stone foundation, six pieces left to right
@@ -52,16 +52,22 @@ found = on & (Y >= 792) & ~green
 body = on & ~roof & ~lolly & ~chimney & ~upper_win & ~found & ~pillarL & ~pillarR & ~door & ~winL & ~winR
 lower = body & (Y >= 470)
 gable_wall = body & (Y < 470)
+# crumbs of smoke and icing outside the gable go with the chimney or the roof, not hang in the air with the gable
+stray = gable_wall & ~gable & (Y < 300)
+chimney |= stray & (X >= 600) & (X <= 830)
+roofL |= stray & ~chimney & (X < 516); roofR |= stray & ~chimney & (X >= 516)
+gable_wall &= ~stray
 wallL, wallR = lower & (X < 516), lower & (X >= 516)
 
 SLOTS = []
 for m in split_even(found, X, 6):
     SLOTS.append(('clay', m, 'clean'))
-SLOTS += [('wall', wallL, 'clean'), ('wall', wallR, 'clean'),
-          ('brick', pillarL, 'clean'), ('brick', pillarR, 'clean'),
+# the candy-cane pillars first: the eave beam over the walls rests on them
+SLOTS += [('brick', pillarL, 'clean'), ('brick', pillarR, 'clean'),
+          ('wall', wallL, 'clean'), ('wall', wallR, 'clean'),
           ('door', door, 'clean'), ('window', winL, 'clean'), ('window', winR, 'clean'),
           ('wall', gable_wall, 'clean'), ('window', upper_win, 'clean'),
-          ('chimney', chimney, 'clean'), ('roof', roofL, 'clean'), ('tiles', roofR, 'clean'),
+          ('roof', roofL, 'clean'), ('tiles', roofR, 'clean'), ('chimney', chimney, 'clean'),
           ('spire', lolly, 'clean')]
 
 # things only in the full picture

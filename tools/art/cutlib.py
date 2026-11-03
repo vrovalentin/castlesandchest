@@ -54,6 +54,28 @@ def split_even(found, X, pieces):
     return [found & (X >= edges[k]) & (X < edges[k + 1]) for k in range(pieces)]
 
 
+def settle(slots, found):
+    """Bits of a step that would hang in the air (not joined to the foundation through what is built so far)
+    move on to the next step of the house, until they have something to hang on. A step that would float
+    whole stays as it is."""
+    slots = list(slots)
+    acc = found.copy()
+    eight = np.ones((3, 3), bool)
+    for i, (part, m, src) in enumerate(slots):
+        if part == 'clay' or src != 'clean':
+            acc |= m
+            continue
+        lab, _ = ndi.label(acc | m, structure=eight)
+        grounded = np.isin(lab, np.unique(lab[found & (lab > 0)]))
+        loose = m & ~grounded
+        j = next((k for k in range(i + 1, len(slots)) if slots[k][2] == 'clean' and slots[k][0] != 'clay'), None)
+        if loose.any() and (m & ~loose).any() and j is not None:
+            slots[i] = (part, m & ~loose, src)
+            slots[j] = (slots[j][0], slots[j][1] | loose, slots[j][2])
+        acc |= slots[i][1]
+    return slots
+
+
 def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True):
     """Writes <prefix>_NN_<part>.png layers, outlines, base, decor (from the clean picture) and the full picture.
     slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False."""

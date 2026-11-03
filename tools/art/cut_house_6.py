@@ -25,7 +25,7 @@ R, rest = claim(on, [
     ('cwin', S.ell(612, 572, 30, 30)),
     ('door', S.arch(556, 662, 628, 815)),
     ('croof', S.poly((455, 595), (520, 437), (650, 450), (800, 600), (790, 642), (455, 620)) & ~((X < 527) & (Y < 560))),
-    ('cwall', S.box(470, 770, 500, 820)),
+    ('cwall', S.box(470, 770, 500, 820) & ~((X < 530) & (Y < 560))),   # not the tower's band above it
     # the tower, bottom-up
     ('spire', Y < 96),
     ('roof', Y < 198),
@@ -39,9 +39,10 @@ R, rest = claim(on, [
 found = R['found']
 SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 8)]
 SLOTS += [('wall', R['bandA'], 'clean'), ('wall', R['bandB'], 'clean'), ('window', R['win2'], 'clean'),
-          ('brick', R['cwall'], 'clean'), ('door', R['door'], 'clean'), ('window', R['cwin'], 'clean'),
+          ('brick', R['cwall'], 'clean'), ('door', R['door'], 'clean'),
           ('wall', R['bandC'], 'clean'), ('wall', R['bandD'], 'clean'), ('window', R['win1'], 'clean'),
-          ('tiles', R['croof'], 'clean'), ('chimney', R['chimney'], 'clean'),
+          # the round window sits in the gable, which comes with the roof
+          ('tiles', R['croof'], 'clean'), ('window', R['cwin'], 'clean'), ('chimney', R['chimney'], 'clean'),
           ('floor', R['cornice'], 'clean'), ('floor', R['rail'], 'clean'), ('beacon', R['lamp'], 'clean'),
           ('roof', R['roof'], 'clean'), ('spire', R['spire'], 'clean')]
 
