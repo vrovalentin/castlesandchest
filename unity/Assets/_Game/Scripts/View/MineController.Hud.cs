@@ -163,8 +163,12 @@ namespace Game.View
             if (_mode == Mode.OutOfMoves) Panel(w, h, "Ходы кончились", OutOfMovesText(), OutOfMovesButtons);
             else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons, SummaryChests);
             else if (_mode == Mode.ConfirmRestart) Panel(w, h, "Начать заново?", RestartText(), RestartButtons);
-            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились", "Новые билеты придут завтра.", () =>
+            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились",
+                Game.CanWatchAdForTickets(State) ? $"Посмотри рекламу и получи {Game.Rules.AdTickets} билета. Или жди завтра: придут новые." : "Новые билеты придут завтра.", () =>
             {
+                if (Game.CanWatchAdForTickets(State) && GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76)))
+                    WatchAdForTickets();
+                GUILayout.Space(12);
                 if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(76))) _toBuild();
             });
             Hints.Draw();

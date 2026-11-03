@@ -21,6 +21,8 @@ namespace Game.View
         private string _message;
         private float _messageUntil;
         private bool _donePanel;
+        /// <summary>When the building was finished: the show of the finished building counts from here.</summary>
+        private float _doneAt;
         private bool _askStartOver;
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
@@ -90,7 +92,7 @@ namespace Game.View
             _placedAt = Time.time;
             _s.Save();
             Sfx.Play("place");
-            if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; Sfx.Play("fanfare"); }
+            if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
             return true;
         }
 
@@ -133,6 +135,18 @@ namespace Game.View
             _storageOpen = false;
             _chestsOpen = false;
             _pick.Clear();
+        }
+
+        /// <summary>
+        /// Tickets for an ad when they ran out. The ad itself is a stub until the Yandex SDK: the reward comes at once.
+        /// </summary>
+        public bool WatchAdForTickets()
+        {
+            if (!Game.AdTickets(State)) return false;
+            _s.Save();
+            Sfx.Play("collect");
+            Say($"+{Game.Rules.AdTickets} билета за рекламу. Можно добывать!");
+            return true;
         }
 
         /// <summary>Shows the «Начать сначала?» window.</summary>

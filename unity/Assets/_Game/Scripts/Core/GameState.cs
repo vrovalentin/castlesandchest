@@ -25,6 +25,8 @@ namespace Game.Core
         public int Tickets;
         /// <summary>Day of the last daily gift, like "2026-10-20". Null if never.</summary>
         public string DailyDay;
+        /// <summary>Ads watched for tickets today (reset with the daily gift).</summary>
+        public int AdsToday;
         public int Built;
         /// <summary>All points ever earned: in the mine and on the building site.</summary>
         public int Score;

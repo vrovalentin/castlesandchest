@@ -201,6 +201,13 @@ namespace Game.View
             var bg = GameArt.BuildBackground;
             // The meadow fills the screen; its horizon (about 60% down the picture) sits a little behind the building site.
             if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, 0.6f, groundY - 150);
+            if (_donePanel)
+            {
+                // The finished building gets the whole screen; the page comes back with the next building.
+                DrawShowcase(w, h);
+                Hints.Draw();
+                return;
+            }
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
@@ -220,7 +227,6 @@ namespace Game.View
             DrawFlights(storageTile.center);
 
             if (_reward != null) DrawRewardPanel(w, h);
-            else if (_donePanel) DrawDonePanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
             else if (_chestsOpen) DrawChestsWindow(w, h);
@@ -542,9 +548,9 @@ namespace Game.View
             var castle = Game.CastleOf(State);
             var parts = Game.Catalog.Parts.Where(p => State.Count(p.Id) > 0).OrderBy(p => p.Tier).Select(p => p.Id).ToList();
             float pw = Mathf.Min(680, w - 40);
-            // As tall as the parts need: header 176, the grid, the «Собрать» strip and the close button.
+            // As tall as the parts need: header 176, the grid (tile, level tag and name), the «Собрать» strip and the close button.
             int gridRows = Mathf.Max(1, Mathf.CeilToInt(parts.Count / 4f));
-            float ph = Mathf.Min(h - 150, 176 + gridRows * 174 + 20 + 190 + 30 + 96 + 50);
+            float ph = Mathf.Min(h - 150, 176 + gridRows * 186 + 20 + 190 + 30 + 96 + 50);
             var r = new Rect((w - pw) / 2, Mathf.Max(110, (h - ph) / 2), pw, ph);
             NightWindow(r, "Склад");
             bool choosing = _pick.Count == 2;
@@ -557,7 +563,7 @@ namespace Game.View
             GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), hint, _nightBody);
 
             // The parts, four in a row.
-            const float tile = 124, nameH = 34, gap = 16;
+            const float tile = 124, nameH = 46, gap = 16;
             int perRow = Mathf.Max(1, Mathf.FloorToInt((r.width - 60 + gap) / (tile + gap)));
             float gridW = perRow * tile + (perRow - 1) * gap, gx = r.center.x - gridW / 2, gy = r.y + 176;
             var nameOnNight = new GUIStyle(_name);
@@ -582,8 +588,9 @@ namespace Game.View
                 GUI.color = old;
                 Badge(new Vector2(cell.xMax - 8, cell.y + 8), State.Count(id));
                 int need = Math.Max(0, Game.Need(State, id));
-                if (need > 0) GUI.Label(new Rect(cell.x + 4, cell.yMax - 32, 44, 28), "−" + need, _need);
-                GUI.Label(new Rect(cell.x - 10, cell.yMax + 4, tile + 20, nameH), Game.Catalog.NameOf(id), nameOnNight);
+                if (need > 0) GUI.Label(new Rect(cell.x - 6, cell.y - 6, 44, 28), "−" + need, _need);
+                TierTag(new Rect(cell.center.x - 42, cell.yMax - 17, 84, 32), t, picked || _pick.Count == 0 || canAdd);
+                GUI.Label(new Rect(cell.x - 10, cell.yMax + 18, tile + 20, nameH), Game.Catalog.NameOf(id), nameOnNight);
             }
 
             // What is being merged: two picked parts, an arrow and what they can become.
@@ -642,12 +649,18 @@ namespace Game.View
 
         private void DrawMineButton(Rect r)
         {
+            bool ad = Game.CanWatchAdForTickets(State);
             string text = State.Run != null ? $"Продолжить · {State.Run.Moves} ход."
                 : State.Tickets > 0 ? $"Добывать · {State.Opts.Moves} ходов  <size=22>билетов: {State.Tickets}</size>"
+                : ad ? $"+{Game.Rules.AdTickets} билета · реклама  <size=22>билеты кончились</size>"
                 : "Билеты кончились, новые завтра";
             if (GUI.Button(r, text, _mineBtn) && _reward == null)
             {
-                if (State.Run == null && State.Tickets < 1) Say("Билеты кончились. Новые придут завтра.");
+                if (State.Run == null && State.Tickets < 1)
+                {
+                    if (ad) Later(() => WatchAdForTickets(), click: false);
+                    else Say("Билеты кончились. Новые придут завтра.");
+                }
                 else Later(() => _toMine?.Invoke());
             }
         }
@@ -700,34 +713,128 @@ namespace Game.View
             GUI.matrix = m;
         }
 
-        private void DrawDonePanel(float w, float h)
+        /// <summary>A part's level on a little plaque in its chest colour, under its storage tile.</summary>
+        private void TierTag(Rect r, int tier, bool bright)
         {
-            Dim(w, h);
+            var c = Palette.Tier(tier);
+            var old = GUI.color;
+            if (!bright) GUI.color = new Color(1, 1, 1, 0.45f);
+            GUI.DrawTexture(r, UiArt.Round(c, Color.Lerp(c, Color.black, 0.45f), 15, 3));
+            // A soft light top half, like the gold buttons.
+            GUI.DrawTexture(new Rect(r.x + 6, r.y + 4, r.width - 12, r.height * 0.36f), UiArt.Round(new Color(1, 1, 1, 0.28f), new Color(1, 1, 1, 0), 6, 0));
+            Outlined(r, $"ур. {tier}", _tierTag ??= new GUIStyle(_ribbonTitle) { fontSize = 19 }, Color.Lerp(c, Color.black, 0.6f), 2f);
+            GUI.color = old;
+        }
+
+        private GUIStyle _tierTag, _showName, _showText;
+
+        private static float EaseOut(float t) { t = Mathf.Clamp01(t); return 1 - (1 - t) * (1 - t) * (1 - t); }
+
+        /// <summary>
+        /// The finished building: it grows from its place on the meadow to the whole screen, rays turn behind it and
+        /// confetti falls. The card with the reward and «Далее» comes only after that (a tap brings it sooner).
+        /// </summary>
+        private void DrawShowcase(float w, float h)
+        {
+            const float cardAt = 1.8f;
+            float t = Time.time - _doneAt;
+            if (t < cardAt && Event.current.type == EventType.MouseDown) { _doneAt = Time.time - cardAt; Event.current.Use(); }
             bool last = Game.IsLastCastle(State);
-            float pw = Mathf.Min(620, w - 60);
-            var r = new Rect((w - pw) / 2, h / 2 - 380, pw, 760);
-            NightWindow(r, "Построено!");
-            var pic = new Rect(r.center.x - 170, r.y + 70, 340, 340);
-            DrawRays(pic.center, 540);
-            var full = Art?.Full;
-            if (full != null) GUI.DrawTexture(pic, full, ScaleMode.ScaleToFit);
-            float y = pic.yMax + 6;
-            Outlined(new Rect(r.x + 30, y, r.width - 60, 44), Game.CastleOf(State).Name, new GUIStyle(_ribbonTitle) { fontSize = 30 }, NightInk, 2.5f);
-            y += 52;
-            string text = $"Бонус за постройку: +{Scoring.Building(State.CastleIndex)} очков. Всего: {State.Score}.\nЗабегов на этот замок: {State.Runs}." + (last ? " Это последний замок демоверсии." : "");
+            float grow = EaseOut(t / 0.9f);
+
+            // The meadow darkens a little so the building and its rays stand out.
+            GUI.color = new Color(0.05f, 0.03f, 0.12f, 0.5f * grow);
+            GUI.DrawTexture(new Rect(0, 0, w, h), Texture2D.whiteTexture);
+            GUI.color = Color.white;
+
+            // Where the building ends up: as big as fits between the title and the card.
+            const float top = 196;
+            float cardH = 330, cardTop = h - 24 - cardH, bottom = cardTop - 24;
+            float foot = Art != null ? Art.FootRight - Art.FootLeft : 0.6f;
+            float fb = Art != null ? Art.FootBottom : 0.98f;
+            float size = Mathf.Min(w * 0.94f / Mathf.Max(0.45f, foot), (bottom - top) / fb);
+            var target = new Rect(w / 2 - size / 2, bottom - size * fb, size, size);
+            var from = _picRect.width > 0 ? _picRect : target;
+            var pic = new Rect(Mathf.Lerp(from.x, target.x, grow), Mathf.Lerp(from.y, target.y, grow),
+                Mathf.Lerp(from.width, target.width, grow), Mathf.Lerp(from.height, target.height, grow));
+            // After it has grown it breathes a little.
+            pic = Scale(pic, 1 + 0.012f * grow * Mathf.Sin(Time.time * 2.2f));
+
+            var mid = new Vector2(pic.center.x, pic.y + pic.height * fb * 0.55f);
+            GUI.color = new Color(1, 1, 1, grow);
+            DrawRays(mid, pic.height * 1.35f);
+            GUI.DrawTexture(new Rect(pic.center.x - pic.width * foot * 0.6f, pic.y + pic.height * fb - pic.height * 0.05f,
+                pic.width * foot * 1.2f, pic.height * 0.1f), UiArt.SoftDisc(new Color(0.1f, 0.06f, 0.02f, 0.5f)));
+            GUI.color = Color.white;
+            if (Art?.Full != null) GUI.DrawTexture(pic, Art.Full, ScaleMode.ScaleToFit);
+            else Art?.Draw(pic, State.Filled);
+
+            DrawConfetti(w, h, t);
+
+            // «Построено!» on the ribbon drops in, the building's name under it.
+            float drop = EaseOut((t - 0.15f) / 0.5f);
+            if (drop > 0)
+            {
+                GUI.color = new Color(1, 1, 1, drop);
+                var rib = new Rect(w / 2 - 280, 26 - 150 * (1 - drop), 560, 140);
+                if (GameArt.Ribbon != null) GUI.DrawTexture(rib, GameArt.Ribbon);
+                Outlined(new Rect(rib.x + 44, rib.y + 16, rib.width - 88, 88), "Построено!", new GUIStyle(_ribbonTitle) { fontSize = 46 }, RibbonInk, 3f);
+                _showName ??= new GUIStyle(_ribbonTitle) { fontSize = 34 };
+                Outlined(new Rect(0, rib.yMax - 4, w, 50), Game.CastleOf(State).Name, _showName, NightInk, 3f);
+                GUI.color = Color.white;
+            }
+
+            // The card with what the player gets, then «Далее».
+            float show = EaseOut((t - cardAt) / 0.45f);
+            if (show <= 0) return;
+            GUI.color = new Color(1, 1, 1, show);
+            var card = new Rect(30, cardTop + (1 - show) * 120, w - 60, cardH);
+            GUI.Box(card, GUIContent.none, _nightPanel);
+            var lines = new List<string> { $"Бонус за постройку: <color=#ffd66e>+{Scoring.Building(State.CastleIndex)}</color> очков. Всего: {State.Score}." };
             if (!last)
             {
+                lines.Add($"Награда: <color=#ffd66e>+{Game.Rules.TicketsPerCastle} билета</color> на следующую постройку.");
                 var bp = Game.PreviewBurn(State);
                 var lost = new List<string>();
                 if (bp.Parts > 0) lost.Add($"деталей: {bp.Parts}");
                 if (bp.Chests > 0) lost.Add($"закрытых сундуков: {bp.Chests}");
-                string kept = string.Join(", ", bp.Kept.Select(k => Game.Catalog.NameOf(k.Id).ToLowerInvariant() + (k.N > 1 ? $" ×{k.N}" : "")));
-                text += "\n" + (lost.Count > 0 ? $"При переходе сгорят {string.Join(", ", lost)}." : "Склад пуст, сгорать нечему.")
-                    + " " + (kept.Length > 0 ? $"Фигурки остаются: {kept}." : "С собой переходят только фигурки.");
+                lines.Add(lost.Count > 0 ? $"<size=19>Сгорят {string.Join(", ", lost)}. Фигурки остаются.</size>" : "<size=19>Склад пуст, сгорать нечему. Фигурки остаются.</size>");
             }
-            GUI.Label(new Rect(r.x + 40, y, r.width - 80, r.yMax - 150 - y), text, _nightBody);
-            if (GoldButton(new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96), last ? "Пройти заново" : "Следующий замок", 34))
+            else lines.Add("Это последняя постройка демоверсии.");
+            _showText ??= new GUIStyle(_nightBody) { richText = true, alignment = TextAnchor.MiddleCenter };
+            GUI.Label(new Rect(card.x + 34, card.y + 26, card.width - 68, cardH - 160), string.Join("\n", lines), _showText);
+            if (GoldButton(new Rect(card.center.x - 170, card.yMax - 126, 340, 100), last ? "Пройти заново" : "Далее", 40) && show >= 1)
                 Later(NextCastle, click: false);
+            GUI.color = Color.white;
+        }
+
+        private static readonly Color32[] ConfettiColors =
+        {
+            new Color32(0xff, 0xd6, 0x6e, 0xff), new Color32(0xf2, 0x5f, 0x5c, 0xff), new Color32(0x4f, 0xb3, 0x5a, 0xff),
+            new Color32(0x4f, 0x8f, 0xe0, 0xff), new Color32(0xb0, 0x7c, 0xe8, 0xff), new Color32(0xff, 0xff, 0xff, 0xff),
+        };
+
+        /// <summary>Paper confetti falling and turning; each piece has its own fixed path, so no state is kept.</summary>
+        private static void DrawConfetti(float w, float h, float t)
+        {
+            if (Event.current.type != EventType.Repaint) return;
+            var m = GUI.matrix;
+            for (int i = 0; i < 46; i++)
+            {
+                float a = Mathf.Repeat(Mathf.Sin(i * 12.9898f) * 43758.5453f, 1);
+                float b = Mathf.Repeat(Mathf.Sin(i * 78.233f) * 12543.1234f, 1);
+                float start = b * 1.2f, speed = 170 + a * 160;
+                float lt = t - start;
+                if (lt < 0) continue;
+                float y = -30 + Mathf.Repeat(lt * speed, h + 60);
+                float x = a * w + Mathf.Sin(lt * (1.5f + b * 2) + i) * 26;
+                var c = (Color)ConfettiColors[i % ConfettiColors.Length];
+                var r = new Rect(x - 6, y - 9, 12, 18 * Mathf.Abs(Mathf.Cos(lt * (3 + 4 * a) + i)) + 3);
+                GUI.matrix = m;
+                GUIUtility.RotateAroundPivot((lt * (90 + 200 * b) + i * 37) % 360, r.center);
+                GUI.DrawTexture(r, UiArt.Round(c, Color.Lerp(c, Color.black, 0.25f), 3, 1));
+            }
+            GUI.matrix = m;
         }
 
         private void DrawStartOverPanel(float w, float h)

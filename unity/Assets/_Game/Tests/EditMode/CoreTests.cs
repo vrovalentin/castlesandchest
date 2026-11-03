@@ -279,6 +279,27 @@ namespace Game.Core.Tests
         }
 
         [Test]
+        public void AdGivesTicketsOnlyWhenOutOfThemAndAFewTimesADay()
+        {
+            var s = _game.NewGame();
+            _game.DailyGrant(s, "2026-11-03");
+            Assert.IsFalse(_game.AdTickets(s), "not while tickets are left");
+            s.Tickets = 0;
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.IsTrue(_game.AdTickets(s));
+                Assert.AreEqual(3, s.Tickets);
+                s.Tickets = 0;
+            }
+            Assert.IsFalse(_game.CanWatchAdForTickets(s), "3 ads a day");
+            Assert.IsFalse(_game.AdTickets(s));
+            Assert.AreEqual(0, s.Tickets);
+            _game.DailyGrant(s, "2026-11-04");
+            s.Tickets = 0;
+            Assert.IsTrue(_game.CanWatchAdForTickets(s), "a new day, new ads");
+        }
+
+        [Test]
         public void MovingToNextCastleBurnsAllButFigurines()
         {
             var s = _game.NewGame();
@@ -286,6 +307,7 @@ namespace Game.Core.Tests
             s.Inventory["window"] = 2;
             s.Inventory["dragon"] = 1;
             s.Runs = 6;
+            s.Tickets = 4;
             var bp = _game.PreviewBurn(s);
             Assert.AreEqual(7, bp.Parts);
             Assert.AreEqual(2, bp.Chests);
@@ -294,6 +316,7 @@ namespace Game.Core.Tests
 
             _game.NextCastle(s);
             Assert.AreEqual(1, s.CastleIndex);
+            Assert.AreEqual(6, s.Tickets, "a new building gives 2 tickets");
             Assert.AreEqual(0, s.Count("clay"));
             Assert.AreEqual(0, s.Count("window"));
             Assert.AreEqual(1, s.Count("dragon"));
