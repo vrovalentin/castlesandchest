@@ -22,6 +22,7 @@ namespace Game.Core
         public int hammers;
         public int tickets;
         public string dailyDay;
+        public int adsToday;
         public int built;
         public int score;
         public int bestRun;
@@ -64,6 +65,7 @@ namespace Game.Core
                 hammers = s.Hammers,
                 tickets = s.Tickets,
                 dailyDay = s.DailyDay ?? "",
+                adsToday = s.AdsToday,
                 built = s.Built,
                 score = s.Score,
                 bestRun = s.BestRun,
@@ -146,6 +148,7 @@ namespace Game.Core
                 Hammers = d.hammers,
                 Tickets = d.tickets,
                 DailyDay = string.IsNullOrEmpty(d.dailyDay) ? null : d.dailyDay,
+                AdsToday = Math.Max(0, d.adsToday),
                 Built = d.built,
                 Score = Math.Max(0, d.score),
                 BestRun = Math.Max(0, d.bestRun),

@@ -30,6 +30,7 @@ namespace Game.Core.Tests
             var s = _game.NewGame();
             _game.DailyGrant(s, "2026-10-21");
             s.Inventory["wall"] = 3;
+            s.AdsToday = 2;
             s.Inventory["dragon"] = 1;
             s.Filled[0] = true;
             _game.NewRun(s, rng);
@@ -50,6 +51,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(s.Tickets, t.Tickets);
             Assert.AreEqual(s.Brooms, t.Brooms);
             Assert.AreEqual("2026-10-21", t.DailyDay);
+            Assert.AreEqual(s.AdsToday, t.AdsToday);
             Assert.AreEqual(s.Run.Moves, t.Run.Moves);
             Assert.Greater(s.Score, 0);
             Assert.AreEqual(s.Score, t.Score);

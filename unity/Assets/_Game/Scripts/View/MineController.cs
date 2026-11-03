@@ -292,7 +292,23 @@ namespace Game.View
             GUILayout.Space(12);
             if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(76))) _toBuild();
             GUILayout.Space(12);
-            if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76))) StartRun();
+            if (Game.CanWatchAdForTickets(State))
+            {
+                if (GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76))) WatchAdForTickets();
+            }
+            else if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76))) StartRun();
+        }
+
+        /// <summary>
+        /// Tickets for an ad. The ad itself is a stub until the Yandex SDK: the reward comes at once.
+        /// </summary>
+        private void WatchAdForTickets()
+        {
+            if (!Game.AdTickets(State)) return;
+            _s.Save();
+            // From the «Билеты кончились» window straight into a run; after a run the button becomes «Новый забег».
+            if (_mode == Mode.NoTickets) StartRun();
+            Toast($"+{Game.Rules.AdTickets} билета за рекламу. Билетов: {State.Tickets}");
         }
     }
 }

@@ -62,6 +62,11 @@ namespace Game.Core
         public int DailyBrooms = 3;
         public int DailyHammers = 3;
         public int DailyTickets = 15;
+        /// <summary>Tickets given for moving on to the next building.</summary>
+        public int TicketsPerCastle = 2;
+        /// <summary>Tickets for watching an ad when they ran out, and how many such ads a day.</summary>
+        public int AdTickets = 3;
+        public int AdsPerDay = 3;
 
         public int ColorCount => ColorTiers;
 

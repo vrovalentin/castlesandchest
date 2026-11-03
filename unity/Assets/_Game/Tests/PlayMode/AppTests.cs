@@ -113,8 +113,11 @@ namespace Game.View.Tests
             _app.Build.PlaceAll();
             Assert.IsTrue(_app.Build.CastleDonePanel);
             Assert.AreEqual(1, s.Built);
+            int tickets = s.Tickets;
+            yield return null;   // one frame of the finished-building show
             _app.Build.NextCastle();
             Assert.AreEqual(1, s.CastleIndex);
+            Assert.AreEqual(tickets + 2, s.Tickets, "a new building gives 2 tickets");
             Assert.AreEqual(48, s.Filled.Length);
             Assert.AreEqual(1, s.Count("dragon"), "figurines stay");
             yield break;
