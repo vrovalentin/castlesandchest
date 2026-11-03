@@ -47,6 +47,18 @@ R, rest = claim(on, [
     ('trunkL_hi', (X < 512)), ('trunkR_hi', np.ones_like(on)),
 ])
 found = R['found']
+# leaves inside the houses' boxes that grow on from the crown outside them go with the crown,
+# so the houses don't show up as rectangles cut out of the foliage
+house = ['wall1', 'roof1', 'win_left', 'chimney1', 'deck1', 'wall2', 'roof2', 'deck2', 'bridge']
+inside = np.zeros_like(on)
+for k in house: inside |= R[k]
+lab, _ = ndi.label(leafy & on, structure=np.ones((3, 3), bool))
+outer = np.isin(lab, np.unique(lab[leafy & on & ~inside & (lab > 0)])) & (lab > 0)
+for k in house:
+    moved = R[k] & outer
+    moved &= ~ndi.binary_fill_holes(ndi.binary_closing(R[k] & ~moved, iterations=6))   # ivy on the walls stays
+    R[k] &= ~moved
+    R['crownL'] |= moved & (X < 330); R['crownR'] |= moved & (X >= 650); R['crownT'] |= moved & (X >= 330) & (X < 650)
 SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 6)]
 SLOTS += [('wall', R['trunkL_lo'], 'clean'), ('wall', R['trunkR_lo'], 'clean'),
           ('wall', R['trunkL_hi'], 'clean'), ('wall', R['trunkR_hi'], 'clean'),
