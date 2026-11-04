@@ -38,10 +38,11 @@ R, rest = claim(on, [
 ])
 found = R['found']
 SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 8)]
+# the leafy canopy comes with the door, so there is no hole of sky over the door for half the build
 SLOTS += [('wall', R['lowL'], 'clean'), ('wall', R['lowR'], 'clean'), ('door', R['door'], 'clean'),
-          ('window', R['w2'], 'clean'), ('wall', R['midL'], 'clean'), ('wall', R['midR'], 'clean'),
+          ('vines', R['canopy'], 'clean'), ('window', R['w2'], 'clean'), ('wall', R['midL'], 'clean'), ('wall', R['midR'], 'clean'),
           ('window', R['w1'], 'clean'), ('window', R['w4'], 'clean'), ('wall', R['top'], 'clean'),
-          ('window', R['w3'], 'clean'), ('vines', R['canopy'], 'clean'),
+          ('window', R['w3'], 'clean'),
           ('roof', R['roofL'], 'clean'), ('tiles', R['roofR'], 'clean'), ('spire', R['stem'], 'clean'),
           ('chimney', R['chimney'], 'clean'), ('brick', R['turret'], 'clean'), ('window', R['w5'], 'clean'),
           ('roof', R['cap'], 'clean'), ('spire', R['finial'], 'clean'),

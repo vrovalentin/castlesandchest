@@ -169,7 +169,7 @@ namespace Game.Core
         }
 
         /// <summary>True when the player can watch an ad for tickets: none left and ads left for today.</summary>
-        public bool CanWatchAdForTickets(GameState s) => s.Run == null && s.Tickets < 1 && s.AdsToday < Rules.AdsPerDay;
+        public bool CanWatchAdForTickets(GameState s) => s.Tickets < 1 && s.AdsToday < Rules.AdsPerDay;
 
         /// <summary>The reward for a watched ad: AdTickets tickets. False (and nothing changes) when not allowed now.</summary>
         public bool AdTickets(GameState s)

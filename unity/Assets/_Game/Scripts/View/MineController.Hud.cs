@@ -384,6 +384,8 @@ namespace Game.View
 
         private string RestartText()
         {
+            if (State.Tickets < 1)
+                return $"Новое поле стоит 1 билет, а билеты кончились.\n\nПосмотри рекламу и получи {Game.Rules.AdTickets} билета.";
             int left = State.Run.Board.ChestsLeft().Count;
             string s = $"Будет новое поле и {State.Opts.Moves} ходов. Это стоит 1 билет, у тебя их {State.Tickets}.\n\nДобытые сундуки останутся.";
             if (left > 0) s += State.Opts.KeepOnEnd ? $" Сундуки с поля ({left}) тоже достанутся тебе." : $" Сундуки на поле ({left}) сгорят.";
@@ -392,7 +394,12 @@ namespace Game.View
 
         private void RestartButtons()
         {
-            if (GUILayout.Button("Начать заново", _button, GUILayout.Height(76))) Restart();
+            if (State.Tickets < 1)
+            {
+                if (Game.CanWatchAdForTickets(State) && GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button, GUILayout.Height(76)))
+                    WatchAdForTickets();
+            }
+            else if (GUILayout.Button("Начать заново", _button, GUILayout.Height(76))) Restart();
             GUILayout.Space(12);
             if (GUILayout.Button("Отмена", _button2, GUILayout.Height(76))) _mode = Mode.Play;
         }

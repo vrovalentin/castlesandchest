@@ -212,7 +212,8 @@ namespace Game.View
         public void AskRestart()
         {
             if (Busy || State.Run == null || _mode != Mode.Play) return;
-            if (State.Tickets < 1) { Toast("Билеты кончились, начать заново можно завтра"); return; }
+            // Out of tickets: the same window offers an ad for tickets, or says new ones come tomorrow.
+            if (State.Tickets < 1 && !Game.CanWatchAdForTickets(State)) { Toast("Билеты кончились, начать заново можно завтра"); return; }
             _mode = Mode.ConfirmRestart;
         }
 
