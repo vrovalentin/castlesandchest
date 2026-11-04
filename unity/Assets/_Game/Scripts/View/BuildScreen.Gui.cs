@@ -779,8 +779,19 @@ namespace Game.View
                 var rib = new Rect(w / 2 - 280, 26 - 150 * (1 - drop), 560, 140);
                 if (GameArt.Ribbon != null) GUI.DrawTexture(rib, GameArt.Ribbon);
                 Outlined(new Rect(rib.x + 44, rib.y + 16, rib.width - 88, 88), "Построено!", new GUIStyle(_ribbonTitle) { fontSize = 46 }, RibbonInk, 3f);
+                GUI.color = Color.white;
+            }
+            // The name comes once the ribbon has landed, on a dark plate, so it never reads as grey on the bright meadow.
+            float nameIn = EaseOut((t - 0.55f) / 0.3f);
+            if (nameIn > 0)
+            {
                 _showName ??= new GUIStyle(_ribbonTitle) { fontSize = 34 };
-                Outlined(new Rect(0, rib.yMax - 4, w, 50), Game.CastleOf(State).Name, _showName, NightInk, 3f);
+                string name = Game.CastleOf(State).Name;
+                float nw = _showName.CalcSize(new GUIContent(name)).x + 90;
+                var plate = new Rect(w / 2 - nw / 2, 26 + 140 - 2, nw, 54);
+                GUI.color = new Color(1, 1, 1, nameIn);
+                GUI.DrawTexture(Scale(plate, 1.1f), UiArt.SoftDisc(new Color(0.06f, 0.05f, 0.16f, 0.75f)));
+                Outlined(plate, name, _showName, NightInk, 3f);
                 GUI.color = Color.white;
             }
 

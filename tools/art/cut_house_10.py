@@ -5,6 +5,7 @@
 import sys, os
 import numpy as np
 from PIL import Image
+from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
 from cutlib import cutout, write_castle, split_even, Shapes, claim, full_only
 
@@ -14,6 +15,11 @@ F = np.array(Image.open(full_p).convert('RGB')).astype(np.int32)
 H, W = C.shape[:2]
 S = Shapes(H, W); X, Y = S.X, S.Y
 aC, aF = cutout(C, snow=True), cutout(F, snow=True)
+# snow by the steps is as white as the background, so the cutout bites bays into it and the plot shows
+# through: close those bays in the snowy base
+for a_ in (aC, aF):
+    bay = ndi.binary_closing(a_ > 0.5, structure=np.ones((3, 3), bool), iterations=24) & (np.indices(a_.shape)[0] >= 760)
+    a_[bay] = 1.0
 on = aC > 0.02
 
 # The five towers, left to right: x range of the body and the top of its cone.

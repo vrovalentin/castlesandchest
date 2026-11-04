@@ -100,7 +100,7 @@ namespace Game.Core
                 "clay*8 wall wall window brick door wall wall window tiles window chimney floor floor " +
                 "beacon roof spire porch lantern lantern catsailor"), AllTiers("beacon", "chimney", "catsailor"));
             var castle7 = new CastleInfo("castle_7", "Тыквенный домик", 30, 0.25, 0.2, Slots(
-                "clay*8 wall wall door window wall wall window window wall window vines roof tiles spire chimney " +
+                "clay*8 wall wall door vines window wall wall window window wall window roof tiles spire chimney " +
                 "brick window roof spire vines vines porch lantern lantern fairy"), AllTiers("vines", "chimney", "fairy"));
             var castle8 = new CastleInfo("castle_8", "Трактир", 30, 0.25, 0.2, Slots(
                 "clay*6 wall wall door window tiles sign floor wall wall window*3 roof tiles wall window*3 chimney " +

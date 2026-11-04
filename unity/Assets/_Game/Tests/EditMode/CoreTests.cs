@@ -297,6 +297,10 @@ namespace Game.Core.Tests
             _game.DailyGrant(s, "2026-11-04");
             s.Tickets = 0;
             Assert.IsTrue(_game.CanWatchAdForTickets(s), "a new day, new ads");
+            s.Tickets = 1;
+            Assert.IsNotNull(_game.NewRun(s, new XorShift32(1)));
+            Assert.IsTrue(_game.AdTickets(s), "in the middle of a run too, to start it over");
+            Assert.AreEqual(3, s.Tickets);
         }
 
         [Test]
