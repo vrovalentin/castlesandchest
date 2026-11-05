@@ -26,13 +26,17 @@ namespace Game.View
             PlayerPrefs.Save();
         }
 
-        /// <summary>Draws the arrow above <paramref name="target"/> (GUI coordinates) unless the lesson is done.</summary>
-        public static void Show(string lesson, Rect target)
+        /// <summary>
+        /// Draws the arrow above <paramref name="target"/> (GUI coordinates) unless the lesson is done.
+        /// With <paramref name="into"/> its tip goes down to the middle of the target, so it stays off what is above.
+        /// </summary>
+        public static void Show(string lesson, Rect target, bool into = false)
         {
             if (Done(lesson) || Event.current.type != EventType.Repaint) return;
             const float size = 92;
             float bob = Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 18;
-            var r = new Rect(target.center.x - size / 2, target.y - size - 4 - bob, size, size);
+            float tipY = into ? target.center.y : target.y - 4;
+            var r = new Rect(target.center.x - size / 2, tipY - size - bob, size, size);
             GUI.DrawTexture(r, UiArt.Pointer, ScaleMode.ScaleToFit);
         }
     }

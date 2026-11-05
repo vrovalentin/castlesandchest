@@ -245,7 +245,7 @@ namespace Game.View
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
             if (have) Pointer.Show("place", _placeAt);
-            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt);
+            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true);
             else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt);
         }
 
@@ -465,7 +465,7 @@ namespace Game.View
             GUI.Box(chests, GUIContent.none, _card);
             var all = new Rect(chests.xMax - 112, chests.yMax - 62, 102, 54);
             if (n > 1 && SmallGoldButton(all, "все", 34)) Later(() => OpenChests());
-            _chestsAt = chests;
+            _chestsAt = new Rect(chests.x + 12, chests.y + 14, 112, 112);
             if (GUI.Button(chests, GUIContent.none, _invisible) && n > 0)
                 Later(() => { if (State.Chests.Count == 1) OpenChests(0); else _chestsOpen = true; });
             var chestIcon = new Rect(chests.x + 12, chests.y + 14, 112, 112);
@@ -663,7 +663,7 @@ namespace Game.View
                     float pad = ts * 0.13f;
                     GameArt.DrawPart(new Rect(c.x + pad, c.y + pad, ts - 2 * pad, ts - 2 * pad), target, Game.Catalog.TierOf(target));
                     // What it is, under the tile: the choice is made by name, not only by the small picture.
-                    _targetName ??= new GUIStyle(_onNight) { fontSize = 17, alignment = TextAnchor.UpperCenter, wordWrap = false, clipping = TextClipping.Clip };
+                    _targetName ??= new GUIStyle(_onNight) { fontSize = 15, alignment = TextAnchor.UpperCenter, wordWrap = false, clipping = TextClipping.Clip };
                     GUI.Label(new Rect(c.x - tg / 2, c.yMax + 2, ts + tg, 24), Game.Catalog.NameOf(target), _targetName);
                     tx += ts + tg;
                 }
