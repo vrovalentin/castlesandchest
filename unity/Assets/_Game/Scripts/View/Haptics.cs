@@ -23,14 +23,18 @@ namespace Game.View
         private static AndroidJavaObject _vibrator;
         private static bool _tried;
 #endif
+#if UNITY_ANDROID
         // Unity adds the VIBRATE permission to the APK only when Handheld.Vibrate appears in the code.
         private static bool _never;
+#endif
 
         /// <summary>A buzz of <paramref name="ms"/> milliseconds.</summary>
         public static void Tap(long ms = 25)
         {
             if (Off || !Supported) return;
+#if UNITY_ANDROID
             if (_never) Handheld.Vibrate();
+#endif
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
