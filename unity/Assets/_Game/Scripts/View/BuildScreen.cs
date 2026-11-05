@@ -24,6 +24,7 @@ namespace Game.View
         /// <summary>When the building was finished: the show of the finished building counts from here.</summary>
         private float _doneAt;
         private bool _askStartOver;
+        private bool _settingsOpen;
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
 
@@ -92,6 +93,7 @@ namespace Game.View
             _placedAt = Time.time;
             _s.Save();
             Sfx.Play("place");
+            Haptics.Tap(20);
             if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
             return true;
         }
@@ -123,6 +125,7 @@ namespace Game.View
             _pick.Clear();
             _s.Save();
             Sfx.Play("merge");
+            Haptics.Tap(30);
             Say($"Собрано: {Game.Catalog.NameOf(target)}");
             return true;
         }
@@ -153,6 +156,17 @@ namespace Game.View
         public void AskStartOver() => _askStartOver = true;
 
         public bool StartOverPanel => _askStartOver;
+
+        /// <summary>The back button: closes the open window. False when nothing was open.</summary>
+        public bool Back()
+        {
+            if (_reward != null) { CloseReward(); return true; }
+            if (_settingsOpen) { _settingsOpen = false; return true; }
+            if (_askStartOver) { _askStartOver = false; return true; }
+            if (_storageOpen) { _storageOpen = false; _pick.Clear(); return true; }
+            if (_chestsOpen) { _chestsOpen = false; return true; }
+            return _donePanel;
+        }
 
         /// <summary>Wipes all progress and goes back to the first castle.</summary>
         public void StartOver()

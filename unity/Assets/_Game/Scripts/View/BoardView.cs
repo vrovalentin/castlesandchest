@@ -161,8 +161,8 @@ namespace Game.View
 
                 float dur = Duration(f.Kind);
                 bool collect = f.Kind == PhaseKind.Collect;
-                if (f.Kind == PhaseKind.Remove && gone.Count > 0) Sfx.Play("pop", 0.9f, 0.9f + Mathf.Min(0.5f, gone.Count * 0.04f));
-                else if (collect && gone.Count > 0) Sfx.Play("chest");
+                if (f.Kind == PhaseKind.Remove && gone.Count > 0) { Sfx.Play("pop", 0.9f, 0.9f + Mathf.Min(0.5f, gone.Count * 0.04f)); Haptics.Tap(15); }
+                else if (collect && gone.Count > 0) { Sfx.Play("chest"); Haptics.Tap(45); }
                 for (float t = 0; t < dur; t += Time.deltaTime)
                 {
                     float k = Ease(Mathf.Clamp01(t / dur));
