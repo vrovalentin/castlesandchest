@@ -648,7 +648,7 @@ namespace Game.View
                 // Every possible target fits in the strip (smaller when there are many), the ones the castle needs first.
                 var targets = castle.PartsOfTier(Game.Catalog.TierOf(_pick[0]) + 1)
                     .OrderByDescending(t => Game.Need(State, t) > 0).ThenByDescending(t => Game.Need(State, t)).ToList();
-                const float tg = 8;
+                const float tg = 14;
                 float ts = Mathf.Min(st, (strip.xMax - 14 - tx - tg * (targets.Count - 1)) / Mathf.Max(1, targets.Count));
                 float ty = sy + (st - ts) / 2;
                 foreach (var target in targets)
