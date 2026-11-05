@@ -64,9 +64,8 @@ namespace Game.Core
         public int DailyTickets = 15;
         /// <summary>Tickets given for moving on to the next building.</summary>
         public int TicketsPerCastle = 2;
-        /// <summary>Tickets for watching an ad when they ran out, and how many such ads a day.</summary>
+        /// <summary>Tickets for watching an ad when they ran out; as many ads as the player likes.</summary>
         public int AdTickets = 3;
-        public int AdsPerDay = 3;
 
         public int ColorCount => ColorTiers;
 

@@ -30,6 +30,7 @@ namespace Game.View
             Build.enabled = false;
             Mine.gameObject.SetActive(true);
             Mine.Enter();
+            Music.Play("music_mine");
         }
 
         public void ShowBuild()
@@ -37,6 +38,18 @@ namespace Game.View
             Mine.gameObject.SetActive(false);
             Build.enabled = true;
             Session.Save();
+            Music.Play("music_build");
+        }
+
+        // Android's «back» (Escape in the browser): close what is open, leave the mine, and on the build screen
+        // with nothing open, leave the game.
+        private void Update()
+        {
+            if (!Input.GetKeyDown(KeyCode.Escape)) return;
+            if (InMine) { if (Mine.Back()) return; ShowBuild(); return; }
+            if (Build.Back()) return;
+            Session.Save();
+            if (Application.platform == RuntimePlatform.Android) Application.Quit();
         }
 
         private void OnApplicationPause(bool paused)

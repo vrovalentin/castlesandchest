@@ -279,24 +279,17 @@ namespace Game.Core.Tests
         }
 
         [Test]
-        public void AdGivesTicketsOnlyWhenOutOfThemAndAFewTimesADay()
+        public void AdGivesTicketsOnlyWhenOutOfThemAsOftenAsWanted()
         {
             var s = _game.NewGame();
             _game.DailyGrant(s, "2026-11-03");
             Assert.IsFalse(_game.AdTickets(s), "not while tickets are left");
-            s.Tickets = 0;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 10; i++)
             {
-                Assert.IsTrue(_game.AdTickets(s));
-                Assert.AreEqual(3, s.Tickets);
                 s.Tickets = 0;
+                Assert.IsTrue(_game.AdTickets(s), "no daily limit");
+                Assert.AreEqual(3, s.Tickets);
             }
-            Assert.IsFalse(_game.CanWatchAdForTickets(s), "3 ads a day");
-            Assert.IsFalse(_game.AdTickets(s));
-            Assert.AreEqual(0, s.Tickets);
-            _game.DailyGrant(s, "2026-11-04");
-            s.Tickets = 0;
-            Assert.IsTrue(_game.CanWatchAdForTickets(s), "a new day, new ads");
             s.Tickets = 1;
             Assert.IsNotNull(_game.NewRun(s, new XorShift32(1)));
             Assert.IsTrue(_game.AdTickets(s), "in the middle of a run too, to start it over");

@@ -211,7 +211,7 @@ namespace Game.View
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
             if (GUI.enabled) CastleTap(cardsTop - 8);
             if (hasNext) DrawNext(x0 + pad, cardsTop, inner);
@@ -228,6 +228,7 @@ namespace Game.View
 
             if (_reward != null) DrawRewardPanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
+            else if (_settingsOpen) DrawSettingsPanel(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
             else if (_chestsOpen) DrawChestsWindow(w, h);
             Hints.Draw();
@@ -236,7 +237,7 @@ namespace Game.View
         /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
         private void AskHint(Rect bubble)
         {
-            if (_reward != null || _donePanel || _askStartOver || _storageOpen || _chestsOpen || _flying.Count > 0) return;
+            if (_reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -257,10 +258,10 @@ namespace Game.View
             const float progW = 150, btn = 64;
             if (GUI.Button(new Rect(r.x, r.y, btn, btn), GUIContent.none, _roundBtn)) Later(AskStartOver);
             GUI.DrawTexture(new Rect(r.x + 11, r.y + 11, btn - 22, btn - 22), UiArt.Restart, ScaleMode.ScaleToFit);
-            // Sound on/off; the click sounds only when turning it on.
+            // Settings: music, sounds and vibration. The speaker is crossed out when both music and sounds are off.
             var snd = new Rect(r.x + btn + 8, r.y, btn, btn);
-            if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
-            GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
+            if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => _settingsOpen = true);
+            GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted && Music.Off ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
             float px = snd.xMax + 10;
             var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
             GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"{State.CastleIndex + 1}. {castle.Name}", title);
@@ -293,6 +294,16 @@ namespace Game.View
         private int _placedSlot = -1;
         private float _placedAt;
 
+        /// <summary>Soft shadow, then a trodden dirt patch with a few stones, centred on <paramref name="cx"/>.</summary>
+        private static void DrawSite(float cx, float groundY, float siteW, float siteH)
+        {
+            GUI.DrawTexture(new Rect(cx - siteW * 0.6f, groundY - siteH * 0.7f, siteW * 1.2f, siteH * 1.75f), UiArt.SoftDisc(new Color(0.15f, 0.1f, 0.05f, 0.45f)));
+            GUI.DrawTexture(new Rect(cx - siteW / 2, groundY - siteH * 0.55f, siteW, siteH), UiArt.Disc(SiteFill, SiteEdge, 2.5f));
+            GUI.DrawTexture(new Rect(cx - siteW * 0.45f, groundY - siteH * 0.47f, siteW * 0.9f, siteH * 0.72f), UiArt.Disc(SiteLight, SiteLight, 0));
+            foreach (var (dx, dy) in Pebbles)
+                GUI.DrawTexture(new Rect(cx + dx * siteW - 7, groundY + dy * siteH - 4, 14, 8), UiArt.Disc(SiteEdge, SiteEdge, 0));
+        }
+
         /// <summary>The building site on the meadow and the castle standing on it, bottom at <paramref name="groundY"/>.</summary>
         private void DrawScene(Rect r, float groundY)
         {
@@ -302,12 +313,7 @@ namespace Game.View
             float size = Mathf.Min(r.width * 0.96f / Mathf.Max(0.3f, foot), (groundY - 128) / bottomFrac, r.width * 1.6f);
             // The dirt site is a little wider than the castle standing on it (castle 2 is much wider than castle 1).
             float cx = r.center.x, siteW = Mathf.Min(r.width * 0.98f, Mathf.Max(size * 0.5f, size * foot * 1.15f)), siteH = Mathf.Min(size, 760) * 0.13f;
-            // Soft shadow, then a trodden dirt patch with a few stones.
-            GUI.DrawTexture(new Rect(cx - siteW * 0.6f, groundY - siteH * 0.7f, siteW * 1.2f, siteH * 1.75f), UiArt.SoftDisc(new Color(0.15f, 0.1f, 0.05f, 0.45f)));
-            GUI.DrawTexture(new Rect(cx - siteW / 2, groundY - siteH * 0.55f, siteW, siteH), UiArt.Disc(SiteFill, SiteEdge, 2.5f));
-            GUI.DrawTexture(new Rect(cx - siteW * 0.45f, groundY - siteH * 0.47f, siteW * 0.9f, siteH * 0.72f), UiArt.Disc(SiteLight, SiteLight, 0));
-            foreach (var (dx, dy) in Pebbles)
-                GUI.DrawTexture(new Rect(cx + dx * siteW - 7, groundY + dy * siteH - 4, 14, 8), UiArt.Disc(SiteEdge, SiteEdge, 0));
+            DrawSite(cx, groundY, siteW, siteH);
 
             var pic = new Rect(cx - size / 2, groundY + siteH * 0.05f - size * (Art != null ? Art.FootBottom - 0.01f : 0.98f), size, size);
             _picRect = pic;
@@ -763,9 +769,10 @@ namespace Game.View
             var mid = new Vector2(pic.center.x, pic.y + pic.height * fb * 0.55f);
             GUI.color = new Color(1, 1, 1, grow);
             DrawRays(mid, pic.height * 1.35f);
-            GUI.DrawTexture(new Rect(pic.center.x - pic.width * foot * 0.6f, pic.y + pic.height * fb - pic.height * 0.05f,
-                pic.width * foot * 1.2f, pic.height * 0.1f), UiArt.SoftDisc(new Color(0.1f, 0.06f, 0.02f, 0.5f)));
             GUI.color = Color.white;
+            // The building stands on its dirt site, as on the build screen, not in the air.
+            float siteW = Mathf.Max(pic.width * 0.5f, pic.width * foot * 1.15f), siteH = Mathf.Min(pic.width, 760) * 0.13f;
+            DrawSite(pic.center.x, pic.y + pic.height * (fb - 0.01f) - siteH * 0.05f, siteW, siteH);
             if (Art?.Full != null) GUI.DrawTexture(pic, Art.Full, ScaleMode.ScaleToFit);
             else Art?.Draw(pic, State.Filled);
 
@@ -858,6 +865,27 @@ namespace Game.View
                 "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _nightBody);
             if (GoldButton(new Rect(r.x + 70, r.yMax - 228, r.width - 140, 96), "Начать сначала", 34)) Later(StartOver);
             if (GUI.Button(new Rect(r.x + 110, r.yMax - 116, r.width - 220, 72), "Отмена", _wood)) Later(() => _askStartOver = false);
+        }
+
+        /// <summary>Music, sounds and (on phones) vibration, each on or off.</summary>
+        private void DrawSettingsPanel(float w, float h)
+        {
+            Dim(w, h);
+            bool buzz = Haptics.Supported;
+            float pw = Mathf.Min(620, w - 60), ph = buzz ? 600 : 500;
+            var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
+            NightWindow(r, "Настройки");
+            float y = r.y + 110;
+            bool Row(string onText, string offText, bool on)
+            {
+                bool hit = GUI.Button(new Rect(r.x + 60, y, r.width - 120, 80), on ? onText : offText, on ? _green : _wood);
+                y += 96;
+                return hit;
+            }
+            if (Row("Музыка: включена", "Музыка: выключена", !Music.Off)) Later(() => Music.Off = !Music.Off, click: true);
+            if (Row("Звуки: включены", "Звуки: выключены", !Sfx.Muted)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
+            if (buzz && Row("Вибрация: включена", "Вибрация: выключена", !Haptics.Off)) Later(() => { Haptics.Off = !Haptics.Off; Haptics.Tap(40); }, click: true);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), "Готово", 34)) Later(() => _settingsOpen = false);
         }
 
         private static Rect Scale(Rect r, float k) =>

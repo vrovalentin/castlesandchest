@@ -208,6 +208,15 @@ namespace Game.View
             _s.Save();
         }
 
+        /// <summary>The back button: closes the restart question; otherwise false, and the app goes back to the build screen.
+        /// True (nothing happens) while tiles are still moving.</summary>
+        public bool Back()
+        {
+            if (Busy) return true;
+            if (_mode == Mode.ConfirmRestart) { _mode = Mode.Play; return true; }
+            return false;
+        }
+
         /// <summary>The ↻ button: ask first, since it costs a ticket.</summary>
         public void AskRestart()
         {
