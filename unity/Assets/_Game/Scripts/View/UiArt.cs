@@ -120,6 +120,22 @@ namespace Game.View
         public static Texture2D SoundOn => Drawn("sound_on") ?? BackShape;
         public static Texture2D SoundOff => Drawn("sound_off") ?? BackShape;
 
+        /// <summary>A fat gold arrow pointing down, for showing a new player where to tap.</summary>
+        public static Texture2D Pointer => Layered("pointer", 128, new (Func<float, float, float>, Color)[]
+        {
+            ((u, v) => Mathf.Min(Seg(u, v, 0.5f, 0.42f, 0.5f, 0.9f) - 0.1f, ArrowHead(u, v)), new Color32(0xff, 0xc8, 0x3c, 0xff)),
+        });
+
+        private static float ArrowHead(float u, float v)
+        {
+            // Triangle with its tip at the bottom (v is up).
+            const float tip = 0.08f, top = 0.5f, half = 0.34f;
+            float k = (v - tip) / (top - tip);
+            bool inside = v >= tip && v <= top && Mathf.Abs(u - 0.5f) <= half * k;
+            float edge = Min(Seg(u, v, 0.5f, tip, 0.5f - half, top), Seg(u, v, 0.5f, tip, 0.5f + half, top), Seg(u, v, 0.5f - half, top, 0.5f + half, top));
+            return inside ? -edge : edge;
+        }
+
         private static Texture2D BackShape => Icon("back", 96, (u, v) => Min(
             Seg(u, v, 0.24f, 0.5f, 0.78f, 0.5f),
             Seg(u, v, 0.24f, 0.5f, 0.47f, 0.73f),

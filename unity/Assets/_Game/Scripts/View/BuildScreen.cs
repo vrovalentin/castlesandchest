@@ -25,6 +25,9 @@ namespace Game.View
         private float _doneAt;
         private bool _askStartOver;
         private bool _settingsOpen;
+        /// <summary>The part last made by merging, and when, for its pop in the storage window.</summary>
+        private string _mergedId;
+        private float _mergedAt = -9;
         // IMGUI must not change what it draws in the middle of an event, so clicks run on the next Update.
         private Action _pending;
 
@@ -52,6 +55,7 @@ namespace Game.View
         /// <summary>Opens chests (all when index is null). Returns the part ids they gave.</summary>
         public List<string> OpenChests(int? index = null)
         {
+            Pointer.MarkDone("chest");
             var got = new List<string>();
             var list = index.HasValue ? new List<int> { index.Value } : Enumerable.Range(0, State.Chests.Count).Reverse().ToList();
             int opened = 0, firstColor = 0, bestStars = 0;
@@ -94,6 +98,7 @@ namespace Game.View
             _s.Save();
             Sfx.Play("place");
             Haptics.Tap(20);
+            Pointer.MarkDone("place");
             if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
             return true;
         }
@@ -126,6 +131,8 @@ namespace Game.View
             _s.Save();
             Sfx.Play("merge");
             Haptics.Tap(30);
+            _mergedId = target;
+            _mergedAt = Time.time;
             Say($"Собрано: {Game.Catalog.NameOf(target)}");
             return true;
         }
@@ -173,6 +180,7 @@ namespace Game.View
         {
             _s.StartOver();
             Hints.Reset();
+            Pointer.Reset();
             _askStartOver = false;
             _storageOpen = false;
             _chestsOpen = false;

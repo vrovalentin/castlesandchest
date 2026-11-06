@@ -225,6 +225,7 @@ namespace Game.View
 
             // Parts from the last opening fly down to the storage tile.
             DrawFlights(storageTile.center);
+            ShowPointer();
 
             if (_reward != null) DrawRewardPanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
@@ -232,6 +233,20 @@ namespace Game.View
             else if (_storageOpen) DrawStorageWindow(w, h);
             else if (_chestsOpen) DrawChestsWindow(w, h);
             Hints.Draw();
+        }
+
+        private Rect _placeAt, _chestsAt, _mineAt;
+
+        /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
+        private void ShowPointer()
+        {
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
+            int next = Game.NextSlot(State);
+            if (next < 0) return;
+            bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
+            if (have) Pointer.Show("place", _placeAt);
+            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true);
+            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt);
         }
 
         /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
@@ -426,6 +441,7 @@ namespace Game.View
                 var b = new Rect(card.xMax - padX - btnW, y + 58, btnW, row > 1 ? 66 : 80);
                 if (row <= 1) b.y += 10;
                 if (GUI.Button(b, "Поставить", _green)) Later(() => PlacePart(id));
+                _placeAt = b;
                 if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), $"Подряд · {row}", _wood)) Later(() => PlaceAll());
             }
             return card.yMax;
@@ -449,6 +465,7 @@ namespace Game.View
             GUI.Box(chests, GUIContent.none, _card);
             var all = new Rect(chests.xMax - 112, chests.yMax - 62, 102, 54);
             if (n > 1 && SmallGoldButton(all, "все", 34)) Later(() => OpenChests());
+            _chestsAt = new Rect(chests.x + 12, chests.y + 14, 112, 112);
             if (GUI.Button(chests, GUIContent.none, _invisible) && n > 0)
                 Later(() => { if (State.Chests.Count == 1) OpenChests(0); else _chestsOpen = true; });
             var chestIcon = new Rect(chests.x + 12, chests.y + 14, 112, 112);
@@ -542,7 +559,7 @@ namespace Game.View
         // ---------- storage window ----------
 
         private bool _storageOpen;
-        private GUIStyle _strip;
+        private GUIStyle _strip, _targetName;
 
         /// <summary>True while the storage window is open.</summary>
         public bool StorageOpen => _storageOpen;
@@ -590,8 +607,12 @@ namespace Game.View
                     // Tap adds the part (the same part twice is fine); tap again when it can't be added removes it.
                     if (canAdd) Later(() => _pick.Add(part)); else Later(() => _pick.Remove(part));
                 }
-                GameArt.DrawPart(new Rect(cell.x + 14, cell.y + 12, tile - 28, tile - 28), id, t);
+                // A part just made pops and throws out sparkles.
+                float mt = id == _mergedId ? Time.time - _mergedAt : 9;
+                float popK = mt < 0.35f ? 1 + 0.28f * Mathf.Sin(Mathf.PI * mt / 0.35f) : 1;
+                GameArt.DrawPart(Scale(new Rect(cell.x + 14, cell.y + 12, tile - 28, tile - 28), popK), id, t);
                 GUI.color = old;
+                if (mt < 0.7f) DrawBurst(cell.center, mt / 0.7f);
                 Badge(new Vector2(cell.xMax - 8, cell.y + 8), State.Count(id));
                 int need = Math.Max(0, Game.Need(State, id));
                 if (need > 0) GUI.Label(new Rect(cell.x - 6, cell.y - 6, 44, 28), "−" + need, _need);
@@ -627,7 +648,7 @@ namespace Game.View
                 // Every possible target fits in the strip (smaller when there are many), the ones the castle needs first.
                 var targets = castle.PartsOfTier(Game.Catalog.TierOf(_pick[0]) + 1)
                     .OrderByDescending(t => Game.Need(State, t) > 0).ThenByDescending(t => Game.Need(State, t)).ToList();
-                const float tg = 8;
+                const float tg = 14;
                 float ts = Mathf.Min(st, (strip.xMax - 14 - tx - tg * (targets.Count - 1)) / Mathf.Max(1, targets.Count));
                 float ty = sy + (st - ts) / 2;
                 foreach (var target in targets)
@@ -641,6 +662,9 @@ namespace Game.View
                     }
                     float pad = ts * 0.13f;
                     GameArt.DrawPart(new Rect(c.x + pad, c.y + pad, ts - 2 * pad, ts - 2 * pad), target, Game.Catalog.TierOf(target));
+                    // What it is, under the tile: the choice is made by name, not only by the small picture.
+                    _targetName ??= new GUIStyle(_onNight) { fontSize = 15, alignment = TextAnchor.UpperCenter, wordWrap = false, clipping = TextClipping.Clip };
+                    GUI.Label(new Rect(c.x - tg / 2, c.yMax + 2, ts + tg, 24), Game.Catalog.NameOf(target), _targetName);
                     tx += ts + tg;
                 }
             }
@@ -660,6 +684,7 @@ namespace Game.View
                 : State.Tickets > 0 ? $"Добывать · {State.Opts.Moves} ходов  <size=22>билетов: {State.Tickets}</size>"
                 : ad ? $"+{Game.Rules.AdTickets} билета · реклама  <size=22>билеты кончились</size>"
                 : "Билеты кончились, новые завтра";
+            _mineAt = r;
             if (GUI.Button(r, text, _mineBtn) && _reward == null)
             {
                 if (State.Run == null && State.Tickets < 1)
@@ -667,7 +692,7 @@ namespace Game.View
                     if (ad) Later(() => WatchAdForTickets(), click: false);
                     else Say("Билеты кончились. Новые придут завтра.");
                 }
-                else Later(() => _toMine?.Invoke());
+                else Later(() => { Pointer.MarkDone("mine"); _toMine?.Invoke(); });
             }
         }
 
@@ -818,7 +843,11 @@ namespace Game.View
                 if (bp.Chests > 0) lost.Add($"закрытых сундуков: {bp.Chests}");
                 lines.Add(lost.Count > 0 ? $"<size=19>Сгорят {string.Join(", ", lost)}. Фигурки остаются.</size>" : "<size=19>Склад пуст, сгорать нечему. Фигурки остаются.</size>");
             }
-            else lines.Add("Это последняя постройка демоверсии.");
+            else
+            {
+                lines.Add($"<color=#ffd66e>Все {Game.Catalog.Castles.Count} построек готовы!</color> Новые замки скоро появятся.");
+                lines.Add("<size=19>А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>");
+            }
             _showText ??= new GUIStyle(_nightBody) { richText = true, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(card.x + 34, card.y + 26, card.width - 68, cardH - 160), string.Join("\n", lines), _showText);
             if (GoldButton(new Rect(card.center.x - 170, card.yMax - 126, 340, 100), last ? "Пройти заново" : "Далее", 40) && show >= 1)
@@ -886,6 +915,22 @@ namespace Game.View
             if (Row("Звуки: включены", "Звуки: выключены", !Sfx.Muted)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
             if (buzz && Row("Вибрация: включена", "Вибрация: выключена", !Haptics.Off)) Later(() => { Haptics.Off = !Haptics.Off; Haptics.Tap(40); }, click: true);
             if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), "Готово", 34)) Later(() => _settingsOpen = false);
+        }
+
+        /// <summary>Eight sparkles flying out from <paramref name="at"/> and fading, <paramref name="k"/> 0 → 1.</summary>
+        private static void DrawBurst(Vector2 at, float k)
+        {
+            var sp = GameArt.Sparkle;
+            if (sp == null || Event.current.type != EventType.Repaint) return;
+            var old = GUI.color;
+            GUI.color = new Color(1, 0.95f, 0.7f, 1 - k * k);
+            float d = 30 + 70 * EaseOut(k), s = 46 * (1 - 0.5f * k);
+            for (int i = 0; i < 8; i++)
+            {
+                float a = i * Mathf.PI / 4 + 0.3f;
+                GUI.DrawTexture(new Rect(at.x + Mathf.Cos(a) * d - s / 2, at.y + Mathf.Sin(a) * d - s / 2, s, s), sp, ScaleMode.ScaleToFit);
+            }
+            GUI.color = old;
         }
 
         private static Rect Scale(Rect r, float k) =>
