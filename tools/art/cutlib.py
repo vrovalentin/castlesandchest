@@ -181,3 +181,32 @@ def full_only(F, C, aF, close=4):
     aFm = aF > 0.5
     d = (np.abs(F - C).sum(2) > 60) & aFm
     return ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(d, iterations=2), iterations=close)) & aFm
+
+
+def load_pair(clean_p, full_p, **cut):
+    """Both pictures as RGB on white and their alpha: the picture's own transparency when it has one,
+    otherwise cut from the white background (cutout)."""
+    out = []
+    for p in (clean_p, full_p):
+        im = Image.open(p).convert('RGBA')
+        a = np.array(im)[..., 3].astype(float) / 255
+        bg = Image.new('RGBA', im.size, (255, 255, 255, 255))
+        bg.alpha_composite(im)
+        rgb = np.array(bg.convert('RGB')).astype(np.int32)
+        if a.min() < 0.5:
+            a[a < 0.08] = 0
+        else:
+            a = cutout(rgb, **cut)
+        out.append((rgb, a))
+    (C, aC), (F, aF) = out
+    return C, F, aC, aF
+
+
+def slots_of(spec, R, found, pieces):
+    """Slots from a spec like 'wall:wL wall:wR door:door' (part:region name, in building order), after the clay pieces."""
+    X = np.mgrid[0:found.shape[0], 0:found.shape[1]][1]
+    S = [('clay', m, 'clean') for m in split_even(found, X, pieces)]
+    for item in spec.split():
+        part, reg = item.split(':')
+        S.append((part, R[reg], 'clean'))
+    return S

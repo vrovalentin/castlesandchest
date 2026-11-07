@@ -27,6 +27,11 @@ namespace Game.Core
             new PartInfo("beacon", 6, "Огонь"), new PartInfo("sign", 6, "Вывеска"), new PartInfo("telescope", 6, "Телескоп"),
             new PartInfo("squirrel", 7, "Белка"), new PartInfo("catsailor", 7, "Кот-моряк"), new PartInfo("fairy", 7, "Фея"),
             new PartInfo("innkeeper", 7, "Трактирщик"), new PartInfo("wizard", 7, "Волшебник"),
+            new PartInfo("shrooms", 5, "Грибочки"), new PartInfo("cannon", 5, "Пушка"), new PartInfo("palm", 5, "Пальма"),
+            new PartInfo("clock", 6, "Часы"), new PartInfo("bells", 6, "Колокольчики"), new PartInfo("pearl", 6, "Жемчужина"),
+            new PartInfo("nest", 6, "Гнездо"),
+            new PartInfo("hedgehog", 7, "Ёжик"), new PartInfo("owl", 7, "Сова"), new PartInfo("panda", 7, "Панда"),
+            new PartInfo("mermaid", 7, "Русалочка"), new PartInfo("parrot", 7, "Попугай"), new PartInfo("camel", 7, "Верблюжонок"),
         };
 
         /// <summary>The parts every castle offers; the rest belong to one building each.</summary>
@@ -112,7 +117,31 @@ namespace Game.Core
                 "clay*6 wall*4 door window*4 wall floor*3 wall*5 window*5 roof roof tiles tiles roof spire*5 " +
                 "porch lantern lantern princess"), AllTiers());
 
-            var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10 };
+            // Buildings 11-17, cut by tools/art/cut_house_11..17.py. The dragon castle (castle_15) comes last.
+            var castle11 = new CastleInfo("castle_11", "Грибной домик", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall door wall wall window brick floor roof floor wall window roof floor roof tiles window chimney " +
+                "vines porch lantern*3 shrooms hedgehog"), AllTiers("vines", "chimney", "shrooms", "hedgehog"));
+            var castle12 = new CastleInfo("castle_12", "Часовая башня", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall window wall door window roof tiles wall wall clock floor wall roof tiles spire chimney " +
+                "porch lantern lantern owl"), AllTiers("clock", "chimney", "owl"));
+            var castle13 = new CastleInfo("castle_13", "Пагода", 30, 0.25, 0.2, Slots(
+                "clay*6 brick wall wall door window window roof tiles wall window roof wall window tiles spire bells " +
+                "porch lantern lantern panda"), AllTiers("bells", "panda"));
+            var castle14 = new CastleInfo("castle_14", "Дворец-ракушка", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall tiles tiles window window brick door floor roof roof wall wall wall window spire*4 pearl " +
+                "porch lantern lantern mermaid"), AllTiers("pearl", "mermaid"));
+            var castle15 = new CastleInfo("castle_15", "Драконья крепость", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall door roof tiles wall wall window window wall sign window floor window window roof tiles " +
+                "spire spire roof spire porch lantern lantern nest dragon"), AllTiers("sign", "nest"));
+            var castle16 = new CastleInfo("castle_16", "Пиратская крепость", 30, 0.25, 0.2, Slots(
+                "clay*6 wall wall cannon brick wall wall door window sign roof tiles window chimney wall window floor ladder floor " +
+                "telescope spire porch lantern lantern parrot"), AllTiers("cannon", "sign", "chimney", "ladder", "telescope", "parrot"));
+            var castle17 = new CastleInfo("castle_17", "Песчаный дворец", 30, 0.25, 0.2, Slots(
+                "clay*6 floor wall wall door window window brick floor wall floor roof spire roof roof wall window tiles roof spire " +
+                "palm porch lantern lantern camel"), AllTiers("palm", "camel"));
+
+            var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10,
+                castle11, castle12, castle13, castle16, castle17, castle14, castle15 };
             return new Catalog(new Rules(), Parts, all.Take(Math.Max(1, Math.Min(castles, all.Length))).ToArray());
         }
     }
