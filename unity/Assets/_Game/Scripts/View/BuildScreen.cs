@@ -42,6 +42,7 @@ namespace Game.View
             var p = _pending;
             _pending = null;
             p?.Invoke();
+            TickPlace();
         }
 
         public void Init(GameSession session, Action toMine)
@@ -77,7 +78,10 @@ namespace Game.View
             return got;
         }
 
-        public bool PlaceSlot(int slot)
+        public bool PlaceSlot(int slot) => PlaceSlot(slot, false);
+
+        /// <summary>Places the part of a slot. <paramref name="quiet"/>: the placing show makes its own sounds and opens the finished building after the drop.</summary>
+        private bool PlaceSlot(int slot, bool quiet)
         {
             var slots = Game.CastleOf(State).Slots;
             var id = slots[slot];
@@ -96,10 +100,15 @@ namespace Game.View
             _placedSlot = slot;
             _placedAt = Time.time;
             _s.Save();
-            Sfx.Play("place");
-            Haptics.Tap(20);
+            if (!quiet) { Sfx.Play("place"); Haptics.Tap(20); }
             Pointer.MarkDone("place");
-            if (Game.IsComplete(State)) { State.Built++; _s.Save(); _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
+            if (Game.IsComplete(State))
+            {
+                State.Built++;
+                _s.Save();
+                if (quiet) _doneDueAt = Time.time + DropTime + 0.45f;
+                else { _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
+            }
             return true;
         }
 
@@ -144,6 +153,7 @@ namespace Game.View
             _donePanel = false;
             _storageOpen = false;
             _chestsOpen = false;
+            ResetPlacing();
             _pick.Clear();
         }
 
@@ -183,6 +193,7 @@ namespace Game.View
             Pointer.Reset();
             _askStartOver = false;
             _storageOpen = false;
+            ResetPlacing();
             _chestsOpen = false;
             _donePanel = false;
             _reward = null;

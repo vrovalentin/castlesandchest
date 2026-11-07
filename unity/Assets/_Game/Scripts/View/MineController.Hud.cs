@@ -24,11 +24,11 @@ namespace Game.View
         private static readonly Color PanelEdge = new Color32(0x6b, 0x50, 0x38, 0xff);
         private static readonly Color ToolFill = new Color32(0x5c, 0x45, 0x32, 0xff);
         private static readonly Color ToolOn = new Color32(0x7a, 0x5a, 0x3a, 0xff);
-        private static readonly Color Parchment = new Color32(0xf6, 0xec, 0xd8, 0xff);
-        private static readonly Color Frame = new Color32(0x8a, 0x6a, 0x48, 0xff);
+        private static readonly Color Parchment = new Color32(0xff, 0xff, 0xff, 0xff);
+        private static readonly Color Frame = new Color32(0x8f, 0x82, 0xc4, 0xff);
         private static readonly Color Green = new Color32(0x4f, 0xb3, 0x5a, 0xff);
         private static readonly Color GreenEdge = new Color32(0x2f, 0x7d, 0x3a, 0xff);
-        private static readonly Color Sand = new Color32(0xe3, 0xc9, 0x9c, 0xff);
+        private static readonly Color Sand = new Color32(0xe6, 0xe1, 0xf5, 0xff);
 
         private GUIStyle _pill, _roundBtn, _needsBox, _needsTitle, _chip, _tool, _toolOn, _badge, _hint,
             _gotBox, _gotTitle, _gotEmpty, _toastStyle, _dim, _panel, _panelTitle, _panelBody, _button, _button2;
@@ -70,14 +70,14 @@ namespace Game.View
         private void Styles()
         {
             if (_button != null) return;
-            _pill = UiArt.Style(UiArt.Round(Cream, Cream, 30, 0), 30, 26, UiArt.Ink);
+            _pill = UiArt.Style(UiArt.Round(Parchment, Parchment, 30, 0), 30, 26, UiArt.Ink);
             _pill.fontStyle = FontStyle.Bold;
-            _roundBtn = UiArt.Style(UiArt.Round(Cream, Frame, 22, 3), 22, 1, UiArt.Ink);
+            _roundBtn = UiArt.Style(UiArt.Round(Parchment, Frame, 22, 3), 22, 1, UiArt.Ink);
             _roundBtn.active.background = UiArt.Round(Sand, Frame, 22, 3);
             _needsBox = UiArt.Style(UiArt.Round(PanelFill, Gold, 16, 3), 16, 1, Cream);
             _needsTitle = new GUIStyle { fontSize = 20, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
             _needsTitle.normal.textColor = Gold;
-            _chip = UiArt.Style(UiArt.Round(Cream, Cream, 14, 0), 14, 19, UiArt.Ink, TextAnchor.MiddleLeft);
+            _chip = UiArt.Style(UiArt.Round(Parchment, Parchment, 14, 0), 14, 19, UiArt.Ink, TextAnchor.MiddleLeft);
             _chip.wordWrap = false;
             _chip.padding = new RectOffset(40, 12, 2, 2);
             _tool = UiArt.Style(UiArt.Round(ToolFill, PanelEdge, 18, 3), 18, 22, Cream, TextAnchor.MiddleLeft);
@@ -186,12 +186,12 @@ namespace Game.View
             const float movesW = 150, chestsW = 116, scoreW = 226, gap = 10;
             float x = r.center.x - (movesW + chestsW + scoreW + 2 * gap) / 2f, y = r.y + 8, ph = b - 16;
             var small = new GUIStyle(_pill) { fontSize = 24, wordWrap = false, padding = new RectOffset(14, 10, 6, 6), alignment = TextAnchor.MiddleCenter };
-            string movesCol = run.Moves <= 5 ? "#d9534f" : "#8a5a34";
+            string movesCol = run.Moves <= 5 ? "#d9534f" : "#6b5aa6";
             GUI.Label(new Rect(x, y, movesW, ph), $"Ходы: <color={movesCol}>{run.Moves}</color>", small);
 
             var chestRect = new Rect(x + movesW + gap, y, chestsW, ph);
             var pill = new GUIStyle(small) { padding = new RectOffset(52, 10, 6, 6) };
-            GUI.Label(chestRect, $"<color=#8a5a34>{run.Got.Count}</color>", pill);
+            GUI.Label(chestRect, $"<color=#6b5aa6>{run.Got.Count}</color>", pill);
             var icon = SpriteFactory.ChestArt(1);
             if (icon != null) GUI.DrawTexture(new Rect(chestRect.x + 8, chestRect.y + 4, ph - 8, ph - 8), icon.texture, ScaleMode.ScaleToFit);
 
@@ -201,7 +201,7 @@ namespace Game.View
             var sr = new Rect(chestRect.xMax + gap, y, scoreW, ph);
             var m = GUI.matrix;
             GUIUtility.ScaleAroundPivot(new Vector2(k, k), sr.center);
-            GUI.Label(sr, $"Очки: <color=#8a5a34>{run.Score}</color>", small);
+            GUI.Label(sr, $"Очки: <color=#6b5aa6>{run.Score}</color>", small);
             GUI.matrix = m;
         }
 
