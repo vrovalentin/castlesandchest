@@ -13,12 +13,13 @@ namespace Game.View
     /// </summary>
     public sealed partial class BuildScreen
     {
-        private static readonly Color Ink = new Color32(0x3a, 0x2a, 0x1c, 0xff);
-        private static readonly Color Brown = new Color32(0x8a, 0x5a, 0x34, 0xff);
-        private static readonly Color CardFill = new Color32(0xfb, 0xf4, 0xe6, 0xf2);
-        private static readonly Color CardEdge = new Color32(0xd9, 0xc4, 0xa0, 0xff);
-        private static readonly Color Cream = new Color32(0xf6, 0xec, 0xd8, 0xff);
-        private static readonly Color Frame = new Color32(0x8a, 0x6a, 0x48, 0xff);
+        private static readonly Color Ink = new Color32(0x2e, 0x2a, 0x3d, 0xff);
+        // Panels are white with soft lavender edges, in tune with the purple pop-up windows.
+        private static readonly Color Brown = new Color32(0x6b, 0x5a, 0xa6, 0xff);
+        private static readonly Color CardFill = new Color32(0xff, 0xff, 0xff, 0xf4);
+        private static readonly Color CardEdge = new Color32(0xd8, 0xd2, 0xec, 0xff);
+        private static readonly Color Cream = new Color32(0xff, 0xff, 0xff, 0xff);
+        private static readonly Color Frame = new Color32(0x8f, 0x82, 0xc4, 0xff);
         private static readonly Color Gold = new Color32(0xd9, 0xa4, 0x41, 0xff);
         private static readonly Color Green = new Color32(0x4f, 0xb3, 0x5a, 0xff);
         private static readonly Color GreenEdge = new Color32(0x2f, 0x7d, 0x3a, 0xff);
@@ -51,9 +52,9 @@ namespace Game.View
             _bigName = new GUIStyle { fontSize = 34, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = false };
             _bigName.normal.textColor = Ink;
             _sub = new GUIStyle { fontSize = 20, wordWrap = true, alignment = TextAnchor.UpperLeft };
-            _sub.normal.textColor = new Color32(0x6e, 0x5a, 0x46, 0xff);
+            _sub.normal.textColor = new Color32(0x6a, 0x66, 0x80, 0xff);
             _tileTitle = new GUIStyle(_bigName) { fontSize = 32 };
-            _sheet = UiArt.Style(UiArt.Round(new Color32(0xfa, 0xf0, 0xdc, 0xff), new Color32(0xa0, 0x78, 0x50, 0xff), 32, 4), 32, 1, Ink);
+            _sheet = UiArt.Style(UiArt.Round(new Color32(0xf8, 0xf7, 0xfc, 0xff), new Color32(0x8f, 0x82, 0xc4, 0xff), 32, 4), 32, 1, Ink);
             _tile = UiArt.Style(UiArt.Round(Color.white, CardEdge, 16, 2), 16, 1, Ink);
             _tile.active.background = UiArt.Round(HaveFill, CardEdge, 16, 2);
             _tilePicked = new GUIStyle(_tile);
@@ -218,6 +219,7 @@ namespace Game.View
             var storageTile = DrawTiles(new Rect(x0 + pad, tilesY, inner, TilesH));
             DrawMineButton(new Rect(x0 + pad, mineY, inner, 100));
             GUI.enabled = true;
+            DrawPlaceFlight();
 
             // Short messages show over the sky, under the header, where they cover nothing.
             if (_message != null && Time.time < _messageUntil && !_storageOpen && !_chestsOpen)
@@ -240,7 +242,7 @@ namespace Game.View
         /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
         private void ShowPointer()
         {
-            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -281,7 +283,7 @@ namespace Game.View
             var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
             GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"{State.CastleIndex + 1}. {castle.Name}", title);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
-            GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#8a5a34>{done}</color> из {total}", center);
+            GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#6b5aa6>{done}</color> из {total}", center);
 
             var bar = new Rect(r.x, r.y + 76, r.width, 16);
             GUI.DrawTexture(bar, UiArt.Round(new Color(1, 1, 1, 0.75f), CardEdge, 8, 2));
@@ -292,7 +294,7 @@ namespace Game.View
             if (State.Score != _shownScore) { if (_shownScore >= 0) _scoreAt = Time.time; _shownScore = State.Score; }
             float k = 1 + 0.15f * Mathf.Clamp01(1 - (Time.time - _scoreAt) / 0.35f);
             var score = new GUIStyle(center) { fontSize = 22, wordWrap = false };
-            string text = $"Очки: <color=#8a5a34>{State.Score}</color>";
+            string text = $"Очки: <color=#6b5aa6>{State.Score}</color>";
             float sw = Mathf.Max(170, score.CalcSize(new GUIContent($"Очки: {State.Score}")).x + 34);
             var sr = new Rect(r.xMax - sw, bar.yMax + 10, sw, 46);
             var m = GUI.matrix;
@@ -335,8 +337,10 @@ namespace Game.View
             int next = Game.NextSlot(State);
             if (Art != null)
             {
-                float t = _placedSlot >= 0 ? Mathf.Clamp01((Time.time - _placedAt) / 0.35f) : 1;
-                Art.DrawBuilt(pic, State.Filled, next, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f), _placedSlot, t);
+                float t = _placedSlot >= 0 ? Mathf.Clamp01((Time.time - _placedAt) / DropTime) : 1;
+                var shaken = new Rect(pic.x + LandingShake(), pic.y, pic.width, pic.height);
+                Art.DrawBuilt(shaken, State.Filled, next, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f), _placedSlot, t);
+                DrawLanding(pic);
                 return;
             }
             // No art for this castle yet: its slots as a grid of icons on the site, built ones solid.
@@ -375,7 +379,7 @@ namespace Game.View
                 bool tap = (e.mousePosition - _castleDown.Value).magnitude < 24;
                 _castleDown = null;
                 int slot = tap ? Art.SlotAt(_picRect, e.mousePosition, State.Filled, Game.NextSlot(State)) : -1;
-                if (slot >= 0) Later(() => TapSlot(slot));
+                if (slot >= 0) Later(() => { if (State.Filled[slot]) TapSlot(slot); else StartPlace(slot); }, click: false);
                 e.Use();
             }
         }
@@ -426,6 +430,7 @@ namespace Game.View
             GUI.Box(card, GUIContent.none, _nextCard);
             GUI.Label(new Rect(x + padX, y + 12, 400, 30), "СЛЕДУЮЩАЯ ДЕТАЛЬ", _section);
             var icon = new Rect(x + padX, y + 52, 124, 124);
+            _iconAt = icon;
             GUI.Box(icon, GUIContent.none, have > 0 ? _tilePicked : _tile);
             GameArt.DrawPart(new Rect(icon.x + 12, icon.y + 12, 100, 100), id, tier);
 
@@ -440,9 +445,13 @@ namespace Game.View
             {
                 var b = new Rect(card.xMax - padX - btnW, y + 58, btnW, row > 1 ? 66 : 80);
                 if (row <= 1) b.y += 10;
-                if (GUI.Button(b, "Поставить", _green)) Later(() => PlacePart(id));
+                // While a part is on its way the buttons wait for it to land.
+                bool was = GUI.enabled;
+                GUI.enabled = was && !Placing;
+                if (GUI.Button(b, "Поставить", _green)) Later(() => StartPlace(next), click: false);
                 _placeAt = b;
-                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), $"Подряд · {row}", _wood)) Later(() => PlaceAll());
+                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), $"Подряд · {row}", _wood)) Later(() => StartPlace(next, row), click: false);
+                GUI.enabled = was;
             }
             return card.yMax;
         }
@@ -632,7 +641,7 @@ namespace Game.View
             for (int k = 0; k < 2; k++)
             {
                 var c = new Rect(strip.x + 20 + k * (st + 34), sy, st, st);
-                GUI.DrawTexture(c, UiArt.Round(new Color32(0xfb, 0xf4, 0xe6, (byte)(k < _pick.Count ? 0xff : 0x55)), Gold, 18, k < _pick.Count ? 4 : 2));
+                GUI.DrawTexture(c, UiArt.Round(new Color32(0xff, 0xff, 0xff, (byte)(k < _pick.Count ? 0xff : 0x55)), Gold, 18, k < _pick.Count ? 4 : 2));
                 if (k < _pick.Count)
                 {
                     GameArt.DrawPart(new Rect(c.x + 12, c.y + 12, st - 24, st - 24), _pick[k], Game.Catalog.TierOf(_pick[k]));
@@ -669,7 +678,7 @@ namespace Game.View
                 }
             }
             else
-                GUI.DrawTexture(new Rect(tx, sy, st, st), UiArt.Round(new Color32(0xfb, 0xf4, 0xe6, 0x55), Gold, 18, 2));
+                GUI.DrawTexture(new Rect(tx, sy, st, st), UiArt.Round(new Color32(0xff, 0xff, 0xff, 0x55), Gold, 18, 2));
 
             if (GoldButton(new Rect(r.center.x - 160, r.yMax - 140, 320, 96), "Закрыть", 34))
                 Later(() => { _storageOpen = false; _pick.Clear(); }, click: false);

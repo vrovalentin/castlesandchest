@@ -119,6 +119,40 @@ namespace Game.View
             return -1;
         }
 
+        private Vector2[] _centers;
+        private float[] _bottoms;
+
+        /// <summary>Where a slot's part sits in the picture drawn in <paramref name="r"/>: the middle of its taps, and its lowest point.</summary>
+        public bool SlotSpot(Rect r, int slot, out Vector2 center, out float bottom)
+        {
+            center = r.center; bottom = r.center.y;
+            if (_hit == null || slot < 0 || slot >= 64) return false;
+            if (_centers == null)
+            {
+                int n = Layers.Length;
+                var sx = new double[n]; var sy = new double[n]; var cnt = new int[n]; var by = new int[n];
+                for (int y = 0; y < _hitSize; y++)
+                    for (int x = 0; x < _hitSize; x++)
+                    {
+                        ulong m = System.BitConverter.ToUInt64(_hit, (y * _hitSize + x) * 8);
+                        for (int i = 0; m != 0 && i < n && i < 64; i++)
+                            if ((m & 1UL << i) != 0) { sx[i] += x; sy[i] += y; cnt[i]++; if (y > by[i]) by[i] = y; }
+                    }
+                _centers = new Vector2[n]; _bottoms = new float[n];
+                for (int i = 0; i < n; i++)
+                {
+                    _centers[i] = cnt[i] > 0 ? new Vector2((float)(sx[i] / cnt[i] + 0.5) / _hitSize, (float)(sy[i] / cnt[i] + 0.5) / _hitSize) : new Vector2(0.5f, 0.5f);
+                    _bottoms[i] = cnt[i] > 0 ? (by[i] + 1f) / _hitSize : 0.5f;
+                }
+            }
+            if (slot >= _centers.Length) return false;
+            float side = Mathf.Min(r.width, r.height);
+            var pic = new Rect(r.center.x - side / 2, r.center.y - side / 2, side, side);
+            center = new Vector2(pic.x + _centers[slot].x * side, pic.y + _centers[slot].y * side);
+            bottom = pic.y + _bottoms[slot] * side;
+            return true;
+        }
+
         private static readonly Color Glow = new Color32(0xff, 0xc8, 0x3c, 0xff);
 
         /// <summary>
@@ -139,9 +173,11 @@ namespace Game.View
                 if (!filled[i]) continue;
                 if (i == justPlaced && dropT < 1)
                 {
-                    float k = 1 - dropT;
-                    GUI.color = new Color(1, 1, 1, dropT);
-                    GUI.DrawTexture(new Rect(r.x, r.y - k * k * r.height * 0.08f, r.width, r.height), Layers[i], ScaleMode.ScaleToFit);
+                    // Falls in from above, lands, bounces once a little.
+                    float fall = Mathf.Clamp01(dropT / 0.55f), k = 1 - fall;
+                    float bounce = dropT > 0.55f ? Mathf.Sin((dropT - 0.55f) / 0.45f * Mathf.PI) * 0.012f : 0;
+                    GUI.color = new Color(1, 1, 1, Mathf.Clamp01(dropT * 10));
+                    GUI.DrawTexture(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), Layers[i], ScaleMode.ScaleToFit);
                     GUI.color = old;
                 }
                 else GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
