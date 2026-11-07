@@ -119,7 +119,7 @@ namespace Game.Core
 
             // Buildings 11-17, cut by tools/art/cut_house_11..17.py. The dragon castle (castle_15) comes last.
             var castle11 = new CastleInfo("castle_11", "Грибной домик", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall door wall wall window brick floor roof floor wall window roof floor roof tiles window chimney " +
+                "clay*6 wall wall door wall wall window brick floor floor roof wall window roof floor roof tiles window chimney " +
                 "vines porch lantern*3 shrooms hedgehog"), AllTiers("vines", "chimney", "shrooms", "hedgehog"));
             var castle12 = new CastleInfo("castle_12", "Часовая башня", 30, 0.25, 0.2, Slots(
                 "clay*6 wall wall window wall door window roof tiles wall wall clock floor wall roof tiles spire chimney " +
@@ -134,7 +134,7 @@ namespace Game.Core
                 "clay*6 wall wall door roof tiles wall wall window window wall sign window floor window window roof tiles " +
                 "spire spire roof spire porch lantern lantern nest dragon"), AllTiers("sign", "nest"));
             var castle16 = new CastleInfo("castle_16", "Пиратская крепость", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall cannon brick wall wall door window sign roof tiles window chimney wall window floor ladder floor " +
+                "clay*6 floor wall wall cannon brick wall wall door window sign roof tiles window chimney wall window floor ladder floor " +
                 "telescope spire porch lantern lantern parrot"), AllTiers("cannon", "sign", "chimney", "ladder", "telescope", "parrot"));
             var castle17 = new CastleInfo("castle_17", "Песчаный дворец", 30, 0.25, 0.2, Slots(
                 "clay*6 floor wall wall door window window brick floor wall floor roof spire roof roof wall window tiles roof spire " +

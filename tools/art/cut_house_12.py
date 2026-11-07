@@ -18,8 +18,8 @@ gable = S.poly((506, 614), (615, 508), (726, 614))
 R, rest = claim(on, [
     ('lanL', S.box(492, 558, 598, 708)), ('lanR', S.box(688, 752, 598, 708)),
     ('door', S.arch(558, 664, 626, 818)),
-    ('porch', S.box(486, 734, 728, 908)),
     ('found', Y >= 790),
+    ('porch', S.box(486, 734, 728, 908)),
     ('chimney', S.box(643, 737, 410, 522)),
     ('winR', S.ell(610, 570, 32, 32)),
     ('roofH', roof & ~gable & (X < 615)), ('tilesH', roof & ~gable),
