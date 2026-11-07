@@ -97,7 +97,7 @@ namespace Game.View
                     float s = 34 - i * 6;
                     GUI.DrawTexture(new Rect(p.x - s / 2, p.y - s / 2, s, s), sp, ScaleMode.ScaleToFit);
                 }
-            GUI.color = new Color(1, 1, 1, t > 0.8f ? 1 - (t - 0.8f) / 0.2f : 1);
+            GUI.color = Color.white;
             var m = GUI.matrix;
             GUIUtility.RotateAroundPivot(Mathf.Sin(t * Mathf.PI * 2) * 10, at);
             GameArt.DrawPart(new Rect(at.x - size / 2, at.y - size / 2, size, size), _flyId, Game.Catalog.TierOf(_flyId));

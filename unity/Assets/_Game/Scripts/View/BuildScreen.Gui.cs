@@ -242,7 +242,7 @@ namespace Game.View
         /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
         private void ShowPointer()
         {
-            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;

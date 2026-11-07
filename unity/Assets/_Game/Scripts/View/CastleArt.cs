@@ -176,7 +176,7 @@ namespace Game.View
                     // Falls in from above, lands, bounces once a little.
                     float fall = Mathf.Clamp01(dropT / 0.55f), k = 1 - fall;
                     float bounce = dropT > 0.55f ? Mathf.Sin((dropT - 0.55f) / 0.45f * Mathf.PI) * 0.012f : 0;
-                    GUI.color = new Color(1, 1, 1, Mathf.Clamp01(dropT * 4));
+                    GUI.color = new Color(1, 1, 1, Mathf.Clamp01(dropT * 10));
                     GUI.DrawTexture(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), Layers[i], ScaleMode.ScaleToFit);
                     GUI.color = old;
                 }
