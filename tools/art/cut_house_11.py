@@ -4,6 +4,7 @@
 # Usage: python3 cut_house_11.py <clean.png> <full.png> <output folder> [preview.png]
 import sys, os
 import numpy as np
+from scipy import ndimage as ndi
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
 from cutlib import load_pair, write_castle, Shapes, claim, full_only, slots_of, settle
@@ -20,17 +21,32 @@ light = (C.min(2) > 165) & (r - b < 70)
 
 shrooms = (S.box(25, 130, 710, 830) | S.box(98, 155, 765, 815) | S.box(200, 262, 860, 930)
            | S.box(660, 720, 722, 805) | S.box(700, 790, 862, 958) | S.box(752, 792, 915, 962) | S.box(330, 360, 765, 800))
+glow = (r > 200) & (g > 140) & (b < 120) & (r - b > 110)
+dark = C.max(2) < 110
+def lamp(x0, x1, y0, y1):
+    """A lantern in a box: its glass, metal and red cap, without the wall or post behind it."""
+    m = S.box(x0, x1, y0, y1) & ((C.max(2) < 140) | redcap)
+    m = ndi.binary_closing(m, iterations=4)
+    lab, n = ndi.label(m)
+    if n:
+        m = lab == 1 + int(np.argmax(ndi.sum(m, lab, range(1, n + 1))))
+    return ndi.binary_dilation(ndi.binary_fill_holes(m), iterations=2)
+stepc = (C.min(2) > 110) & (r - b < 60) & ~green
 R, rest = claim(on, [
     ('found', Y >= 850),
-    ('shrooms', shrooms),
-    ('porch', S.box(330, 690, 750, 878)),
-    ('lanL', S.box(122, 198, 420, 592)), ('lanR', S.box(928, 1012, 655, 812)), ('lanC', S.box(505, 590, 310, 458) & ~light),
-    ('lanR', S.box(860, 1010, 610, 860)),
+    ('shrooms', shrooms & ndi.binary_fill_holes(ndi.binary_closing(redcap | (C.min(2) > 175), iterations=2))),
+    ('porch', S.box(330, 690, 750, 878) & ndi.binary_fill_holes(ndi.binary_closing(stepc, iterations=3))),
+    # lanterns drawn around their shape: hanger, cap and glass body, not the wall or beam behind them
+    ('lanL', S.ell(160, 500, 38, 22) | S.poly((126, 505), (194, 505), (192, 585), (128, 585)) | S.box(153, 167, 420, 490)),
+    ('lanR', S.ell(972, 690, 36, 24) | S.poly((938, 695), (1006, 695), (1004, 808), (940, 808)) | S.box(964, 980, 655, 680)),
+    ('lanC', S.poly((518, 378), (578, 378), (594, 412), (588, 460), (508, 460), (500, 412)) | S.box(536, 560, 312, 382)),
+    ('lanR', S.box(860, 1010, 610, 860) & ~green & ~light),
     ('barrel', S.box(700, 862, 640, 850)),
     ('door', S.arch(432, 668, 488, 760)),
     ('ivy', S.box(380, 800, 330, 660) & green),
     ('winL', S.ell(320, 520, 66, 74)), ('winR', S.ell(876, 590, 64, 60) | S.box(815, 940, 615, 668)),
-    ('dormer', S.box(388, 602, 48, 252) & ~redcap & ~(light & (Y < 70))),
+    # the dormer: its arched wooden frame and the flower box under it
+    ('dormer', S.arch(390, 588, 58, 205) | S.box(368, 608, 168, 252)),
     ('chimney', S.box(750, 885, 38, 228)),
     ('bench', S.box(100, 368, 600, 770) & ~(light & (X > 240))),
     ('gills', S.box(60, 940, 268, 410) & ~redcap),
@@ -51,4 +67,4 @@ SLOTS = slots_of('wall:wallLow wall:wallLow2 door:door wall:wallUp wall:wallUp2 
 SLOTS = settle(SLOTS, found)
 D = full_only(F, C, aF)
 SLOTS += [('hedgehog', D & S.box(230, 470, 600, 970), 'full')]
-write_castle(out, 'c11', 'castle_11', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c11', 'castle_11', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

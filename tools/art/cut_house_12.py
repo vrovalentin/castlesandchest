@@ -16,16 +16,18 @@ on = aC > 0.02
 roof = S.poly((436, 614), (615, 446), (786, 614))
 gable = S.poly((506, 614), (615, 508), (726, 614))
 R, rest = claim(on, [
-    ('lanL', S.box(492, 558, 598, 708)), ('lanR', S.box(688, 752, 598, 708)),
+    # lanterns by their shape: hanger, cap and glass body
+    ('lanL', S.poly((508, 625), (544, 625), (556, 650), (550, 705), (502, 705), (494, 650)) | S.box(516, 534, 600, 628)),
+    ('lanR', S.poly((704, 625), (740, 625), (752, 650), (746, 705), (698, 705), (690, 650)) | S.box(712, 730, 600, 628)),
     ('door', S.arch(558, 664, 626, 818)),
     ('found', Y >= 790),
-    ('porch', S.box(486, 734, 728, 908)),
+    ('porch', (S.box(492, 534, 730, 835) | S.box(682, 728, 730, 835) | S.box(498, 724, 812, 908)) & ~((C[..., 1] > C[..., 0] + 10) & (C[..., 1] > C[..., 2] + 10))),
     ('chimney', S.box(643, 737, 410, 522)),
     ('winR', S.ell(610, 570, 32, 32)),
     ('roofH', roof & ~gable & (X < 615)), ('tilesH', roof & ~gable),
     ('houseWall', (X > 520) & (Y >= 500)),
     ('clock', S.ell(415, 437, 96, 98) | S.box(328, 502, 505, 568)),
-    ('winT', S.box(326, 446, 574, 712)),
+    ('winT', S.arch(332, 442, 575, 690) | S.box(325, 447, 684, 714)),
     ('lowL', (Y >= 568) & (X < 418)), ('lowR', Y >= 568),
     ('midL', (Y >= 330) & (X < 418)), ('midR', Y >= 330),
     ('rail', Y >= 255),
@@ -40,4 +42,4 @@ SLOTS = slots_of('wall:lowL wall:lowR window:winT wall:houseWall door:door windo
 SLOTS = settle(SLOTS, found)
 D = full_only(F, C, aF)
 SLOTS += [('owl', D & S.box(500, 668, 640, 850), 'full')]
-write_castle(out, 'c12', 'castle_12', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c12', 'castle_12', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)
