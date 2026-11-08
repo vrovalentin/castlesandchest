@@ -32,9 +32,10 @@ R, rest = claim(on, [
     ('lamp', S.box(335, 525, 150, 280) & (Y >= 198)),
     ('rail', Y < 300),
     ('cornice', Y < 352),
-    ('win1', S.arch(362, 472, 362, 492)),
-    ('win2', S.arch(350, 465, 562, 696)),
-    ('bandD', Y < 455), ('bandC', Y < 560), ('bandB', Y < 690), ('bandA', np.ones_like(on)),
+    ('win1', S.arch(368, 470, 364, 470) | S.box(362, 474, 462, 492)),
+    ('win2', S.arch(356, 462, 556, 672) | S.box(350, 466, 664, 694)),
+    # bands of the tower along the edges of its red and white stripes
+    ('bandD', Y < 470), ('bandC', Y < 600), ('bandB', Y < 718), ('bandA', np.ones_like(on)),
 ])
 found = R['found']
 SLOTS = [('clay', m, 'clean') for m in split_even(found, X, 8)]
@@ -53,4 +54,4 @@ lantR = D & S.box(686, 750, 598, 708)
 steps = D & S.box(490, 735, 720, 905) & ~cat & ~lantL & ~lantR
 SLOTS += [('porch', steps, 'full'), ('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('catsailor', cat, 'full')]
 
-write_castle(out, 'c6', 'castle_6', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c6', 'castle_6', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

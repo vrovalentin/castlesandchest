@@ -19,17 +19,18 @@ r, g, b = C[..., 0], C[..., 1], C[..., 2]
 red = (r > g + 70) & (r > b + 60)
 
 R, rest = claim(on, [
-    ('door', S.box(462, 634, 646, 958)),
+    ('door', S.arch(466, 632, 646, 958)),
     ('found', (Y >= 850) | (Y >= 765) & (X > 640)),
     ('sign', S.box(700, 868, 552, 756)),
     ('chimney', S.box(678, 806, 0, 100) | S.box(678, 806, 0, 290) & ~red & ~S.box(632, 762, 128, 300)),
     ('canopy', S.box(405, 708, 538, 664) & (red | (Y >= 590))),
-    ('wLow', S.box(298, 414, 660, 822)),
+    ('wLow', S.arch(316, 408, 662, 822)),
     ('beam', S.box(200, 802, 548, 614)),
-    ('dL', S.box(266, 347, 188, 292)), ('dR', S.box(666, 747, 188, 292)),
-    ('dC', S.box(434, 582, 168, 330)),
-    ('wUL', S.box(256, 372, 384, 542)), ('wUC', S.box(438, 580, 374, 532)),
-    ('wUR', S.box(641, 754, 384, 542)),
+    # windows: the arched wooden frame and the flower box under it
+    ('dL', S.arch(292, 341, 194, 262) | S.box(270, 352, 246, 294)), ('dR', S.arch(673, 724, 194, 262) | S.box(666, 744, 246, 294)),
+    ('dC', S.arch(454, 563, 172, 265) | S.box(436, 580, 252, 332)),
+    ('wUL', S.arch(279, 365, 388, 480) | S.box(258, 372, 466, 538)), ('wUC', S.arch(454, 563, 378, 470) | S.box(438, 580, 453, 530)),
+    ('wUR', S.arch(651, 731, 388, 480) | S.box(643, 754, 466, 538)),
     ('gable', S.poly((262, 300), (262, 214), (305, 166), (350, 214), (350, 300))
               | S.poly((660, 300), (660, 214), (705, 166), (752, 214), (752, 300))
               | S.poly((420, 338), (420, 196), (505, 96), (590, 196), (590, 338))),
@@ -54,4 +55,4 @@ lant = D & S.box(645, 718, 636, 752)
 steps = D & S.box(462, 716, 780, 990) & ~keeper
 SLOTS += [('porch', steps, 'full'), ('lantern', lant, 'full'), ('innkeeper', keeper, 'full')]
 
-write_castle(out, 'c8', 'castle_8', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c8', 'castle_8', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

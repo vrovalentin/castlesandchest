@@ -76,7 +76,7 @@ def settle(slots, found):
     return slots
 
 
-def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True, grow_back=False):
+def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True, grow_back=False, decor_full=False):
     """Writes <prefix>_NN_<part>.png layers, outlines, base, decor (from the clean picture) and the full picture.
     slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False.
     Each layer reaches 3 px over its neighbours to hide the seams; grow_back=True lets it reach only over the parts
@@ -91,6 +91,7 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
     taken = np.zeros((H, W), bool)
     first_porch = next((i for i, s in enumerate(slots) if s[0] == 'porch'), None)
     decor = decor if decor is not None else np.zeros((H, W), bool)
+    Di, Da = (F.astype(np.uint8), aF) if decor_full else (C.astype(np.uint8), aC)
     for i, (part, m, src) in enumerate(slots):
         img, al = (Cu, aC) if src == 'clean' else (Fu, aF)
         if part == 'clay' and grey_clay:
@@ -114,9 +115,9 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
         o[rim] = [70, 110, 170, 220]
         Image.fromarray(o).save(f'{out}/{prefix}_line_{i:02d}.png', optimize=True)
         if i == first_porch:
-            comp.alpha_composite(Image.fromarray(_rgba(Cu, decor, aC)))
+            comp.alpha_composite(Image.fromarray(_rgba(Di, decor, Da)))
         comp.alpha_composite(layer)
-    Image.fromarray(_rgba(Cu, decor, aC)).save(f'{out}/{prefix}_decor.png', optimize=True)
+    Image.fromarray(_rgba(Di, decor, Da)).save(f'{out}/{prefix}_decor.png', optimize=True)
     base = _rgba(Cu, on, aC)
     base[..., 3] = (base[..., 3] * 0.25).astype(np.uint8)
     Image.fromarray(base).save(f'{out}/{prefix}_base.png', optimize=True)

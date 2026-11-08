@@ -54,65 +54,32 @@ namespace Game.Core
         /// <summary>The demo catalog. <paramref name="castles"/> limits it to the first buildings (the prototype has two).</summary>
         public static Catalog Create(int castles = int.MaxValue)
         {
-            var castle1 = new CastleInfo("castle_1", "Башня в 2 этажа", 30, 0.25, 0.2,
-                new[]
-                {
-                    "clay", "clay", "clay", "clay",
-                    "wall", "wall", "wall", "wall",
-                    "floor", "floor",
-                    "roof", "tiles",
-                    "window", "window",
-                    "porch", "spire", "lantern",
-                }, AllTiers());
-
-            // In building order, like the layers in Art/Resources/Castles/castle_2 (tools/art/cut_castle_2.py).
-            var slots2 = new List<string>();
-            slots2.AddRange(Repeat("clay", 15));                        // grey foundation
-            slots2.AddRange(Repeat("wall", 5));                         // lower walls of the five towers
-            slots2.AddRange(new[] { "door", "window", "window" });     // gate, lower windows
-            slots2.AddRange(Repeat("floor", 3));                        // battlements and the balcony
-            slots2.AddRange(Repeat("wall", 3));                         // upper walls
-            slots2.AddRange(Repeat("window", 3));                       // upper windows
-            slots2.AddRange(Repeat("roof", 5));
-            slots2.AddRange(Repeat("spire", 5));
-            slots2.AddRange(new[] { "porch", "porch", "lantern", "lantern", "knight", "princess" });
-            var castle2 = new CastleInfo("castle_2", "Замок с башнями", 30, 0.25, 0.2, slots2.ToArray(), AllTiers());
-
-            // Building 3, the gingerbread house (tools/art/cut_house_3.py).
-            var slots3 = new List<string>();
-            slots3.AddRange(Repeat("clay", 6));                                       // cookie stones
-            slots3.AddRange(new[] { "brick", "brick", "wall", "wall" });             // candy-cane pillars, lower walls
-            slots3.AddRange(new[] { "door", "window", "window", "wall", "window" }); // door, windows, gable
-            slots3.AddRange(new[] { "roof", "tiles", "chimney", "spire" });          // icing roof, chimney, lollipop
-            slots3.AddRange(new[] { "porch", "lantern", "lantern", "baker" });       // jelly steps, lanterns, the baker
-            var castle3 = new CastleInfo("castle_3", "Пряничный домик", 30, 0.25, 0.2, slots3.ToArray(), AllTiers("chimney", "baker"));
-
-            // Building 4, the windmill (tools/art/cut_house_4.py).
-            var slots4 = new List<string>();
-            slots4.AddRange(Repeat("clay", 6));                                       // stone base
-            slots4.AddRange(new[] { "wall", "wall", "window", "floor" });            // lower tower, window, balcony
-            slots4.AddRange(new[] { "window", "wall" });                              // upper window, upper tower
-            slots4.AddRange(Repeat("sails", 4));                                      // the sails hold the roof up in the picture
-            slots4.AddRange(new[] { "roof", "tiles", "spire" });
-            slots4.AddRange(new[] { "door", "porch", "lantern", "lantern", "miller" });
-            var castle4 = new CastleInfo("castle_4", "Мельница", 30, 0.25, 0.2, slots4.ToArray(), AllTiers("sails", "miller"));
+            // Buildings 1-4, cut by their drawing (tools/art/cut_house_1..4.py); the slots follow their layers.
+            var castle1 = new CastleInfo("castle_1", "Башня в 2 этажа", 30, 0.25, 0.2, Slots(
+                "clay*4 wall*2 window wall*2 window floor*2 roof tiles spire porch lantern"), AllTiers());
+            var castle2 = new CastleInfo("castle_2", "Замок с башнями", 30, 0.25, 0.2, Slots(
+                "clay*15 wall*5 door window*2 floor*3 wall*3 window*3 roof*5 spire*5 porch*2 lantern*2 knight princess"), AllTiers());
+            var castle3 = new CastleInfo("castle_3", "Пряничный домик", 30, 0.25, 0.2, Slots(
+                "clay*6 brick*2 wall*2 door window*2 wall window roof tiles chimney spire porch lantern*2 baker"), AllTiers("chimney", "baker"));
+            var castle4 = new CastleInfo("castle_4", "Мельница", 30, 0.25, 0.2, Slots(
+                "clay*6 wall*2 window floor wall window sails*4 roof tiles spire door porch lantern*2 miller"), AllTiers("sails", "miller"));
 
             // Buildings 5-10, cut by tools/art/cut_house_N.py; the slots follow their layers.
             var castle5 = new CastleInfo("castle_5", "Домик на дереве", 30, 0.25, 0.2, Slots(
-                "clay*6 wall*4 floor floor brick door window window roof chimney " +
-                "brick floor door window tiles spire roof tiles roof ladder porch lantern lantern squirrel"), AllTiers("ladder", "chimney", "squirrel"));
+                "clay*6 wall*4 floor*2 brick door window*2 roof chimney brick floor door window tiles spire roof tiles roof " +
+                "ladder porch lantern*2 squirrel"), AllTiers("ladder", "chimney", "squirrel"));
             var castle6 = new CastleInfo("castle_6", "Маяк", 30, 0.25, 0.2, Slots(
-                "clay*8 wall wall window brick door wall wall window tiles window chimney floor floor " +
-                "beacon roof spire porch lantern lantern catsailor"), AllTiers("beacon", "chimney", "catsailor"));
+                "clay*8 wall*2 window brick door wall*2 window tiles window chimney floor*2 beacon roof spire porch lantern*2 " +
+                "catsailor"), AllTiers("beacon", "chimney", "catsailor"));
             var castle7 = new CastleInfo("castle_7", "Тыквенный домик", 30, 0.25, 0.2, Slots(
-                "clay*8 wall wall door vines window wall wall window window wall window roof tiles spire chimney " +
-                "brick window roof spire vines vines porch lantern lantern fairy"), AllTiers("vines", "chimney", "fairy"));
+                "clay*8 wall*2 door vines window wall*2 window*2 wall window roof tiles spire chimney brick window roof spire " +
+                "vines*2 porch lantern*2 fairy"), AllTiers("vines", "chimney", "fairy"));
             var castle8 = new CastleInfo("castle_8", "Трактир", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall door window tiles sign floor wall wall window*3 roof tiles wall window*3 chimney " +
-                "porch lantern innkeeper"), AllTiers("sign", "chimney", "innkeeper"));
+                "clay*6 wall*2 door window tiles sign floor wall*2 window*3 roof tiles wall window*3 chimney porch lantern " +
+                "innkeeper"), AllTiers("sign", "chimney", "innkeeper"));
             var castle9 = new CastleInfo("castle_9", "Башня волшебника", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall door wall floor window wall window wall window floor wall window " +
-                "roof spire tiles spire roof spire telescope lantern lantern wizard"), AllTiers("telescope", "wizard"));
+                "clay*6 wall*2 door wall floor window wall window wall window floor wall window roof spire tiles spire roof " +
+                "spire telescope lantern*2 wizard"), AllTiers("telescope", "wizard"));
             var castle10 = new CastleInfo("castle_10", "Ледяной дворец", 30, 0.25, 0.2, Slots(
                 "clay*6 wall*7 door window*4 floor*4 roof*3 wall*4 window*2 floor*3 wall*3 window*5 roof*2 tiles*2 roof spire*5 " +
                 "porch lantern*2 princess"), AllTiers());
