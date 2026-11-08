@@ -99,7 +99,7 @@ def trim(folder, drop_lines=False):
         lines[1] = f'guid: {uuid.uuid4().hex}'
         open(rp + '.meta', 'w').write('\n'.join(lines) + '\n')
     area = sum(w * h for _, _, w, h in out.values())
-    print(f'{os.path.basename(folder)}: {len(out)} pieces, {area / (len(out) * canvas * canvas):.1%} of full size')
+    print(f'{os.path.basename(os.path.normpath(folder))}: {len(out)} pieces, {area / (len(out) * canvas * canvas):.1%} of full size')
 
 
 if __name__ == '__main__':
