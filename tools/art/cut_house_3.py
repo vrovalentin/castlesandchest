@@ -1,87 +1,68 @@
-# Cut building 3, the gingerbread house, into its building steps, bottom-up.
-#   pryanik3_cut.png : the house without the baker, lanterns and jelly steps (the house is taken from it)
-#   pryanik3.png     : the same house with them (they are taken from the difference)
-# Both are 1024x1024 on white and line up pixel for pixel.
-# Usage: python3 cut_house_3.py <clean.png> <full.png> <output folder> [preview.png]
+# Cut building 3, the gingerbread house, by its drawing, bottom-up.
+#   pryanik3_cut.png : the house without the baker, lanterns and jelly steps
+#   pryanik3.png     : with them
+# Windows are their icing frames with the lollipop shutters, the red candy on top and the holly under them;
+# the roof halves are the pink and white icing with the drips; gingerbread between the drips is the gable.
+# Usage: python3 cut_house_3.py <clean.png> <full.png> <output folder> [map.png]
 import sys, os
 import numpy as np
-from PIL import Image
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import cutout, arch, write_castle, split_even
+from recut import Cut, overlay
 
-clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
-C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
-F = np.array(Image.open(full_p).convert('RGB')).astype(np.int32)
-H, W = C.shape[:2]
-Y, X = np.mgrid[0:H, 0:W]
-aC, aF = cutout(C), cutout(F)
-on = aC > 0.02
+c = Cut(sys.argv[1], sys.argv[2])
+X, Y, C = c.X, c.Y, c.C
 r, g, b = C[..., 0], C[..., 1], C[..., 2]
-def box(x0, x1, y0, y1): return (X >= x0) & (X <= x1) & (Y >= y0) & (Y <= y1)
+green = c.color('green') & c.on
+ginger = (r > 120) & (r - b > 80) & (g > 75) & (g < 170) & (r - g > 35) & (b < 95)
+inner = c.below([(110, 468), (250, 446), (515, 182), (790, 446), (915, 468)])
+icing = (C.min(2) > 195) | ((r > 190) & (b > 110) & (r - g > 50))     # white and pink icing
+drips = inner & icing & ~c.below([(110, 520), (250, 500), (515, 240), (790, 500), (915, 520)])
+lab, _ = ndi.label(drips | (~inner & c.on))
+drips &= np.isin(lab, np.unique(lab[~inner & c.on]))
 
-pink = (r > 180) & (r - g > 60) & (b > 80) & (b - g > -10)
-cream = (r > 205) & (g > 185) & (b > 165)
-green = (g > r + 15) & (g > b + 15)
 
-# the lollipop on the ridge and the chimney with its smoke
-lolly = on & (Y < 112) & (np.abs(X - 518) < 58)
-chimney = on & (X >= 616) & (X <= 830) & ((Y < 205) | ((Y < 282) & ~cream)) & ~pink & ~lolly
-# the gable: a triangle under the ridge; everything above the eaves outside it (and the icing at its edge) is roof
-gable = (Y > 190) & (np.abs(X - 512) < (Y - 190) * 1.16 - 6)
-upper_win = ((((X - 516) / 128.0) ** 2 + ((Y - 352) / 100.0) ** 2) <= 1) & on
-upper_win |= box(495, 535, 245, 285) & on | box(495, 535, 410, 448) & on      # the red candies above and below
-roof = on & (Y < 462) & ~lolly & ~chimney & ~upper_win & (~gable | ((pink | cream) & (Y <= 300)))
-roof |= on & (Y < 470) & ((X < 205) | (X > 822)) & ~chimney
-roof &= ~((Y > 300) & gable & ~pink)            # keep the swirls and gingerbread out of the roof
-roof = ndi.binary_opening(roof, iterations=1)
-roofL, roofR = roof & (X < 516), roof & (X >= 516)
+def window(cx, cy, rx, ry, sh_dx, sh_ry, top):
+    """Icing frame, lollipop shutters on both sides, the candy on top, the holly under it."""
+    m = c.ell(cx, cy, rx, ry) | c.ell(cx - sh_dx, cy + 8, 27, sh_ry) | c.ell(cx + sh_dx, cy + 8, 27, sh_ry)
+    m |= c.ell(cx, top, 15, 15)
+    return m
 
-# candy-cane pillars, door, windows
-pillarL = on & box(200, 262, 448, 792) & ~green
-pillarR = on & box(762, 824, 448, 792) & ~green
-door = arch(X, Y, 414, 618, 462, 770) & on
-winL = on & box(248, 432, 518, 702) & ~green
-winR = on & box(596, 792, 518, 702) & ~green & ~pillarR
-holly = on & ((box(290, 390, 650, 700)) | box(640, 745, 650, 700))   # window boxes with their leaves
-winL |= holly & (X < 512); winR |= holly & (X >= 512)
 
-# cookie-stone foundation, six pieces left to right
-found = on & (Y >= 792) & ~green
-# body of the house: lower walls left and right of the door (with the bushes), and the gable above
-body = on & ~roof & ~lolly & ~chimney & ~upper_win & ~found & ~pillarL & ~pillarR & ~door & ~winL & ~winR
-lower = body & (Y >= 470)
-gable_wall = body & (Y < 470)
-# crumbs of smoke and icing outside the gable go with the chimney or the roof, not hang in the air with the gable
-stray = gable_wall & ~gable & (Y < 300)
-chimney |= stray & (X >= 600) & (X <= 830)
-roofL |= stray & ~chimney & (X < 516); roofR |= stray & ~chimney & (X >= 516)
-gable_wall &= ~stray
-wallL, wallR = lower & (X < 516), lower & (X >= 516)
+c.claim([
+    ('found', (Y >= 786) | (green & (Y >= 690))),
+    ('spire', c.box(462, 572, 15, 112)),
+    ('chimney', c.box(612, 822, 0, 280) & ~c.below([(600, 250), (760, 262)]) | c.box(612, 760, 100, 280) & ~icing | c.box(612, 822, 0, 150)),
+    ('pillarL', c.box(200, 264, 420, 792) & ~green),
+    ('pillarR', c.box(760, 826, 420, 792) & ~green),
+    ('door', c.round(414, 618, 462, 768)),
+    ('winL', window(342, 600, 60, 76, 66, 48, 532) | c.ell(340, 680, 50, 24)),
+    ('winR', window(695, 600, 60, 76, 66, 48, 532) | c.ell(695, 680, 50, 24)),
+    ('winUp', window(515, 345, 76, 94, 92, 60, 266) | c.ell(515, 430, 16, 16)),
+    ('roofL', ((~inner & ~ginger) | drips) & (X < 516)),
+    ('roofR', ((~inner & ~ginger) | drips) & (X >= 516)),
+    ('wallL', (Y >= 456) & (X < 516)),
+    ('wallR', (Y >= 456) & (X >= 516)),
+    ('gable', Y >= 0),
+])
+if len(sys.argv) > 4:
+    overlay(c, sys.argv[4])
 
-SLOTS = []
-for m in split_even(found, X, 6):
-    SLOTS.append(('clay', m, 'clean'))
-# the candy-cane pillars first: the eave beam over the walls rests on them
-SLOTS += [('brick', pillarL, 'clean'), ('brick', pillarR, 'clean'),
-          ('wall', wallL, 'clean'), ('wall', wallR, 'clean'),
-          ('door', door, 'clean'), ('window', winL, 'clean'), ('window', winR, 'clean'),
-          ('wall', gable_wall, 'clean'), ('window', upper_win, 'clean'),
-          ('roof', roofL, 'clean'), ('tiles', roofR, 'clean'), ('chimney', chimney, 'clean'),
-          ('spire', lolly, 'clean')]
-
-# things only in the full picture
-aFm = aF > 0.5
+F = c.F
+aFm = c.aF > 0.5
 diff = (np.abs(F - C).sum(2) > 60) & aFm
 diff = ndi.binary_fill_holes(ndi.binary_closing(ndi.binary_opening(diff, iterations=2), iterations=4)) & aFm
-lantL = diff & box(100, 215, 430, 620)
-lantR = diff & box(810, 925, 430, 620)
-baker = (diff & box(225, 446, 460, 845) | diff & box(446, 492, 600, 760)) & ~lantL
+lantL = diff & c.box(100, 215, 430, 620)
+lantR = diff & c.box(810, 925, 430, 620)
+baker = (diff & c.box(225, 446, 460, 845) | diff & c.box(446, 492, 600, 760)) & ~lantL
 Fr, Fg, Fb = F[..., 0], F[..., 1], F[..., 2]
-# the window shutter, the bush and the ground beside him changed a little too: not the baker
 baker &= ~((Fr > 180) & (Fr - Fg > 60) & (Fb > 120)) & ~((Fg > Fr + 15) & (Fg > Fb + 15)) & (Y < 838)
 baker = ndi.binary_fill_holes(ndi.binary_opening(baker, iterations=2))
-porch = diff & box(420, 665, 660, 900) & ~baker
-SLOTS += [('porch', porch, 'full'), ('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('baker', baker, 'full')]
+porch = diff & c.box(420, 665, 660, 900) & ~baker
 
-write_castle(out, 'c3', 'castle_3', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+slots = c.write(sys.argv[3], 'c3', 'castle_3', 'found', 6, [
+    ('brick', 'pillarL'), ('brick', 'pillarR'), ('wall', 'wallL'), ('wall', 'wallR'),
+    ('door', 'door'), ('window', 'winL'), ('window', 'winR'), ('wall', 'gable'), ('window', 'winUp'),
+    ('roof', 'roofL'), ('tiles', 'roofR'), ('chimney', 'chimney'), ('spire', 'spire')],
+    extra=[('porch', porch), ('lantern', lantL), ('lantern', lantR), ('baker', baker)])
+print(' '.join(slots))

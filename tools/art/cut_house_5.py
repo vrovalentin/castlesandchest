@@ -21,12 +21,12 @@ leafy = (g > r + 8) & (g > b + 30)
 
 R, rest = claim(on, [
     ('found', (Y >= 880)),
-    ('ladder', S.box(726, 802, 488, 868)),
+    ('ladder', S.box(726, 802, 488, 868) & ndi.binary_closing((r > 110) & (r - b > 40) & ~leafy, iterations=2)),
     # big house
     ('chimney1', S.box(232, 298, 92, 172)),
     ('win_round', S.ell(383, 218, 36, 38)),
     ('door1', S.arch(322, 424, 268, 412)),
-    ('win_left', S.box(196, 282, 280, 384)),
+    ('win_left', S.arch(202, 254, 282, 352) | S.box(198, 284, 322, 382)),
     ('roof1', S.poly((150, 268), (392, 86), (552, 280), (520, 300), (392, 150), (180, 300))),
     ('wall1', S.box(170, 525, 150, 412)),
     ('deck1', S.box(160, 560, 398, 478)),
@@ -43,8 +43,9 @@ R, rest = claim(on, [
     ('crownL', (Y < 565) & (X < 330)),
     ('crownR', (Y < 600) & (X >= 650)),
     ('crownT', (Y < 330) | leafy & (Y < 470)),
-    ('trunkL_lo', (Y >= 700) & (X < 512)), ('trunkR_lo', (Y >= 700)),
-    ('trunkL_hi', (X < 512)), ('trunkR_hi', np.ones_like(on)),
+    # the trunk grows up in bands across it
+    ('trunkL_lo', (Y >= 770)), ('trunkR_lo', (Y >= 650)),
+    ('trunkL_hi', (Y >= 545)), ('trunkR_hi', np.ones_like(on)),
 ])
 found = R['found']
 # leaves inside the houses' boxes that grow on from the crown outside them go with the crown,
@@ -81,4 +82,4 @@ lantR = D & (S.box(612, 690, 195, 345) | S.box(860, 935, 535, 670) | S.box(735, 
 rail = D & S.box(160, 580, 340, 470) & ~squirrel & ~lantL & ~lantR
 SLOTS += [('porch', rail, 'full'), ('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('squirrel', squirrel, 'full')]
 
-write_castle(out, 'c5', 'castle_5', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c5', 'castle_5', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

@@ -57,7 +57,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
             Assert.AreEqual(23, _cat.Castles[2].Slots.Length);
             Assert.AreEqual(24, _cat.Castles[3].Slots.Length);
-            CollectionAssert.AreEqual(new[] { 32, 28, 33, 28, 29, 43, 31, 27, 26, 31, 30, 30, 32 }, _cat.Castles.Skip(4).Select(c => c.Slots.Length).ToArray());
+            CollectionAssert.AreEqual(new[] { 32, 28, 33, 28, 29, 56, 31, 27, 26, 31, 30, 30, 32 }, _cat.Castles.Skip(4).Select(c => c.Slots.Length).ToArray());
             Assert.AreEqual(17, _cat.Castles.Count);
             Assert.AreEqual("castle_15", _cat.Castles[16].Id, "the dragon castle is the finale");
             CollectionAssert.DoesNotContain(_cat.Castles[0].PartsOfTier(7), "baker", "a building's own parts stay in that building");
