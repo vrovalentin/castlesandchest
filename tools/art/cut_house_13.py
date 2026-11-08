@@ -17,14 +17,16 @@ bells = (S.box(316, 358, 178, 270) | S.box(666, 708, 178, 270) | S.box(256, 304,
          | S.box(186, 234, 533, 642) | S.box(793, 842, 533, 642))
 R, rest = claim(on, [
     ('bells', bells),
-    ('lanL', S.box(333, 420, 563, 712)), ('lanR', S.box(606, 692, 563, 712)),
+    # round paper lanterns: the ball, its cap and the tassel
+    ('lanL', S.ell(376, 618, 44, 40) | S.box(364, 390, 562, 582) | S.box(362, 392, 650, 712)),
+    ('lanR', S.ell(648, 618, 44, 40) | S.box(636, 662, 562, 582) | S.box(634, 664, 650, 712)),
     ('found', (Y >= 822) | S.box(150, 252, 680, 822) | S.box(770, 870, 680, 822)),
     ('porch', S.box(382, 664, 782, 952)),
     ('rail', S.box(208, 816, 712, 842)),
-    ('door', S.box(428, 600, 578, 792)),
-    ('winL', S.box(283, 347, 608, 702)), ('winR', S.box(681, 744, 608, 702)),
-    ('w2', S.box(363, 422, 373, 437) | S.box(468, 562, 358, 437) | S.box(603, 662, 373, 437)),
-    ('w3', S.box(408, 452, 213, 264) | S.box(473, 552, 203, 264) | S.box(568, 612, 213, 264)),
+    ('door', S.arch(428, 600, 578, 792)),
+    ('winL', S.arch(283, 347, 604, 704)), ('winR', S.arch(681, 745, 604, 704)),
+    ('w2', S.arch(363, 422, 371, 438) | S.box(466, 564, 358, 438) | S.arch(603, 662, 371, 438)),
+    ('w3', S.arch(408, 452, 211, 264) | S.box(472, 553, 203, 264) | S.arch(568, 612, 211, 264)),
     ('lowL', (Y >= 568) & (X < 512)), ('lowR', Y >= 568),
     ('roof1L', (Y >= 452) & (X < 512)), ('roof1R', Y >= 452),
     ('wall2', Y >= 345),
@@ -40,4 +42,4 @@ SLOTS = slots_of('brick:rail wall:lowL wall:lowR door:door window:winL window:wi
 SLOTS = settle(SLOTS, found)
 D = full_only(F, C, aF)
 SLOTS += [('panda', D & S.box(525, 675, 650, 830), 'full')]
-write_castle(out, 'c13', 'castle_13', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False)
+write_castle(out, 'c13', 'castle_13', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

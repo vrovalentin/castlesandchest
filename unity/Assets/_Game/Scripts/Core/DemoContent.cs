@@ -86,26 +86,25 @@ namespace Game.Core
 
             // Buildings 11-17, cut by tools/art/cut_house_11..17.py. The dragon castle (castle_15) comes last.
             var castle11 = new CastleInfo("castle_11", "Грибной домик", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall door wall wall window brick floor floor roof wall window roof floor roof tiles window chimney " +
-                "vines porch lantern*3 shrooms hedgehog"), AllTiers("vines", "chimney", "shrooms", "hedgehog"));
+                "clay*6 wall*2 door wall*2 window brick floor*2 roof wall window roof floor roof tiles window chimney vines " +
+                "porch lantern*3 shrooms hedgehog"), AllTiers("vines", "chimney", "shrooms", "hedgehog"));
             var castle12 = new CastleInfo("castle_12", "Часовая башня", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall window wall door window roof tiles wall wall clock floor wall roof tiles spire chimney " +
-                "porch lantern lantern owl"), AllTiers("clock", "chimney", "owl"));
+                "clay*6 wall*2 window wall door window roof tiles wall*2 clock floor wall roof tiles spire chimney porch " +
+                "lantern*2 owl"), AllTiers("clock", "chimney", "owl"));
             var castle13 = new CastleInfo("castle_13", "Пагода", 30, 0.25, 0.2, Slots(
-                "clay*6 brick wall wall door window window roof tiles wall window roof wall window tiles spire bells " +
-                "porch lantern lantern panda"), AllTiers("bells", "panda"));
+                "clay*6 brick wall*2 door window*2 roof tiles wall window roof wall window tiles spire bells porch lantern*2 " +
+                "panda"), AllTiers("bells", "panda"));
             var castle14 = new CastleInfo("castle_14", "Дворец-ракушка", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall tiles tiles window window brick door floor roof roof wall wall wall window spire*4 pearl " +
-                "porch lantern lantern mermaid"), AllTiers("pearl", "mermaid"));
+                "clay*6 wall*2 tiles*2 window*2 brick door floor roof*2 wall*3 window spire*4 pearl porch lantern*2 mermaid"), AllTiers("pearl", "mermaid"));
             var castle15 = new CastleInfo("castle_15", "Драконья крепость", 30, 0.25, 0.2, Slots(
-                "clay*6 wall wall door roof tiles wall wall window window wall sign window floor window window roof tiles " +
-                "spire spire roof spire porch lantern lantern nest dragon"), AllTiers("sign", "nest"));
+                "clay*6 wall*2 door roof tiles wall*2 window*2 wall sign window floor window*2 roof tiles spire*2 roof spire " +
+                "porch lantern*2 nest dragon"), AllTiers("sign", "nest"));
             var castle16 = new CastleInfo("castle_16", "Пиратская крепость", 30, 0.25, 0.2, Slots(
-                "clay*6 floor wall wall cannon brick wall wall door window sign roof tiles window chimney wall window floor ladder floor " +
-                "telescope spire porch lantern lantern parrot"), AllTiers("cannon", "sign", "chimney", "ladder", "telescope", "parrot"));
+                "clay*6 floor wall*2 cannon brick wall*2 door window sign roof tiles window chimney wall window floor ladder " +
+                "floor telescope spire porch lantern*2 parrot"), AllTiers("cannon", "sign", "chimney", "ladder", "telescope", "parrot"));
             var castle17 = new CastleInfo("castle_17", "Песчаный дворец", 30, 0.25, 0.2, Slots(
-                "clay*6 floor wall wall door window window brick floor wall floor roof spire roof roof wall window tiles roof spire " +
-                "palm porch lantern lantern camel"), AllTiers("palm", "camel"));
+                "clay*6 floor wall*2 door window*2 brick floor wall floor roof spire roof*2 wall window tiles roof spire palm " +
+                "porch lantern*2 camel"), AllTiers("palm", "camel"));
 
             var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10,
                 castle11, castle12, castle13, castle16, castle17, castle14, castle15 };
