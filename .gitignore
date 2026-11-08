@@ -4,3 +4,6 @@ node_modules/
 # WebGL and other player builds
 /Builds/
 __pycache__/
+
+# Hand-cut Photoshop files of buildings (big, kept in the project folder, not in git)
+*.psd
