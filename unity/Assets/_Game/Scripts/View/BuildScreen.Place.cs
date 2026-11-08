@@ -35,7 +35,7 @@ namespace Game.View
             _flyAt = Time.time;
             _flyDur = row > 1 || chained ? RowFlyTime : FlyTime;
             if (!chained) _rowLeft = row - 1;
-            Sfx.Play("whoosh", 0.6f, 1.15f);
+            Sfx.Play("tock", 0.8f, UnityEngine.Random.Range(0.95f, 1.05f));
             Haptics.Tap(8);
         }
 
@@ -53,8 +53,7 @@ namespace Game.View
             if (_thudAt > 0 && Time.time >= _thudAt)
             {
                 _thudAt = -1;
-                Sfx.Play("place");
-                Sfx.Play("hammer", 0.8f, UnityEngine.Random.Range(0.92f, 1.08f));
+                Sfx.Play("thud", 1f, UnityEngine.Random.Range(0.94f, 1.06f));
                 Haptics.Tap(25);
             }
             if (_rowLeft > 0 && _flySlot < 0 && Time.time >= _rowNextAt)

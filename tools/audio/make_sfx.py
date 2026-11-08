@@ -97,6 +97,15 @@ knock = noise(0.05, 90, 0.7)
 ring = sum(a * tone(f, 0.35, d) for a, f, d in ((1.0, 1480, 14), (0.6, 3170, 20), (0.35, 4630, 28)))
 save('place', mix((0, 0.9 * reson(knock, 520, 6)), (0, 0.5 * knock), (0.004, 0.55 * ring),
                   (0, 0.5 * tone(np.linspace(260, 200, int(SR * 0.09)), 0.09, 35))), 0.8)
+# "Поставить" pressed: a short dull knock, like a wooden mallet on a beam ("тык")
+save('tock', mix((0, tone(np.linspace(210, 150, int(SR * 0.09)), 0.09, 45)),
+                 (0, 0.6 * reson(noise(0.04, 120, 0.25), 330, 6)),
+                 (0, 0.35 * tone(95, 0.07, 60))), 0.6)
+# a part lands on the castle: a dull construction "бум" (low thump of a stone block set down, a little dust)
+thump = tone(np.linspace(95, 48, int(SR * 0.32)), 0.32, 13)
+body = reson(noise(0.12, 38, 0.12), 160, 3)
+save('thud', mix((0, thump), (0, 0.55 * body), (0, 0.35 * tone(np.linspace(190, 140, int(SR * 0.07)), 0.07, 50)),
+                 (0.01, 0.3 * reson(noise(0.25, 12, 0.1), 260, 2))), 0.85)
 # two parts merge: chime up
 save('merge', mix((0, tone(784, 0.35, 8, 'tri')), (0.09, tone(1175, 0.45, 7, 'tri'))), 0.65)
 # button click

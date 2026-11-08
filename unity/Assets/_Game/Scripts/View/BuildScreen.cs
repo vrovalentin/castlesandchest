@@ -100,7 +100,7 @@ namespace Game.View
             _placedSlot = slot;
             _placedAt = Time.time;
             _s.Save();
-            if (!quiet) { Sfx.Play("place"); Haptics.Tap(20); }
+            if (!quiet) { Sfx.Play("thud"); Haptics.Tap(20); }
             Pointer.MarkDone("place");
             if (Game.IsComplete(State))
             {

@@ -8,6 +8,9 @@ namespace Game.View
     /// Files live in Art/Resources/Castles/&lt;castle id&gt;/: c&lt;N&gt;_base.png (faded blueprint), c&lt;N&gt;_decor.png (bushes on the site, optional),
     /// c&lt;N&gt;_&lt;slot 00&gt;_&lt;part id&gt;.png per slot, c&lt;N&gt;_line_&lt;slot 00&gt;.png (outline of an empty slot)
     /// and &lt;castle id&gt;_full.png.
+    /// Layers, outlines and decor may be trimmed to the box around their picture (tools/art/trim_layers.py):
+    /// c&lt;N&gt;_rects.txt then says where each one sits on the canvas. Without an outline file the outline of an
+    /// empty slot is drawn from its layer (Shaders/SlotOutline).
     /// </summary>
     public sealed class CastleArt
     {
@@ -22,6 +25,12 @@ namespace Game.View
         public Texture2D[] Lines { get; private set; }
         /// <summary>Which slots cover each point (c&lt;N&gt;_hit.bytes from tools/art/make_hitmap.py). May be null.</summary>
         private byte[] _hit;
+        /// <summary>Where each layer, outline and the decor sit on the canvas, as fractions of its side (x, y from the top, w, h).</summary>
+        private Rect[] _layerAt, _lineAt;
+        private Rect _decorAt = Full01;
+        private static readonly Rect Full01 = new Rect(0, 0, 1, 1);
+        private static Material _outline;
+        private static bool _outlineTried;
         private int _hitSize;
 
         /// <summary>Where the castle stands in its picture, as fractions of the side: left and right edges and the bottom.
@@ -50,6 +59,10 @@ namespace Game.View
                 int size = Mathf.RoundToInt(Mathf.Sqrt(hit.bytes.Length / 8f));
                 if (size * size * 8 == hit.bytes.Length) { art._hit = hit.bytes; art._hitSize = size; art.MeasureFoot(); }
             }
+            var at = ReadRects(Resources.Load<TextAsset>(dir + prefix + "_rects"));
+            art._layerAt = new Rect[castle.Slots.Length];
+            art._lineAt = new Rect[castle.Slots.Length];
+            if (at.TryGetValue(prefix + "_decor", out var dr)) art._decorAt = dr;
             int porch = System.Array.IndexOf(castle.Slots, "porch");
             art._decorBefore = porch >= 0 ? porch : castle.Slots.Length;
             for (int i = 0; i < castle.Slots.Length; i++)
@@ -61,8 +74,63 @@ namespace Game.View
                     return null;
                 }
                 art.Lines[i] = Resources.Load<Texture2D>($"{dir}{prefix}_line_{i:00}");
+                art._layerAt[i] = at.TryGetValue($"{prefix}_{i:00}_{castle.Slots[i]}", out var lr) ? lr : Full01;
+                art._lineAt[i] = at.TryGetValue($"{prefix}_line_{i:00}", out var ln) ? ln : Full01;
             }
             return art;
+        }
+
+        private static System.Collections.Generic.Dictionary<string, Rect> ReadRects(TextAsset t)
+        {
+            var d = new System.Collections.Generic.Dictionary<string, Rect>();
+            if (t == null) return d;
+            var lines = t.text.Split('\n');
+            if (lines.Length == 0 || !float.TryParse(lines[0].Trim(), out float size) || size <= 0) return d;
+            for (int k = 1; k < lines.Length; k++)
+            {
+                var v = lines[k].Trim().Split(' ');
+                if (v.Length != 5) continue;
+                d[v[0]] = new Rect(int.Parse(v[1]) / size, int.Parse(v[2]) / size, int.Parse(v[3]) / size, int.Parse(v[4]) / size);
+            }
+            return d;
+        }
+
+        /// <summary>Where slot i's layer sits on the canvas, as fractions of its side.</summary>
+        public Rect LayerRect(int i) => _layerAt[i];
+
+        /// <summary>True when slot i has an outline to draw while it is empty: its own file, or one drawn from its layer.</summary>
+        public bool HasOutline(int i) => Lines[i] != null || OutlineMaterial != null;
+
+        private static Material OutlineMaterial
+        {
+            get
+            {
+                if (_outlineTried) return _outline;
+                _outlineTried = true;
+                var sh = Resources.Load<Shader>("Shaders/SlotOutline");
+                if (sh != null && sh.isSupported) _outline = new Material(sh) { hideFlags = HideFlags.HideAndDontSave };
+                return _outline;
+            }
+        }
+
+        /// <summary>The part of the square picture (ScaleToFit in r) that a piece at <paramref name="at"/> covers.</summary>
+        private static Rect Place(Rect r, Rect at)
+        {
+            float side = Mathf.Min(r.width, r.height);
+            float x = r.x + (r.width - side) / 2, y = r.y + (r.height - side) / 2;
+            return new Rect(x + at.x * side, y + at.y * side, at.width * side, at.height * side);
+        }
+
+        private void DrawLayer(Rect r, int i) => GUI.DrawTexture(Place(r, _layerAt[i]), Layers[i], ScaleMode.StretchToFill);
+
+        /// <summary>The outline of an empty slot, tinted by GUI.color.</summary>
+        private void DrawLine(Rect r, int i)
+        {
+            if (Lines[i] != null) { GUI.DrawTexture(Place(r, _lineAt[i]), Lines[i], ScaleMode.StretchToFill); return; }
+            var mat = OutlineMaterial;
+            if (mat == null || Event.current == null || Event.current.type != EventType.Repaint) return;
+            var c = GUI.color;
+            Graphics.DrawTexture(Place(r, _layerAt[i]), Layers[i], Full01, 0, 0, 0, 0, new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f, c.a * 0.5f), mat);
         }
 
         private void MeasureFoot()
@@ -90,9 +158,9 @@ namespace Game.View
             if (all && Full != null) { GUI.DrawTexture(r, Full, ScaleMode.ScaleToFit); return; }
             GUI.DrawTexture(r, Base, ScaleMode.ScaleToFit);
             for (int i = 0; i < Lines.Length; i++)
-                if (!filled[i] && Lines[i] != null) GUI.DrawTexture(r, Lines[i], ScaleMode.ScaleToFit);
+                if (!filled[i]) DrawLine(r, i);
             for (int i = 0; i < Layers.Length; i++)
-                if (filled[i]) GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
+                if (filled[i]) DrawLayer(r, i);
         }
 
         /// <summary>
@@ -169,7 +237,7 @@ namespace Game.View
             bool decor = Decor != null && (last < 0 || filled[last]);
             for (int i = 0; i < Layers.Length; i++)
             {
-                if (i == _decorBefore && decor) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
+                if (i == _decorBefore && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
                 if (!filled[i]) continue;
                 if (i == justPlaced && dropT < 1)
                 {
@@ -177,18 +245,17 @@ namespace Game.View
                     float fall = Mathf.Clamp01(dropT / 0.55f), k = 1 - fall;
                     float bounce = dropT > 0.55f ? Mathf.Sin((dropT - 0.55f) / 0.45f * Mathf.PI) * 0.012f : 0;
                     GUI.color = new Color(1, 1, 1, Mathf.Clamp01(dropT * 10));
-                    GUI.DrawTexture(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), Layers[i], ScaleMode.ScaleToFit);
+                    DrawLayer(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), i);
                     GUI.color = old;
                 }
-                else GUI.DrawTexture(r, Layers[i], ScaleMode.ScaleToFit);
+                else DrawLayer(r, i);
             }
-            if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(r, Decor, ScaleMode.ScaleToFit);
+            if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
             if (next < 0 || next >= Layers.Length) return;
-            var line = Lines[next];
-            if (line == null)
+            if (!HasOutline(next))
             {
                 GUI.color = new Color(1, 1, 1, 0.25f + 0.25f * pulse);
-                GUI.DrawTexture(r, Layers[next], ScaleMode.ScaleToFit);
+                DrawLayer(r, next);
                 GUI.color = old;
                 return;
             }
@@ -196,9 +263,9 @@ namespace Game.View
             float o = r.width * 0.004f;
             GUI.color = new Color(Glow.r, Glow.g, Glow.b, 0.5f * pulse);
             foreach (var (dx, dy) in Around)
-                GUI.DrawTexture(new Rect(r.x + dx * o, r.y + dy * o, r.width, r.height), line, ScaleMode.ScaleToFit);
+                DrawLine(new Rect(r.x + dx * o, r.y + dy * o, r.width, r.height), next);
             GUI.color = new Color(1, 0.97f, 0.85f, 0.7f + 0.3f * pulse);
-            GUI.DrawTexture(r, line, ScaleMode.ScaleToFit);
+            DrawLine(r, next);
             GUI.color = old;
         }
 

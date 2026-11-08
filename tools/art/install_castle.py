@@ -35,6 +35,8 @@ for f in glob.glob(f'{dst}/{prefix}_*.png'):
         os.remove(f); os.remove(f + '.meta') if os.path.exists(f + '.meta') else None
 subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_hitmap.py'), dst, prefix], check=True)
 meta_from(os.path.join(c2, 'c2_hit.bytes.meta'), os.path.join(dst, f'{prefix}_hit.bytes'))
+# keep only the box around each piece (the game reads where it goes from <prefix>_rects.txt)
+subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'trim_layers.py'), '--no-lines', dst], check=True)
 
 # storage icons: the layer cropped to its picture and fitted into 256x256
 for part, spec in icons.items():
