@@ -173,27 +173,28 @@ namespace Game.View.Tests
             Assert.IsNotNull(art.Base);
             Assert.IsNotNull(art.Full);
             Assert.AreEqual(17, art.Layers.Length);
-            Assert.IsTrue(art.Layers.All(t => t != null && t.width == art.Base.width && t.height == art.Base.height),
-                "every layer is on the same canvas as the blueprint");
-            Assert.IsTrue(art.Lines.All(t => t != null), "every slot has an outline");
+            Assert.IsTrue(art.Layers.All(t => t != null), "every slot has its layer");
+            Assert.IsTrue(Enumerable.Range(0, 17).Select(art.LayerRect).All(q => q.width > 0 && q.xMin >= 0 && q.yMin >= 0 && q.xMax <= 1 && q.yMax <= 1),
+                "every layer sits inside the canvas of the blueprint");
+            Assert.IsTrue(Enumerable.Range(0, 17).All(art.HasOutline), "every slot has an outline");
 
             _app.Session.Game.NextCastle(_app.Session.State);
             art = _app.Build.Art;
             Assert.IsNotNull(art, "castle_2 layers in Art/Resources/Castles/castle_2");
             Assert.AreEqual(48, art.Layers.Length);
-            Assert.IsTrue(art.Lines.All(t => t != null), "every slot of castle_2 has an outline");
+            Assert.IsTrue(Enumerable.Range(0, 48).All(art.HasOutline), "every slot of castle_2 has an outline");
             // A tap on the gate finds it, on castle 2's own tap map.
             var r = new Rect(0, 0, 1000, 1000);
             Assert.AreEqual(20, art.SlotAt(r, new Vector2(500, 780), _app.Session.State.Filled, 0));
 
             // Buildings 3-10 have their layers too.
-            foreach (int n in new[] { 23, 24, 32, 28, 33, 28, 29, 43 })
+            foreach (int n in new[] { 23, 24, 32, 28, 33, 28, 29, 56 })
             {
                 _app.Session.Game.NextCastle(_app.Session.State);
                 art = _app.Build.Art;
                 Assert.IsNotNull(art, $"building with {n} layers");
                 Assert.AreEqual(n, art.Layers.Length);
-                Assert.IsTrue(art.Lines.All(t => t != null));
+                Assert.IsTrue(Enumerable.Range(0, n).All(art.HasOutline));
             }
             yield return null;
         }

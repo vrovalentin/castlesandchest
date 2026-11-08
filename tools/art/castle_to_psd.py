@@ -6,6 +6,8 @@
 import sys, os, glob, re
 from PIL import Image
 from psd_tools import PSDImage
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from trim_layers import open_piece
 from psd_tools.api.layers import PixelLayer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -37,20 +39,20 @@ def main():
     d, p = os.path.join(CASTLES, f'castle_{n}'), f'c{n}'
     files = sorted(glob.glob(f'{d}/{p}_[0-9][0-9]_*.png'))
     assert files, f'no layers in {d}'
-    W, H = Image.open(files[0]).size
+    W, H = open_piece(files[0]).size
     psd = PSDImage.new('RGBA', (W, H))
     src = os.path.join(INC, SOURCE[n]) if n in SOURCE else os.path.join(d, f'castle_{n}_full.png')
     ref = Image.open(src).convert('RGBA').resize((W, H))
     add(psd, ref, 'ref', visible=False)
     decor = os.path.join(d, f'{p}_decor.png')
-    decor = Image.open(decor).convert('RGBA') if os.path.exists(decor) else None
+    decor = open_piece(decor) if os.path.exists(decor) else None
     if decor is not None and decor.getchannel('A').getbbox() is None:
         decor = None
     for f in files:
         name = re.match(rf'{p}_(\d\d_[a-z]+)\.png', os.path.basename(f)).group(1)
         if decor is not None and name.endswith('_porch'):
             add(psd, decor, 'decor'); decor = None
-        add(psd, Image.open(f).convert('RGBA'), name)
+        add(psd, open_piece(f), name)
     if decor is not None:
         add(psd, decor, 'decor')
     psd.save(out)

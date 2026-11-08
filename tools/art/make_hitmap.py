@@ -6,6 +6,8 @@ import sys, glob, os, re
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from trim_layers import open_piece
 
 src, prefix = sys.argv[1], sys.argv[2]
 n = int(sys.argv[3]) if len(sys.argv) > 3 else 256
@@ -14,7 +16,7 @@ assert files, 'no layers'
 mask = np.zeros((n, n), np.uint64)
 for f in files:
     i = int(re.search(rf'{prefix}_(\d\d)_', os.path.basename(f)).group(1))
-    a = np.array(Image.open(f).getchannel('A').resize((n, n), Image.BILINEAR)) > 40
+    a = np.array(open_piece(f).getchannel('A').resize((n, n), Image.BILINEAR)) > 40
     a = ndi.binary_dilation(a, iterations=2)
     mask[a] |= np.uint64(1 << i)
 open(f'{src}/{prefix}_hit.bytes', 'wb').write(mask.astype('<u8').tobytes())   # row 0 = top of the picture
