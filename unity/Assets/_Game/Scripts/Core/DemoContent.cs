@@ -114,8 +114,8 @@ namespace Game.Core
                 "clay*6 wall wall door wall floor window wall window wall window floor wall window " +
                 "roof spire tiles spire roof spire telescope lantern lantern wizard"), AllTiers("telescope", "wizard"));
             var castle10 = new CastleInfo("castle_10", "Ледяной дворец", 30, 0.25, 0.2, Slots(
-                "clay*6 wall*4 door window*4 wall floor*3 wall*5 window*5 roof roof tiles tiles roof spire*5 " +
-                "porch lantern lantern princess"), AllTiers());
+                "clay*6 wall*7 door window*4 floor*4 roof*3 wall*4 window*2 floor*3 wall*3 window*5 roof*2 tiles*2 roof spire*5 " +
+                "porch lantern*2 princess"), AllTiers());
 
             // Buildings 11-17, cut by tools/art/cut_house_11..17.py. The dragon castle (castle_15) comes last.
             var castle11 = new CastleInfo("castle_11", "Грибной домик", 30, 0.25, 0.2, Slots(

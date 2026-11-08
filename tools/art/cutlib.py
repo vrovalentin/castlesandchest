@@ -76,9 +76,11 @@ def settle(slots, found):
     return slots
 
 
-def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True):
+def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview=None, decor=None, grey_clay=True, grow_back=False):
     """Writes <prefix>_NN_<part>.png layers, outlines, base, decor (from the clean picture) and the full picture.
-    slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False."""
+    slots: (part, mask, 'clean'|'full') in building order. 'clay' pieces are recoloured to grey stone unless grey_clay is False.
+    Each layer reaches 3 px over its neighbours to hide the seams; grow_back=True lets it reach only over the parts
+    built before it, so the hole a part leaves keeps its exact shape (a pointed window stays pointed)."""
     os.makedirs(out, exist_ok=True)
     H, W = on.shape
     for f in os.listdir(out):
@@ -102,6 +104,8 @@ def write_castle(out, prefix, castle_id, slots, C, F, aC, aF, on, found, preview
             grow = ndi.binary_dilation(m, iterations=3) & on
             if part != 'clay':
                 grow &= ~found
+            if grow_back:
+                grow &= taken & ~m
             draw = m | grow
         layer = Image.fromarray(_rgba(img, draw, al))
         layer.save(f'{out}/{prefix}_{i:02d}_{part}.png', optimize=True)
