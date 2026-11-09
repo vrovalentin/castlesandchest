@@ -153,7 +153,7 @@ namespace Game.View.Tests
             Assert.IsTrue(_app.InMine);
             var run = _app.Session.State.Run;
             Assert.IsNotNull(run);
-            Assert.AreEqual(14, _app.Session.State.Tickets);
+            Assert.AreEqual(17, _app.Session.State.Tickets);
 
             _app.ShowBuild();
             yield return null;
@@ -161,7 +161,7 @@ namespace Game.View.Tests
             _app.ShowMine();
             yield return null;
             Assert.AreSame(run, _app.Session.State.Run, "the same run continues");
-            Assert.AreEqual(14, _app.Session.State.Tickets, "no second ticket");
+            Assert.AreEqual(17, _app.Session.State.Tickets, "no second ticket");
             Assert.AreEqual(100, _app.Mine.CellViewCount);
         }
 

@@ -88,10 +88,10 @@ namespace Game.Core
         public int ColorCount => ColorTiers;
 
         /// <summary>Iced blocks at the start of a run on castle <paramref name="castle"/> (0-based).</summary>
-        public int IceFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(14, 4 + 2 * (castle - ObstaclesFrom));
+        public int IceFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(8, 3 + (castle - ObstaclesFrom));
 
         /// <summary>Stones at the start of a run on castle <paramref name="castle"/> (0-based).</summary>
-        public int StonesFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(5, 2 + (castle - ObstaclesFrom) / 3);
+        public int StonesFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(3, 1 + (castle - ObstaclesFrom) / 4);
 
         public int StarsFor(int size)
         {
