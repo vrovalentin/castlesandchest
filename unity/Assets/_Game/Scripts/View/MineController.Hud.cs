@@ -174,7 +174,7 @@ namespace Game.View
                 GUILayout.Space(12);
                 if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(76))) _toBuild();
             });
-            else if (_mode == Mode.NoTools) Panel(w, h, "Инструменты кончились",
+            else if (_mode == Mode.NoTools) Panel(w, h, "Нет инструментов",
                 $"Посмотри рекламу и получи {Game.Rules.AdTools} метлы и {Game.Rules.AdTools} молотка. Или жди завтра: придут новые.", () =>
             {
                 if (Game.CanWatchAdForTools(State) && GUILayout.Button($"+{Game.Rules.AdTools} и +{Game.Rules.AdTools} · реклама", _button2, GUILayout.Height(76)))
