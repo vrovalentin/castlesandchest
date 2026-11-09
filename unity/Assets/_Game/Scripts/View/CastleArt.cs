@@ -274,9 +274,6 @@ namespace Game.View
         private ulong _scaffoldFor = ulong.MaxValue;
         private bool _scaffoldOn;
         private float _scaffoldY, _scaffoldL, _scaffoldR;
-        /// <summary>Which strips of the picture, ScaffoldBin wide, have a cut edge at the scaffolding's height.</summary>
-        private readonly bool[] _scaffoldCut = new bool[(int)(1 / ScaffoldBin) + 1];
-        private const float ScaffoldBin = 0.02f;
 
         /// <summary>
         /// Finds where the scaffolding goes: the height where most built pieces end with an empty slot right above
@@ -291,7 +288,6 @@ namespace Game.View
             if (fm == _scaffoldFor) return;
             _scaffoldFor = fm;
             _scaffoldOn = false;
-            System.Array.Clear(_scaffoldCut, 0, _scaffoldCut.Length);
             if (_hit == null || fm == 0) return;
             const float bin = 0.03f;
             int n = _hitSize;
@@ -318,7 +314,6 @@ namespace Game.View
             {
                 if (Mathf.Abs((float)ys[k] / n - mid) >= 0.04f) continue;
                 near.Add(ys[k]); count++;
-                _scaffoldCut[(int)((float)xs[k] / n / ScaffoldBin)] = true;
                 if (xs[k] < x0) x0 = xs[k];
                 if (xs[k] > x1) x1 = xs[k];
             }
@@ -336,9 +331,9 @@ namespace Game.View
         private const float TopPost = 40 / 512f, TopSpan = 431 / 512f, TopDeck = 163 / 462f;
 
         /// <summary>
-        /// Wooden scaffolding in front of an unfinished building, from the kit in UI/scaff_*: columns of storeys from
-        /// the ground up, the top storey with a rail and its deck lying across the cut edges of the unfinished walls,
-        /// a ladder at the side. Fractions are of the picture's side.
+        /// Wooden scaffolding at an unfinished building, from the kit in UI/scaff_*: a tower of storeys on each side
+        /// of the cut edge of the unfinished walls, the top deck with a rail lying across the edge between them, and a
+        /// ladder at the side. Fractions are of the picture's side.
         /// </summary>
         private void DrawScaffold(Rect r, bool[] filled)
         {
@@ -347,56 +342,48 @@ namespace Game.View
             if (sec == null || top == null) return;
             MeasureScaffold(filled);
             if (!_scaffoldOn) return;
-            float y = _scaffoldY, left = _scaffoldL - 0.01f, right = _scaffoldR + 0.01f, ground = FootBottom;
-            if (ground - y < 0.04f) return;
-            if (right - left < 0.14f) { float mid = (left + right) / 2; left = mid - 0.07f; right = mid + 0.07f; }   // a short cut: still one whole storey wide
-            int cols = Mathf.Max(1, Mathf.RoundToInt((right - left) / 0.2f));
-            float w = (right - left) / cols;
+            float y = _scaffoldY, ground = FootBottom;
+            if (ground - y < 0.25f) return;    // only the foundation so far: just the piles at the foot
+            // Two towers of storeys stand just outside the cut, on the left and on the right; between them only the
+            // top deck with its rail lies across the cut edge, so the finished walls below stay in sight.
+            const float inset = 0.015f;
+            float span = _scaffoldR - _scaffoldL - 2 * inset;
+            int mid = span < 0.1f ? 0 : Mathf.Max(1, Mathf.RoundToInt(span / 0.14f));
+            float w = mid > 0 ? span / mid : 0.13f;                       // one bay, the same in the towers and between
+            float lx = _scaffoldL + inset - w, rx = _scaffoldR - inset;   // left post of each tower
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
             float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
-            // Only over walls still being built: a column whose stretch has hardly any cut edge is left out,
-            // so the finished parts stay in sight.
-            bool Over(int c)
+            float ty = y - TopDeck * th;
+            for (int t = 0; t < 2; t++)
             {
-                float a = left + c * w;
-                int b0 = Mathf.Clamp((int)(a / ScaffoldBin), 0, _scaffoldCut.Length - 1), b1 = Mathf.Clamp((int)((a + w) / ScaffoldBin), b0, _scaffoldCut.Length - 1);
-                int cut = 0;
-                for (int b = b0; b <= b1; b++) if (_scaffoldCut[b]) cut++;
-                return cut >= (b1 - b0 + 1) * 0.3f;
-            }
-            int first = -1, last = -1;
-            for (int c = 0; c < cols; c++)
-                if (Over(c)) { if (first < 0) first = c; last = c; }
-            if (first < 0) return;
-            float lastRight = left + (last + 1) * w;
-            for (int c = first; c <= last; c++)
-            {
-                if (!Over(c)) continue;
-                float x0 = left + c * w;
-                float ty = y - TopDeck * top.height * tk;
-                // Storeys under the top one down to the ground; the lowest is cut off at the ground. The brace turns
-                // the other way every other storey.
-                // The storeys below stand only at the two ends: the top deck rests on them, and the finished walls
-                // between stay in sight.
+                float x0 = t == 0 ? lx : rx;
+                // Storeys down to the ground, the lowest cut off at it; the brace turns every other storey.
                 int j = 0;
-                for (float sy = ty + th - 0.002f; (c == first || c == last) && sy < ground; sy += sh - 0.002f, j++)
+                for (float sy = ty + th - 0.002f; sy < ground; sy += sh - 0.002f, j++)
                 {
                     float vis = Mathf.Min(1, (ground - sy + 0.004f) / sh);
-                    bool flip = (c + j) % 2 == 1;
+                    bool flip = (t + j) % 2 == 1;
                     var uv = new Rect(flip ? 1 : 0, 1 - vis, flip ? -1 : 1, vis);
                     GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - (flip ? 1 - SecPost - SecSpan : SecPost) * sw, sy, sw, sh * vis)), sec, uv);
                 }
                 GUI.DrawTexture(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th)), top, ScaleMode.StretchToFill);
             }
-            // A ladder at the right of the last column, from the ground up to the top deck, made of whole ladders one on another.
+            // Between the towers: the deck and rail only, without the legs.
+            const float keep = 0.6f;    // the top piece down to just under its deck
+            for (int c = 0; c < mid; c++)
+            {
+                float x0 = _scaffoldL + inset + c * w;
+                GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th * keep)), top, new Rect(0, 1 - keep, 1, keep));
+            }
+            // A ladder by the right tower, from the ground up to the top deck, made of whole ladders one on another.
             var ladder = GameArt.ScaffoldLadder;
-            if (ladder != null && lastRight > 0)
+            if (ladder != null)
             {
                 float lw = 0.035f, lh = lw * ladder.height / ladder.width, from = y - 0.03f;
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(lastRight + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(rx + w + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
         }
 
