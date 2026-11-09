@@ -274,6 +274,9 @@ namespace Game.View
         private ulong _scaffoldFor = ulong.MaxValue;
         private bool _scaffoldOn;
         private float _scaffoldY, _scaffoldL, _scaffoldR;
+        /// <summary>Which strips of the picture, ScaffoldBin wide, have a cut edge at the scaffolding's height.</summary>
+        private readonly bool[] _scaffoldCut = new bool[(int)(1 / ScaffoldBin) + 1];
+        private const float ScaffoldBin = 0.02f;
 
         /// <summary>
         /// Finds where the scaffolding goes: the height where most built pieces end with an empty slot right above
@@ -288,6 +291,7 @@ namespace Game.View
             if (fm == _scaffoldFor) return;
             _scaffoldFor = fm;
             _scaffoldOn = false;
+            System.Array.Clear(_scaffoldCut, 0, _scaffoldCut.Length);
             if (_hit == null || fm == 0) return;
             const float bin = 0.03f;
             int n = _hitSize;
@@ -314,6 +318,7 @@ namespace Game.View
             {
                 if (Mathf.Abs((float)ys[k] / n - mid) >= 0.04f) continue;
                 near.Add(ys[k]); count++;
+                _scaffoldCut[(int)((float)xs[k] / n / ScaffoldBin)] = true;
                 if (xs[k] < x0) x0 = xs[k];
                 if (xs[k] > x1) x1 = xs[k];
             }
@@ -349,14 +354,32 @@ namespace Game.View
             float w = (right - left) / cols;
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
             float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
-            for (int c = 0; c < cols; c++)
+            // Only over walls still being built: a column whose stretch has hardly any cut edge is left out,
+            // so the finished parts stay in sight.
+            bool Over(int c)
             {
+                float a = left + c * w;
+                int b0 = Mathf.Clamp((int)(a / ScaffoldBin), 0, _scaffoldCut.Length - 1), b1 = Mathf.Clamp((int)((a + w) / ScaffoldBin), b0, _scaffoldCut.Length - 1);
+                int cut = 0;
+                for (int b = b0; b <= b1; b++) if (_scaffoldCut[b]) cut++;
+                return cut >= (b1 - b0 + 1) * 0.3f;
+            }
+            int first = -1, last = -1;
+            for (int c = 0; c < cols; c++)
+                if (Over(c)) { if (first < 0) first = c; last = c; }
+            if (first < 0) return;
+            float lastRight = left + (last + 1) * w;
+            for (int c = first; c <= last; c++)
+            {
+                if (!Over(c)) continue;
                 float x0 = left + c * w;
                 float ty = y - TopDeck * top.height * tk;
                 // Storeys under the top one down to the ground; the lowest is cut off at the ground. The brace turns
                 // the other way every other storey.
+                // The storeys below stand only at the two ends: the top deck rests on them, and the finished walls
+                // between stay in sight.
                 int j = 0;
-                for (float sy = ty + th - 0.002f; sy < ground; sy += sh - 0.002f, j++)
+                for (float sy = ty + th - 0.002f; (c == first || c == last) && sy < ground; sy += sh - 0.002f, j++)
                 {
                     float vis = Mathf.Min(1, (ground - sy + 0.004f) / sh);
                     bool flip = (c + j) % 2 == 1;
@@ -365,15 +388,15 @@ namespace Game.View
                 }
                 GUI.DrawTexture(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th)), top, ScaleMode.StretchToFill);
             }
-            // A ladder at the right side, from the ground up to the top deck, made of whole ladders one on another.
+            // A ladder at the right of the last column, from the ground up to the top deck, made of whole ladders one on another.
             var ladder = GameArt.ScaffoldLadder;
-            if (ladder != null)
+            if (ladder != null && lastRight > 0)
             {
                 float lw = 0.035f, lh = lw * ladder.height / ladder.width, from = y - 0.03f;
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(right + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(lastRight + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
         }
 
