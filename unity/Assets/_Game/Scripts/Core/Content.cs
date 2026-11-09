@@ -59,15 +59,39 @@ namespace Game.Core
         public double[] PremiumChance = { 0, 0, 0, 0, 0.2, 0.4 };
         /// <summary>Share of figurines (tier 7) among premium parts of the top-colour chest.</summary>
         public double FigureShare = 0.25;
+        /// <summary>Brooms and hammers added every day (they pile up).</summary>
         public int DailyBrooms = 3;
         public int DailyHammers = 3;
+        /// <summary>Tickets are topped up to this every day.</summary>
         public int DailyTickets = 15;
+        /// <summary>Extra gift by day of the login streak (1..7); a missed day starts it over from day 1.</summary>
+        public DailyGift[] Calendar =
+        {
+            new DailyGift { Tickets = 3 },
+            new DailyGift { Brooms = 1, Hammers = 1 },
+            new DailyGift { Tickets = 5 },
+            new DailyGift { Hammers = 2 },
+            new DailyGift { Brooms = 2 },
+            new DailyGift { Tickets = 8 },
+            new DailyGift { Brooms = 3, Hammers = 3, Tickets = 10 },
+        };
+        /// <summary>Brooms and hammers (each) for watching an ad, and how many such ads a day.</summary>
+        public int AdTools = 3;
+        public int AdToolsPerDay = 1;
+        /// <summary>Ice and stones on the board from this castle on (0-based: 2 = the third castle).</summary>
+        public int ObstaclesFrom = 2;
         /// <summary>Tickets given for moving on to the next building.</summary>
         public int TicketsPerCastle = 2;
         /// <summary>Tickets for watching an ad when they ran out; as many ads as the player likes.</summary>
         public int AdTickets = 3;
 
         public int ColorCount => ColorTiers;
+
+        /// <summary>Iced blocks at the start of a run on castle <paramref name="castle"/> (0-based).</summary>
+        public int IceFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(14, 4 + 2 * (castle - ObstaclesFrom));
+
+        /// <summary>Stones at the start of a run on castle <paramref name="castle"/> (0-based).</summary>
+        public int StonesFor(int castle) => castle < ObstaclesFrom ? 0 : Math.Min(5, 2 + (castle - ObstaclesFrom) / 3);
 
         public int StarsFor(int size)
         {

@@ -23,6 +23,8 @@ namespace Game.Core
         public int tickets;
         public string dailyDay;
         public int adsToday;
+        public int streak;
+        public int toolAdsToday;
         public int built;
         public int score;
         public int bestRun;
@@ -43,11 +45,12 @@ namespace Game.Core
         public int rows;
         public int cols;
         public int nextId;
-        /// <summary>Row by row. Kind: -1 empty, 0 block, 1 chest.</summary>
+        /// <summary>Row by row. Kind: -1 empty, 0 block, 1 chest, 2 stone. Ice: blocks under ice (may be missing in old saves).</summary>
         public int[] cellIds = Array.Empty<int>();
         public int[] cellKinds = Array.Empty<int>();
         public int[] cellColors = Array.Empty<int>();
         public int[] cellStars = Array.Empty<int>();
+        public bool[] cellIce = Array.Empty<bool>();
     }
 
     public static class SaveMapper
@@ -66,6 +69,8 @@ namespace Game.Core
                 tickets = s.Tickets,
                 dailyDay = s.DailyDay ?? "",
                 adsToday = s.AdsToday,
+                streak = s.Streak,
+                toolAdsToday = s.ToolAdsToday,
                 built = s.Built,
                 score = s.Score,
                 bestRun = s.BestRun,
@@ -98,7 +103,7 @@ namespace Game.Core
             };
             SplitChests(run.Got, out r.gotColors, out r.gotStars);
             int n = b.Rows * b.Cols;
-            r.cellIds = new int[n]; r.cellKinds = new int[n]; r.cellColors = new int[n]; r.cellStars = new int[n];
+            r.cellIds = new int[n]; r.cellKinds = new int[n]; r.cellColors = new int[n]; r.cellStars = new int[n]; r.cellIce = new bool[n];
             for (int y = 0; y < b.Rows; y++)
                 for (int x = 0; x < b.Cols; x++)
                 {
@@ -106,9 +111,10 @@ namespace Game.Core
                     var c = b[y, x];
                     if (c == null) { r.cellKinds[i] = -1; continue; }
                     r.cellIds[i] = c.Id;
-                    r.cellKinds[i] = c.IsChest ? 1 : 0;
+                    r.cellKinds[i] = c.IsChest ? 1 : c.IsStone ? 2 : 0;
                     r.cellColors[i] = c.Color;
                     r.cellStars[i] = c.Stars;
+                    r.cellIce[i] = c.Ice;
                 }
             return r;
         }
@@ -149,6 +155,8 @@ namespace Game.Core
                 Tickets = d.tickets,
                 DailyDay = string.IsNullOrEmpty(d.dailyDay) ? null : d.dailyDay,
                 AdsToday = Math.Max(0, d.adsToday),
+                Streak = Math.Max(0, Math.Min(d.streak, rules.Calendar.Length)),
+                ToolAdsToday = Math.Max(0, d.toolAdsToday),
                 Built = d.built,
                 Score = Math.Max(0, d.score),
                 BestRun = Math.Max(0, d.bestRun),
@@ -186,9 +194,10 @@ namespace Game.Core
                     b[y, x] = new Cell
                     {
                         Id = r.cellIds[i],
-                        Kind = r.cellKinds[i] == 1 ? CellKind.Chest : CellKind.Block,
+                        Kind = r.cellKinds[i] == 1 ? CellKind.Chest : r.cellKinds[i] == 2 ? CellKind.Stone : CellKind.Block,
                         Color = Math.Max(0, Math.Min(r.cellColors[i], rules.ColorCount - 1)),
                         Stars = r.cellStars[i],
+                        Ice = r.cellKinds[i] == 0 && r.cellIce != null && r.cellIce.Length == n && r.cellIce[i],
                     };
                     maxId = Math.Max(maxId, r.cellIds[i]);
                 }

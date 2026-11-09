@@ -11,6 +11,7 @@ namespace Game.View
         public int R, C;
         public CellKind Kind;
         public int Color, Stars;
+        public bool Ice;
     }
 
     /// <summary>Board picture after one phase of a move (Core calls back after each phase; we copy the board).</summary>
@@ -20,6 +21,8 @@ namespace Game.View
         public Dictionary<int, Snap> Cells;
         /// <summary>For refill: the row each new block falls from.</summary>
         public Dictionary<int, int> SpawnFrom;
+        /// <summary>Blocks whose ice broke in this phase.</summary>
+        public int Thawed;
     }
 
     /// <summary>Draws a Core Board with sprites and animates moves frame by frame.</summary>
@@ -36,7 +39,7 @@ namespace Game.View
 
         public static Frame Capture(Board b, Phase p)
         {
-            var f = new Frame { Kind = p.Kind, Cells = Snapshot(b) };
+            var f = new Frame { Kind = p.Kind, Cells = Snapshot(b), Thawed = p.Thawed };
             if (p.Spawns != null)
             {
                 f.SpawnFrom = new Dictionary<int, int>();
@@ -52,7 +55,7 @@ namespace Game.View
                 for (int c = 0; c < b.Cols; c++)
                 {
                     var x = b[r, c];
-                    if (x != null) d[x.Id] = new Snap { R = r, C = c, Kind = x.Kind, Color = x.Color, Stars = x.Stars };
+                    if (x != null) d[x.Id] = new Snap { R = r, C = c, Kind = x.Kind, Color = x.Color, Stars = x.Stars, Ice = x.Ice };
                 }
             return d;
         }
@@ -92,7 +95,7 @@ namespace Game.View
         private CellView Spawn(int id, Snap s, Vector3 pos)
         {
             var v = CellView.Create(_cellsRoot, id);
-            v.Apply(s.Kind, s.Color, s.Stars);
+            v.Apply(s.Kind, s.Color, s.Stars, s.Ice);
             v.transform.localPosition = pos;
             _views[id] = v;
             return v;
@@ -152,7 +155,7 @@ namespace Game.View
                         v = Spawn(kv.Key, kv.Value, start);
                         if (!falls) { popIn.Add(v); v.transform.localScale = Vector3.zero; }
                     }
-                    else v.Apply(kv.Value.Kind, kv.Value.Color, kv.Value.Stars);
+                    else v.Apply(kv.Value.Kind, kv.Value.Color, kv.Value.Stars, kv.Value.Ice);
                     from[v] = v.transform.localPosition;
                     to[v] = target;
                 }
@@ -162,6 +165,7 @@ namespace Game.View
                 float dur = Duration(f.Kind);
                 bool collect = f.Kind == PhaseKind.Collect;
                 if (f.Kind == PhaseKind.Remove && gone.Count > 0) { Sfx.Play("pop", 0.9f, 0.9f + Mathf.Min(0.5f, gone.Count * 0.04f)); Haptics.Tap(15); }
+                if (f.Thawed > 0) Sfx.Play("tick", 0.8f, 1.6f);
                 else if (collect && gone.Count > 0) { Sfx.Play("chest"); Haptics.Tap(45); }
                 for (float t = 0; t < dur; t += Time.deltaTime)
                 {

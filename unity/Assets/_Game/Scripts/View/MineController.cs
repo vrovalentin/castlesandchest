@@ -13,7 +13,7 @@ namespace Game.View
     /// </summary>
     public sealed partial class MineController : MonoBehaviour
     {
-        private enum Mode { Play, OutOfMoves, Summary, NoTickets, ConfirmRestart }
+        private enum Mode { Play, OutOfMoves, Summary, NoTickets, ConfirmRestart, NoTools }
 
         public GameLogic Game => _s.Game;
         public GameState State => _s.State;
@@ -155,6 +155,8 @@ namespace Game.View
             if (cell == null) return false;
             if (Armed.HasValue) return TryTool(Armed.Value, r, c);
             if (cell.IsChest) { Toast("Сундук не нажимается. Убери блоки под ним, и он упадёт."); return false; }
+            if (cell.IsStone) { Toast("Камень не взрывается. Убери блоки под ним, и он упадёт с поля."); StartCoroutine(_view.Shake(cell.Id)); return false; }
+            if (cell.Ice) { Toast("Блок во льду. Взорви группу рядом, и лёд треснет."); StartCoroutine(_view.Shake(cell.Id)); return false; }
             if (board.Group(r, c).Count < 2) { StartCoroutine(_view.Shake(cell.Id)); return false; }
 
             var frames = new List<Frame>();
@@ -173,7 +175,12 @@ namespace Game.View
             if (Busy || _mode != Mode.Play) return;
             if (Armed == tool) { Armed = null; return; }
             int left = tool == Tool.Broom ? State.Brooms : State.Hammers;
-            if (left < 1) { Toast($"{ToolName(tool)}: кончились, новые завтра"); return; }
+            if (left < 1)
+            {
+                if (Game.CanWatchAdForTools(State)) _mode = Mode.NoTools;
+                else Toast($"{ToolName(tool)}: кончились, новые завтра");
+                return;
+            }
             Armed = tool;
         }
 
@@ -307,6 +314,15 @@ namespace Game.View
                 if (GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76))) WatchAdForTickets();
             }
             else if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76))) StartRun();
+        }
+
+        /// <summary>Brooms and hammers for an ad (a stub until the platform SDK: the reward comes at once).</summary>
+        private void WatchAdForTools()
+        {
+            if (!Game.AdTools(State)) return;
+            _s.Save();
+            _mode = Mode.Play;
+            Toast($"+{Game.Rules.AdTools} метлы и +{Game.Rules.AdTools} молотка за рекламу");
         }
 
         /// <summary>

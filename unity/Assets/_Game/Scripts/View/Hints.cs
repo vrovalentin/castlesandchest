@@ -28,7 +28,7 @@ namespace Game.View
         /// <summary>Forget every hint, for «Начать сначала».</summary>
         public static void Reset()
         {
-            foreach (var k in new[] { "chests", "place", "mine", "board" }) PlayerPrefs.DeleteKey(Prefix + k);
+            foreach (var k in new[] { "chests", "place", "mine", "board", "obstacles" }) PlayerPrefs.DeleteKey(Prefix + k);
             PlayerPrefs.Save();
         }
 

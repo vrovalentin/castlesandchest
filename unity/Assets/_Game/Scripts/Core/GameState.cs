@@ -27,6 +27,10 @@ namespace Game.Core
         public string DailyDay;
         /// <summary>Ads watched for tickets today (reset with the daily gift).</summary>
         public int AdsToday;
+        /// <summary>Day of the login streak, 1..7 (0 before the first gift).</summary>
+        public int Streak;
+        /// <summary>Ads watched for brooms and hammers today (reset with the daily gift).</summary>
+        public int ToolAdsToday;
         public int Built;
         /// <summary>All points ever earned: in the mine and on the building site.</summary>
         public int Score;
@@ -89,5 +93,7 @@ namespace Game.Core
     public struct DailyGift
     {
         public int Brooms, Hammers, Tickets;
+        /// <summary>Day of the login streak this gift is for, 1..7 (only on what DailyGrant returns).</summary>
+        public int Day;
     }
 }

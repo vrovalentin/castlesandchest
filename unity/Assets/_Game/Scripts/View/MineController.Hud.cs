@@ -147,6 +147,9 @@ namespace Game.View
             if (run != null && _mode == Mode.Play && !Busy)
                 Hints.Want("board", new Rect(L.Board.x + 20, L.Board.center.y - 150, L.Board.width - 40, 300),
                     "Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!");
+            if (run != null && _mode == Mode.Play && !Busy && !Hints.Showing && HasObstacles(run.Board))
+                Hints.Want("obstacles", new Rect(L.Board.x + 20, L.Board.center.y - 160, L.Board.width - 40, 320),
+                    "Тут лёд и камни!\nБлок во льду не нажимается: взорви группу рядом, и лёд треснет.\nКамень не взрывается: он падает вниз и уходит с поля.");
             if (run != null)
             {
                 GUI.enabled = !Busy && _mode == Mode.Play;
@@ -171,7 +174,23 @@ namespace Game.View
                 GUILayout.Space(12);
                 if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(76))) _toBuild();
             });
+            else if (_mode == Mode.NoTools) Panel(w, h, "Инструменты кончились",
+                $"Посмотри рекламу и получи {Game.Rules.AdTools} метлы и {Game.Rules.AdTools} молотка. Или жди завтра: придут новые.", () =>
+            {
+                if (Game.CanWatchAdForTools(State) && GUILayout.Button($"+{Game.Rules.AdTools} и +{Game.Rules.AdTools} · реклама", _button2, GUILayout.Height(76)))
+                    WatchAdForTools();
+                GUILayout.Space(12);
+                if (GUILayout.Button("Позже", _button, GUILayout.Height(76))) _mode = Mode.Play;
+            });
             Hints.Draw();
+        }
+
+        private static bool HasObstacles(Board b)
+        {
+            for (int r = 0; r < b.Rows; r++)
+                for (int c = 0; c < b.Cols; c++)
+                    if (b[r, c] != null && (b[r, c].Ice || b[r, c].IsStone)) return true;
+            return false;
         }
 
         // ---------- top bar ----------

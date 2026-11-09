@@ -186,7 +186,8 @@ namespace Game.Core
             if (s.Tickets < 1) return null;
             if (s.Tickets != int.MaxValue) s.Tickets--;
             var castle = CastleOf(s);
-            s.Run = new RunState { Board = Board.Generate(Rules, castle, rng), Moves = s.Opts.Moves };
+            int idx = Math.Min(s.CastleIndex, Catalog.Castles.Count - 1);
+            s.Run = new RunState { Board = Board.Generate(Rules, castle, rng, Rules.IceFor(idx), Rules.StonesFor(idx)), Moves = s.Opts.Moves };
             s.Runs++;
             return s.Run;
         }
@@ -253,22 +254,53 @@ namespace Game.Core
             return NewRun(s, rng);
         }
 
-        /// <summary>Once a day tools and tickets are topped up to the daily amounts. Null if already given today.</summary>
+        /// <summary>
+        /// Once a day: brooms and hammers are added (DailyBrooms, DailyHammers), tickets topped up to DailyTickets,
+        /// and the login calendar adds the gift of the streak day. Coming back the next day moves the streak on
+        /// (after day 7 it starts again at 1); a missed day starts it over. Null if already given today.
+        /// </summary>
         public DailyGift? DailyGrant(GameState s, string day)
         {
             if (s.DailyDay == day) return null;
+            s.Streak = s.Streak >= 1 && IsDayAfter(s.DailyDay, day) ? s.Streak % Rules.Calendar.Length + 1 : 1;
+            var bonus = Rules.Calendar[s.Streak - 1];
             var got = new DailyGift
             {
-                Brooms = Math.Max(0, Rules.DailyBrooms - s.Brooms),
-                Hammers = Math.Max(0, Rules.DailyHammers - s.Hammers),
-                Tickets = Math.Max(0, Rules.DailyTickets - s.Tickets),
+                Brooms = Rules.DailyBrooms + bonus.Brooms,
+                Hammers = Rules.DailyHammers + bonus.Hammers,
+                Tickets = Math.Max(0, Rules.DailyTickets - s.Tickets) + bonus.Tickets,
+                Day = s.Streak,
             };
             s.Brooms += got.Brooms;
             s.Hammers += got.Hammers;
-            s.Tickets += got.Tickets;
+            if (s.Tickets != int.MaxValue) s.Tickets += got.Tickets;
             s.DailyDay = day;
             s.AdsToday = 0;
+            s.ToolAdsToday = 0;
             return got;
+        }
+
+        /// <summary>True when <paramref name="next"/> is the day right after <paramref name="prev"/> (both "yyyy-MM-dd").</summary>
+        public static bool IsDayAfter(string prev, string next)
+        {
+            const string f = "yyyy-MM-dd";
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            if (!DateTime.TryParseExact(prev, f, inv, System.Globalization.DateTimeStyles.None, out var a)) return false;
+            if (!DateTime.TryParseExact(next, f, inv, System.Globalization.DateTimeStyles.None, out var b)) return false;
+            return (b - a).TotalDays == 1;
+        }
+
+        /// <summary>An ad for brooms and hammers: when one of them ran out, AdToolsPerDay times a day.</summary>
+        public bool CanWatchAdForTools(GameState s) => (s.Brooms < 1 || s.Hammers < 1) && s.ToolAdsToday < Rules.AdToolsPerDay;
+
+        /// <summary>The reward for that ad: AdTools brooms and AdTools hammers. False (and nothing changes) when not allowed now.</summary>
+        public bool AdTools(GameState s)
+        {
+            if (!CanWatchAdForTools(s)) return false;
+            s.Brooms += Rules.AdTools;
+            s.Hammers += Rules.AdTools;
+            s.ToolAdsToday++;
+            return true;
         }
     }
 }
