@@ -8,9 +8,10 @@ namespace Game.View
     public sealed class CellView : MonoBehaviour
     {
         public int Id { get; private set; }
-        private SpriteRenderer _body, _trim;
+        private SpriteRenderer _body, _trim, _ice;
         private readonly List<SpriteRenderer> _stars = new List<SpriteRenderer>();
         private CellKind _kind;
+        private bool _iced;
         private int _chestStars;
 
         public static CellView Create(Transform parent, int id)
@@ -25,18 +26,26 @@ namespace Game.View
             v._trim = trim.AddComponent<SpriteRenderer>();
             v._trim.sprite = SpriteFactory.ChestTrim;
             v._trim.sortingOrder = 1;
+            var ice = new GameObject("Ice");
+            ice.transform.SetParent(go.transform, false);
+            v._ice = ice.AddComponent<SpriteRenderer>();
+            v._ice.sprite = SpriteFactory.Ice;
+            v._ice.sortingOrder = 4;
+            ice.SetActive(false);
             return v;
         }
 
-        public void Apply(CellKind kind, int color, int stars)
+        public void Apply(CellKind kind, int color, int stars, bool ice = false)
         {
             _kind = kind;
-            bool chest = kind == CellKind.Chest;
-            var art = chest ? SpriteFactory.ChestArt(color) : SpriteFactory.BlockArt(color);
+            _iced = ice;
+            bool chest = kind == CellKind.Chest, stone = kind == CellKind.Stone;
+            var art = stone ? SpriteFactory.Stone : chest ? SpriteFactory.ChestArt(color) : SpriteFactory.BlockArt(color);
             _body.sprite = art != null ? art : chest ? SpriteFactory.ChestBody : SpriteFactory.Block;
             // Drawn art already has its colour; placeholders are grey and get tinted.
-            _body.color = art != null ? Color.white : (Color)Palette.Block(color);
+            _body.color = art != null ? Color.white : stone ? new Color(0.35f, 0.33f, 0.32f) : (Color)Palette.Block(color);
             _trim.gameObject.SetActive(chest && art == null);
+            _ice.gameObject.SetActive(ice && _ice.sprite != null);
             _chestStars = kind == CellKind.Chest ? stars : 0;
             ShowStars(_chestStars, kind == CellKind.Chest ? -0.22f : 0f);
         }
@@ -44,7 +53,7 @@ namespace Game.View
         /// <summary>For blocks: how many stars a chest from this block's group would get. 0 hides it.</summary>
         public void SetHint(int stars)
         {
-            if (_kind != CellKind.Block) return;
+            if (_kind != CellKind.Block || _iced) return;
             ShowStars(stars, 0f);
         }
 
@@ -89,6 +98,7 @@ namespace Game.View
         {
             var c = _body.color; c.a = a; _body.color = c;
             var t = _trim.color; t.a = a; _trim.color = t;
+            var ic = _ice.color; ic.a = a; _ice.color = ic;
             foreach (var s in _stars) { var sc = s.color; sc.a = a; s.color = sc; }
         }
     }

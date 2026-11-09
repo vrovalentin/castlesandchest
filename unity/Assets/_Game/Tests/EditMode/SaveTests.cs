@@ -24,6 +24,27 @@ namespace Game.Core.Tests
         }
 
         [Test]
+        public void StreakToolAdsIceAndStonesSurviveSaveAndLoad()
+        {
+            var s = _game.NewGame();
+            _game.DailyGrant(s, "2026-11-01");
+            _game.DailyGrant(s, "2026-11-02");
+            s.ToolAdsToday = 1;
+            _game.NewRun(s, new XorShift32(3));
+            var b = s.Run.Board;
+            b[2, 3] = new Cell { Id = b.NextId++, Kind = CellKind.Stone };
+            b[5, 5].Ice = true;
+
+            var t = RoundTrip(s);
+
+            Assert.AreEqual(2, t.Streak);
+            Assert.AreEqual(1, t.ToolAdsToday);
+            Assert.IsTrue(t.Run.Board[2, 3].IsStone);
+            Assert.IsTrue(t.Run.Board[5, 5].Ice);
+            Assert.IsFalse(t.Run.Board[5, 4].Ice);
+        }
+
+        [Test]
         public void GameWithARunSurvivesSaveAndLoad()
         {
             var rng = new XorShift32(5);

@@ -252,6 +252,7 @@ namespace Game.View
             }
             if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
             if (next < 0 || next >= Layers.Length) return;
+            DrawScaffold(r, filled);
             if (!HasOutline(next))
             {
                 GUI.color = new Color(1, 1, 1, 0.25f + 0.25f * pulse);
@@ -267,6 +268,84 @@ namespace Game.View
             GUI.color = new Color(1, 0.97f, 0.85f, 0.7f + 0.3f * pulse);
             DrawLine(r, next);
             GUI.color = old;
+        }
+
+        private ulong _scaffoldFor = ulong.MaxValue;
+        private bool _scaffoldOn;
+        private float _scaffoldY, _scaffoldL, _scaffoldR;
+
+        /// <summary>
+        /// Finds where the scaffolding goes: the height where most built pieces end with an empty slot right above
+        /// them (the straight cut edges of unfinished walls), and how wide that edge runs. Worked out from the tap map
+        /// once per set of built slots.
+        /// </summary>
+        private void MeasureScaffold(bool[] filled)
+        {
+            ulong fm = 0;
+            for (int i = 0; i < filled.Length && i < 64; i++)
+                if (filled[i]) fm |= 1UL << i;
+            if (fm == _scaffoldFor) return;
+            _scaffoldFor = fm;
+            _scaffoldOn = false;
+            if (_hit == null || fm == 0) return;
+            const float bin = 0.03f;
+            int n = _hitSize;
+            var perBin = new int[(int)(1 / bin) + 2];
+            var xs = new System.Collections.Generic.List<int>();
+            var ys = new System.Collections.Generic.List<int>();
+            for (int y = 1; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    ulong m = System.BitConverter.ToUInt64(_hit, (y * n + x) * 8);
+                    if ((m & fm) == 0) continue;
+                    ulong up = System.BitConverter.ToUInt64(_hit, ((y - 1) * n + x) * 8);
+                    if (up == 0 || (up & fm) != 0) continue;
+                    xs.Add(x); ys.Add(y);
+                    perBin[(int)((float)y / n / bin)]++;
+                }
+            int best = 0;
+            for (int i = 1; i < perBin.Length; i++)
+                if (perBin[i] > perBin[best]) best = i;
+            float mid = (best + 0.5f) * bin;
+            int x0 = n, x1 = -1, count = 0;
+            var near = new System.Collections.Generic.List<int>();
+            for (int k = 0; k < ys.Count; k++)
+            {
+                if (Mathf.Abs((float)ys[k] / n - mid) >= 0.04f) continue;
+                near.Add(ys[k]); count++;
+                if (xs[k] < x0) x0 = xs[k];
+                if (xs[k] > x1) x1 = xs[k];
+            }
+            if (count < n * 0.04f) return;      // only a few loose points: nothing that looks cut
+            near.Sort();
+            _scaffoldY = (float)near[near.Count / 2] / n;
+            _scaffoldL = (float)x0 / n;
+            _scaffoldR = (x1 + 1f) / n;
+            _scaffoldOn = true;
+        }
+
+        /// <summary>
+        /// Wooden scaffolding in front of an unfinished building: a walkway plank lying across the cut edges of the
+        /// unfinished walls, a thin rail above it, and poles from the ground. Fractions are of the picture's side.
+        /// </summary>
+        private void DrawScaffold(Rect r, bool[] filled)
+        {
+            var pole = GameArt.ScaffoldPole;
+            var plank = GameArt.ScaffoldPlank;
+            if (pole == null || plank == null) return;
+            MeasureScaffold(filled);
+            if (!_scaffoldOn) return;
+            float y = _scaffoldY, left = _scaffoldL - 0.015f, right = _scaffoldR + 0.015f, ground = FootBottom - 0.004f;
+            if (ground - y < 0.05f) return;
+            const float poleW = 0.014f, poleOver = 0.095f;
+            int bays = Mathf.Max(1, Mathf.RoundToInt((right - left) / 0.22f));
+            GUI.DrawTexture(Place(r, new Rect(left - 0.015f, y - 0.008f, right - left + 0.03f, 0.022f)), plank, ScaleMode.StretchToFill);
+            GUI.DrawTexture(Place(r, new Rect(left - 0.01f, y - 0.075f, right - left + 0.02f, 0.014f)), plank, ScaleMode.StretchToFill);
+            for (int k = 0; k <= bays; k++)
+            {
+                float x = Mathf.Lerp(left, right, k / (float)bays);
+                GUI.DrawTexture(Place(r, new Rect(x - poleW / 2, y - poleOver, poleW, ground - y + poleOver)), pole, ScaleMode.StretchToFill);
+            }
         }
 
         private static readonly (float, float)[] Around = { (-1, 0), (1, 0), (0, -1), (0, 1), (-0.7f, -0.7f), (0.7f, 0.7f), (-0.7f, 0.7f), (0.7f, -0.7f) };

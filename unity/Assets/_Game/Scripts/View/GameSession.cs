@@ -18,7 +18,10 @@ namespace Game.View
             Persistent = persistent;
         }
 
-        public static string Today => DateTime.Now.ToString("yyyy-MM-dd");
+        public static string Today => DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>Today's gift when it was just given (the build screen shows the login calendar), else null.</summary>
+        public DailyGift? NewGift;
 
         /// <summary>Loads the saved game (when persistent) or starts a new one, then gives the daily gift.</summary>
         public static GameSession Create(bool persistent)
@@ -26,7 +29,7 @@ namespace Game.View
             var s = new GameSession(new GameLogic(DemoContent.Create()), persistent);
             if (persistent) s.State = SaveStore.Load(s.Game.Catalog);
             if (s.State == null) s.State = s.Game.NewGame();
-            s.Game.DailyGrant(s.State, Today);
+            s.NewGift = s.Game.DailyGrant(s.State, Today);
             if (persistent) s.TestStart(Application.absoluteURL);
             s.Save();
             return s;
@@ -42,7 +45,7 @@ namespace Game.View
             var m = System.Text.RegularExpressions.Regex.Match(url, @"[?&]castle=(\d+)");
             if (!m.Success || !int.TryParse(m.Groups[1].Value, out int n)) return;
             State = Game.NewGame();
-            Game.DailyGrant(State, Today);
+            NewGift = Game.DailyGrant(State, Today);
             for (int i = 1; i < n && State.CastleIndex < Game.Catalog.Castles.Count - 1; i++) Game.NextCastle(State);
             if (System.Text.RegularExpressions.Regex.IsMatch(url, @"[?&]parts\b"))
                 foreach (var id in Game.CastleOf(State).Slots) State.Add(id, 1);

@@ -25,6 +25,8 @@ namespace Game.View
         private float _doneAt;
         private bool _askStartOver;
         private bool _settingsOpen;
+        /// <summary>The login calendar, shown when today's gift was just given.</summary>
+        private bool _calendarOpen;
         /// <summary>The part last made by merging, and when, for its pop in the storage window.</summary>
         private string _mergedId;
         private float _mergedAt = -9;
@@ -48,6 +50,7 @@ namespace Game.View
         public void Init(GameSession session, Action toMine)
         {
             _s = session;
+            _calendarOpen = session.NewGift.HasValue;
             _toMine = toMine;
         }
 

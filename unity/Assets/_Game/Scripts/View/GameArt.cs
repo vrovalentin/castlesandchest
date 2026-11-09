@@ -35,6 +35,9 @@ namespace Game.View
         public static Texture2D GoldButtonDown => Load("UI/ui_btn_gold_down");
         public static Texture2D MineBackground => Load("UI/bg_mine");
         public static Texture2D BuildBackground => Load("UI/bg_build");
+        /// <summary>Wooden pole and plank of the scaffolding around an unfinished building (tools/art/make_scaffold.py).</summary>
+        public static Texture2D ScaffoldPole => Load("UI/scaff_pole");
+        public static Texture2D ScaffoldPlank => Load("UI/scaff_plank");
 
         /// <summary>Closed chest with its stars, as on the board.</summary>
         public static void DrawChest(Rect cell, Chest chest)

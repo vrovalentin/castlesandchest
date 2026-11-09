@@ -99,7 +99,7 @@ namespace Game.View.Tests
             int r = -1, c = -1;
             for (int y = 0; y < b.Rows && r < 0; y++)
                 for (int x = 0; x < b.Cols; x++)
-                    if (b[y, x].IsBlock) { r = y; c = x; break; }
+                    if (b[y, x].IsFree) { r = y; c = x; break; }
             _mine.Arm(Tool.Hammer);
             Assert.AreEqual(Tool.Hammer, _mine.Armed);
             Assert.IsTrue(_mine.TryTap(r, c));

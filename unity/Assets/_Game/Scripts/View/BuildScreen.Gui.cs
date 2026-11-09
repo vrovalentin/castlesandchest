@@ -212,7 +212,7 @@ namespace Game.View
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen && !_calendarOpen;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
             if (GUI.enabled) CastleTap(cardsTop - 8);
             if (hasNext) DrawNext(x0 + pad, cardsTop, inner);
@@ -230,6 +230,7 @@ namespace Game.View
             ShowPointer();
 
             if (_reward != null) DrawRewardPanel(w, h);
+            else if (_calendarOpen) DrawCalendarPanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
             else if (_settingsOpen) DrawSettingsPanel(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
@@ -242,7 +243,7 @@ namespace Game.View
         /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
         private void ShowPointer()
         {
-            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -254,7 +255,7 @@ namespace Game.View
         /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
         private void AskHint(Rect bubble)
         {
-            if (_reward != null || _donePanel || _askStartOver || _settingsOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
+            if (_reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -903,6 +904,64 @@ namespace Game.View
                 "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _nightBody);
             if (GoldButton(new Rect(r.x + 70, r.yMax - 228, r.width - 140, 96), "Начать сначала", 34)) Later(StartOver);
             if (GUI.Button(new Rect(r.x + 110, r.yMax - 116, r.width - 220, 72), "Отмена", _wood)) Later(() => _askStartOver = false);
+        }
+
+        /// <summary>
+        /// The login calendar: seven days in a row, the days already taken ticked, today's gift in gold.
+        /// A missed day starts it over from day 1.
+        /// </summary>
+        private void DrawCalendarPanel(float w, float h)
+        {
+            Dim(w, h);
+            var gift = _s.NewGift ?? new DailyGift { Day = Mathf.Max(1, State.Streak) };
+            var cal = Game.Rules.Calendar;
+            float pw = Mathf.Min(680, w - 40), ph = 760;
+            var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
+            NightWindow(r, "Подарок дня");
+            GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64),
+                "Заходи каждый день: подарок растёт. Пропустишь день, и всё начнётся с первого.", _nightBody);
+            // Days 1-4 in the top row, 5-7 below; the 7th tile is wider: it is the big one.
+            float gap = 10, tw = (r.width - 60 - 3 * gap) / 4, th = 150, top = r.y + 170;
+            for (int i = 0; i < cal.Length; i++)
+            {
+                int row = i < 4 ? 0 : 1, col = i < 4 ? i : i - 4;
+                float x = row == 0 ? r.x + 30 + col * (tw + gap) : r.x + 30 + col * (tw + gap);
+                float ww = row == 1 && i == cal.Length - 1 ? tw * 2 + gap : tw;
+                var t = new Rect(x, top + row * (th + gap), ww, th);
+                int day = i + 1;
+                bool today = day == gift.Day, past = day < gift.Day;
+                var fill = today ? new Color32(0xff, 0xc8, 0x3c, 0xff) : past ? new Color32(0x4f, 0x8a, 0x4a, 0xff) : new Color32(0x2c, 0x34, 0x5c, 0xff);
+                GUI.DrawTexture(t, UiArt.Round(fill, new Color32(0xff, 0xf8, 0xe6, 0xff), 18, today ? 4 : 2));
+                var ink = today ? new Color32(0x4a, 0x2a, 0x08, 0xff) : new Color32(0xff, 0xf8, 0xe6, 0xff);
+                var head = new GUIStyle(_nightBody) { fontSize = 22, fontStyle = FontStyle.Bold };
+                head.normal.textColor = ink;
+                GUI.Label(new Rect(t.x, t.y + 8, t.width, 30), past ? $"День {day} ✓" : $"День {day}", head);
+                var body = new GUIStyle(_nightBody) { fontSize = 20 };
+                body.normal.textColor = ink;
+                GUI.Label(new Rect(t.x + 6, t.y + 44, t.width - 12, t.height - 50), GiftText(cal[i], "\n"), body);
+            }
+            var got = new GUIStyle(_nightBody) { fontSize = 25, fontStyle = FontStyle.Bold };
+            GUI.Label(new Rect(r.x + 30, top + 2 * (th + gap) + 14, r.width - 60, 90),
+                $"Сегодня: {GiftText(gift, ", ")}", got);
+            if (GoldButton(new Rect(r.x + 90, r.yMax - 130, r.width - 180, 96), "Забрать", 36))
+                Later(() => { _calendarOpen = false; _s.NewGift = null; Sfx.Play("collect"); });
+        }
+
+        private static string GiftText(DailyGift g, string sep)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            if (g.Tickets > 0) parts.Add($"+{g.Tickets} {Plural(g.Tickets, "билет", "билета", "билетов")}");
+            if (g.Brooms > 0) parts.Add($"+{g.Brooms} {Plural(g.Brooms, "метла", "метлы", "мётел")}");
+            if (g.Hammers > 0) parts.Add($"+{g.Hammers} {Plural(g.Hammers, "молоток", "молотка", "молотков")}");
+            return parts.Count > 0 ? string.Join(sep, parts) : "—";
+        }
+
+        private static string Plural(int n, string one, string few, string many)
+        {
+            int m10 = n % 10, m100 = n % 100;
+            if (m10 == 1 && m100 != 11) return one;
+            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+            return many;
         }
 
         /// <summary>Music, sounds and (on phones) vibration, each on or off.</summary>

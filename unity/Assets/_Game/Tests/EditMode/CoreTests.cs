@@ -387,22 +387,113 @@ namespace Game.Core.Tests
         }
 
         [Test]
-        public void DailyGiftTopsUpOncePerDay()
+        public void DailyGiftAddsToolsTopsUpTicketsOncePerDay()
         {
             var s = _game.NewGame();
             var g = _game.DailyGrant(s, "2026-10-20");
             Assert.IsTrue(g.HasValue);
+            Assert.AreEqual(1, g.Value.Day);
             Assert.AreEqual(3, s.Brooms);
             Assert.AreEqual(3, s.Hammers);
-            Assert.AreEqual(15, s.Tickets);
+            Assert.AreEqual(15 + 3, s.Tickets, "topped up to 15, plus 3 for day 1 of the calendar");
             Assert.IsNull(_game.DailyGrant(s, "2026-10-20"));
 
             s.Brooms = 1; s.Tickets = 20;
             g = _game.DailyGrant(s, "2026-10-21");
-            Assert.AreEqual(2, g.Value.Brooms);
+            Assert.AreEqual(2, g.Value.Day);
+            Assert.AreEqual(3 + 1, g.Value.Brooms, "3 a day plus 1 for day 2");
             Assert.AreEqual(0, g.Value.Tickets, "tops up to 15, never takes away");
-            Assert.AreEqual(3, s.Brooms);
+            Assert.AreEqual(5, s.Brooms, "brooms pile up");
             Assert.AreEqual(20, s.Tickets);
+        }
+
+        [Test]
+        public void LoginCalendarGoesRoundAWeekAndStartsOverAfterAMissedDay()
+        {
+            var s = _game.NewGame();
+            string[] days = { "2026-10-30", "2026-10-31", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06" };
+            for (int i = 0; i < days.Length; i++)
+                Assert.AreEqual(i % 7 + 1, _game.DailyGrant(s, days[i]).Value.Day, days[i]);
+            int hammers = s.Hammers;
+            var g = _game.DailyGrant(s, "2026-11-08");
+            Assert.AreEqual(1, g.Value.Day, "a missed day starts over");
+            Assert.AreEqual(hammers + 3, s.Hammers);
+
+            s.Streak = 6; s.DailyDay = "2026-12-31";
+            g = _game.DailyGrant(s, "2027-01-01");
+            Assert.AreEqual(7, g.Value.Day, "across the new year");
+            Assert.AreEqual(3 + 3, g.Value.Hammers, "day 7: 3 more hammers");
+            Assert.IsTrue(GameLogic.IsDayAfter("2028-02-28", "2028-02-29"));
+            Assert.IsFalse(GameLogic.IsDayAfter("2026-11-01", "2026-11-03"));
+            Assert.IsFalse(GameLogic.IsDayAfter(null, "2026-11-03"));
+        }
+
+        [Test]
+        public void AdGivesToolsWhenOneRanOutOnceADay()
+        {
+            var s = _game.NewGame();
+            _game.DailyGrant(s, "2026-11-03");
+            Assert.IsFalse(_game.AdTools(s), "not while both are left");
+            s.Hammers = 0;
+            int brooms = s.Brooms;
+            Assert.IsTrue(_game.AdTools(s));
+            Assert.AreEqual(3, s.Hammers);
+            Assert.AreEqual(brooms + 3, s.Brooms);
+            s.Hammers = 0;
+            Assert.IsFalse(_game.AdTools(s), "once a day");
+            _game.DailyGrant(s, "2026-11-04");
+            s.Brooms = 0;
+            Assert.IsTrue(_game.AdTools(s), "again the next day");
+        }
+
+        [Test]
+        public void IceKeepsABlockOutOfGroupsUntilAnExplosionNextToIt()
+        {
+            var b = NoGroupBoard();
+            // Row 9: 0 0 [0 iced] — a pair to tap and an iced block of the same colour next to it.
+            b[9, 0].Color = 0; b[9, 1].Color = 0; b[9, 2].Color = 0; b[9, 2].Ice = true;
+            b[8, 2].Color = 0; b[8, 2].Ice = true;
+            Cell near = b[9, 2], far = b[8, 2];
+            Assert.AreEqual(2, b.Group(9, 0).Count, "iced blocks don't join");
+            Assert.AreEqual(0, b.Group(9, 2).Count, "an iced block can't be tapped");
+            int thawed = -1;
+            var res = b.Tap(9, 0, _castle1, new XorShift32(1), p => { if (p.Kind == PhaseKind.Remove) thawed = p.Thawed; });
+            Assert.AreEqual(2, res.Size);
+            Assert.AreEqual(1, thawed, "only the block next to the explosion thaws");
+            Assert.IsFalse(near.Ice);
+            Assert.IsTrue(far.Ice);
+        }
+
+        [Test]
+        public void StonesOnlyFallAndLeaveAtTheBottom()
+        {
+            var b = NoGroupBoard();
+            b[8, 0] = new Cell { Id = b.NextId++, Kind = CellKind.Stone };
+            b[9, 1].Color = 3; b[9, 0].Color = 3;
+            Assert.AreEqual(0, b.Group(8, 0).Count, "a stone is not a block");
+            int stones = 0;
+            b.Tap(9, 0, _castle1, new XorShift32(1), p => { if (p.Kind == PhaseKind.Collect) stones += p.Stones; });
+            Assert.AreEqual(1, stones, "the stone fell into the bottom row and left");
+            for (int r = 0; r < b.Rows; r++)
+                for (int c = 0; c < b.Cols; c++) Assert.IsFalse(b[r, c].IsStone);
+        }
+
+        [Test]
+        public void ObstaclesStartOnTheThirdCastle()
+        {
+            var rules = _cat.Rules;
+            Assert.AreEqual(0, rules.IceFor(1));
+            Assert.AreEqual(0, rules.StonesFor(1));
+            Assert.Greater(rules.IceFor(2), 0);
+            Assert.Greater(rules.StonesFor(2), 0);
+            var b = Board.Generate(rules, _castle1, new XorShift32(5), rules.IceFor(2), rules.StonesFor(2));
+            int ice = 0, stones = 0;
+            for (int r = 0; r < b.Rows; r++)
+                for (int c = 0; c < b.Cols; c++) { if (b[r, c].Ice) ice++; if (b[r, c].IsStone) { stones++; Assert.Less(r, b.Rows / 2); } }
+            Assert.AreEqual(rules.StonesFor(2), stones);
+            Assert.LessOrEqual(ice, rules.IceFor(2));
+            Assert.Greater(ice, 0);
+            Assert.IsTrue(b.HasMove());
         }
 
         [Test]

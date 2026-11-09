@@ -30,6 +30,31 @@ namespace Game.View
         /// <summary>Drawn closed chest of a colour from Art/Resources/Board, or null when there is no art for it.</summary>
         public static Sprite ChestArt(int color) => Art(ref _chestArt, "chest_", color);
 
+        private static Sprite _stone, _ice;
+        private static bool _obstaclesLoaded;
+
+        /// <summary>The stone obstacle (Art/Resources/Board/stone.png), or null.</summary>
+        public static Sprite Stone { get { LoadObstacles(); return _stone; } }
+
+        /// <summary>The sheet of ice drawn over an iced block (Art/Resources/Board/ice.png), or null.</summary>
+        public static Sprite Ice { get { LoadObstacles(); return _ice; } }
+
+        private static void LoadObstacles()
+        {
+            if (_obstaclesLoaded) return;
+            _obstaclesLoaded = true;
+            Sprite One(string name)
+            {
+                var tex = Resources.Load<Texture2D>("Board/" + name);
+                if (tex == null) return null;
+                var sp = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), tex.width / 0.94f);
+                sp.hideFlags = HideFlags.DontSave;
+                return sp;
+            }
+            _stone = One("stone");
+            _ice = One("ice");
+        }
+
         private static Sprite Art(ref Sprite[] cache, string prefix, int color)
         {
             if (cache == null)
