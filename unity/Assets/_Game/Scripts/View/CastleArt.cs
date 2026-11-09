@@ -253,6 +253,7 @@ namespace Game.View
             if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
             if (next < 0 || next >= Layers.Length) return;
             DrawScaffold(r, filled);
+            DrawDebris(r);
             if (!HasOutline(next))
             {
                 GUI.color = new Color(1, 1, 1, 0.25f + 0.25f * pulse);
@@ -324,27 +325,72 @@ namespace Game.View
             _scaffoldOn = true;
         }
 
+        // Where the posts and the deck are in the scaffolding pictures (tools/art/cut_scaffold.py), as fractions of
+        // their width and height: the left post's middle, the distance between the posts, the top of the deck.
+        private const float SecPost = 39 / 512f, SecSpan = 434 / 512f, SecDeck = 57 / 484f;
+        private const float TopPost = 40 / 512f, TopSpan = 431 / 512f, TopDeck = 163 / 462f;
+
         /// <summary>
-        /// Wooden scaffolding in front of an unfinished building: a walkway plank lying across the cut edges of the
-        /// unfinished walls, a thin rail above it, and poles from the ground. Fractions are of the picture's side.
+        /// Wooden scaffolding in front of an unfinished building, from the kit in UI/scaff_*: columns of storeys from
+        /// the ground up, the top storey with a rail and its deck lying across the cut edges of the unfinished walls,
+        /// a ladder at the side. Fractions are of the picture's side.
         /// </summary>
         private void DrawScaffold(Rect r, bool[] filled)
         {
-            var pole = GameArt.ScaffoldPole;
-            var plank = GameArt.ScaffoldPlank;
-            if (pole == null || plank == null) return;
+            var sec = GameArt.ScaffoldSection;
+            var top = GameArt.ScaffoldTop;
+            if (sec == null || top == null) return;
             MeasureScaffold(filled);
             if (!_scaffoldOn) return;
-            float y = _scaffoldY, left = _scaffoldL - 0.015f, right = _scaffoldR + 0.015f, ground = FootBottom - 0.004f;
-            if (ground - y < 0.05f) return;
-            const float poleW = 0.014f, poleOver = 0.065f;
-            GUI.DrawTexture(Place(r, new Rect(left - 0.008f, y - 0.008f, right - left + 0.016f, 0.022f)), plank, ScaleMode.StretchToFill);
-            GUI.DrawTexture(Place(r, new Rect(left - 0.004f, y - 0.05f, right - left + 0.008f, 0.014f)), plank, ScaleMode.StretchToFill);
-            // Poles only at the two ends, so none stands across a door or a window.
-            foreach (float x in new[] { left, right })
+            float y = _scaffoldY, left = _scaffoldL - 0.01f, right = _scaffoldR + 0.01f, ground = FootBottom;
+            if (ground - y < 0.04f) return;
+            if (right - left < 0.14f) { float mid = (left + right) / 2; left = mid - 0.07f; right = mid + 0.07f; }   // a short cut: still one whole storey wide
+            int cols = Mathf.Max(1, Mathf.RoundToInt((right - left) / 0.2f));
+            float w = (right - left) / cols;
+            float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
+            float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
+            for (int c = 0; c < cols; c++)
             {
-                GUI.DrawTexture(Place(r, new Rect(x - poleW / 2, y - poleOver, poleW, ground - y + poleOver)), pole, ScaleMode.StretchToFill);
+                float x0 = left + c * w;
+                float ty = y - TopDeck * top.height * tk;
+                // Storeys under the top one down to the ground; the lowest is cut off at the ground. The brace turns
+                // the other way every other storey.
+                int j = 0;
+                for (float sy = ty + th - 0.002f; sy < ground; sy += sh - 0.002f, j++)
+                {
+                    float vis = Mathf.Min(1, (ground - sy + 0.004f) / sh);
+                    bool flip = (c + j) % 2 == 1;
+                    var uv = new Rect(flip ? 1 : 0, 1 - vis, flip ? -1 : 1, vis);
+                    GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - (flip ? 1 - SecPost - SecSpan : SecPost) * sw, sy, sw, sh * vis)), sec, uv);
+                }
+                GUI.DrawTexture(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th)), top, ScaleMode.StretchToFill);
             }
+            // A ladder at the right side, from the ground up to the top deck, made of whole ladders one on another.
+            var ladder = GameArt.ScaffoldLadder;
+            if (ladder != null)
+            {
+                float lw = 0.035f, lh = lw * ladder.height / ladder.width, from = y - 0.03f;
+                int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
+                lh = (ground - from) / n;
+                for (int i = 0; i < n; i++)
+                    GUI.DrawTexture(Place(r, new Rect(right + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+            }
+        }
+
+        /// <summary>Piles of blocks, planks and sand at the foot of an unfinished building.</summary>
+        private void DrawDebris(Rect r)
+        {
+            float l = FootLeft, rr = FootRight, g = FootBottom;
+            DrawPile(r, GameArt.ScaffoldDebris(0), l + 0.02f, g, 0.17f);
+            DrawPile(r, GameArt.ScaffoldDebris(1), rr - 0.03f, g, 0.16f);
+            DrawPile(r, GameArt.ScaffoldDebris(2), (l + rr) / 2 + 0.05f, g, 0.12f);
+        }
+
+        private static void DrawPile(Rect r, Texture2D t, float cx, float ground, float w)
+        {
+            if (t == null) return;
+            float h = w * t.height / t.width;
+            GUI.DrawTexture(Place(r, new Rect(cx - w / 2, ground - h + 0.02f, w, h)), t, ScaleMode.StretchToFill);
         }
 
         private static readonly (float, float)[] Around = { (-1, 0), (1, 0), (0, -1), (0, 1), (-0.7f, -0.7f), (0.7f, 0.7f), (-0.7f, 0.7f), (0.7f, -0.7f) };
