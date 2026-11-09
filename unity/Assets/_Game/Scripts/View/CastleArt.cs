@@ -337,13 +337,12 @@ namespace Game.View
             if (!_scaffoldOn) return;
             float y = _scaffoldY, left = _scaffoldL - 0.015f, right = _scaffoldR + 0.015f, ground = FootBottom - 0.004f;
             if (ground - y < 0.05f) return;
-            const float poleW = 0.014f, poleOver = 0.095f;
-            int bays = Mathf.Max(1, Mathf.RoundToInt((right - left) / 0.22f));
-            GUI.DrawTexture(Place(r, new Rect(left - 0.015f, y - 0.008f, right - left + 0.03f, 0.022f)), plank, ScaleMode.StretchToFill);
-            GUI.DrawTexture(Place(r, new Rect(left - 0.01f, y - 0.075f, right - left + 0.02f, 0.014f)), plank, ScaleMode.StretchToFill);
-            for (int k = 0; k <= bays; k++)
+            const float poleW = 0.014f, poleOver = 0.065f;
+            GUI.DrawTexture(Place(r, new Rect(left - 0.008f, y - 0.008f, right - left + 0.016f, 0.022f)), plank, ScaleMode.StretchToFill);
+            GUI.DrawTexture(Place(r, new Rect(left - 0.004f, y - 0.05f, right - left + 0.008f, 0.014f)), plank, ScaleMode.StretchToFill);
+            // Poles only at the two ends, so none stands across a door or a window.
+            foreach (float x in new[] { left, right })
             {
-                float x = Mathf.Lerp(left, right, k / (float)bays);
                 GUI.DrawTexture(Place(r, new Rect(x - poleW / 2, y - poleOver, poleW, ground - y + poleOver)), pole, ScaleMode.StretchToFill);
             }
         }

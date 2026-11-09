@@ -40,7 +40,7 @@ namespace Game.View.Tests
             var run = _mine.State.Run;
             Assert.IsNotNull(run);
             Assert.AreEqual(30, run.Moves);
-            Assert.AreEqual(14, _mine.State.Tickets, "daily gift 15, one spent on the run");
+            Assert.AreEqual(17, _mine.State.Tickets, "daily top-up 15 and 3 from calendar day 1, one spent on the run");
             Assert.AreEqual(100, _mine.CellViewCount);
             yield break;
         }

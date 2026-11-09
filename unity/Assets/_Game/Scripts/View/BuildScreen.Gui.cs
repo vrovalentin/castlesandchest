@@ -915,7 +915,7 @@ namespace Game.View
             Dim(w, h);
             var gift = _s.NewGift ?? new DailyGift { Day = Mathf.Max(1, State.Streak) };
             var cal = Game.Rules.Calendar;
-            float pw = Mathf.Min(680, w - 40), ph = 760;
+            float pw = Mathf.Min(680, w - 40), ph = 730;
             var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
             NightWindow(r, "Подарок дня");
             GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64),
@@ -931,7 +931,8 @@ namespace Game.View
                 int day = i + 1;
                 bool today = day == gift.Day, past = day < gift.Day;
                 var fill = today ? new Color32(0xff, 0xc8, 0x3c, 0xff) : past ? new Color32(0x4f, 0x8a, 0x4a, 0xff) : new Color32(0x2c, 0x34, 0x5c, 0xff);
-                GUI.DrawTexture(t, UiArt.Round(fill, new Color32(0xff, 0xf8, 0xe6, 0xff), 18, today ? 4 : 2));
+                // As a style with borders, so the wide 7th tile keeps round corners and an even rim.
+                GUI.Box(t, GUIContent.none, UiArt.Style(UiArt.Round(fill, new Color32(0xff, 0xf8, 0xe6, 0xff), 18, today ? 4 : 2), 18, 1, Color.white));
                 var ink = today ? new Color32(0x4a, 0x2a, 0x08, 0xff) : new Color32(0xff, 0xf8, 0xe6, 0xff);
                 var head = new GUIStyle(_nightBody) { fontSize = 22, fontStyle = FontStyle.Bold };
                 head.normal.textColor = ink;
@@ -941,8 +942,18 @@ namespace Game.View
                 GUI.Label(new Rect(t.x + 6, t.y + 44, t.width - 12, t.height - 50), GiftText(cal[i], "\n"), body);
             }
             var got = new GUIStyle(_nightBody) { fontSize = 25, fontStyle = FontStyle.Bold };
-            GUI.Label(new Rect(r.x + 30, top + 2 * (th + gap) + 14, r.width - 60, 90),
-                $"Сегодня: {GiftText(gift, ", ")}", got);
+            // Today's calendar gift, and the daily tools and tickets apart from it.
+            var bonus = cal[Mathf.Clamp(gift.Day, 1, cal.Length) - 1];
+            var daily = new DailyGift
+            {
+                Tickets = Mathf.Max(0, gift.Tickets - bonus.Tickets),
+                Brooms = Mathf.Max(0, gift.Brooms - bonus.Brooms),
+                Hammers = Mathf.Max(0, gift.Hammers - bonus.Hammers),
+            };
+            var rest = new GUIStyle(_nightBody) { fontSize = 21 };
+            float ty = top + 2 * (th + gap) + 10;
+            GUI.Label(new Rect(r.x + 30, ty, r.width - 60, 44), $"Подарок дня {gift.Day}: {GiftText(bonus, ", ")}", got);
+            GUI.Label(new Rect(r.x + 30, ty + 46, r.width - 60, 60), $"И как каждый день: {GiftText(daily, ", ")}", rest);
             if (GoldButton(new Rect(r.x + 90, r.yMax - 130, r.width - 180, 96), "Забрать", 36))
                 Later(() => { _calendarOpen = false; _s.NewGift = null; Sfx.Play("collect"); });
         }
