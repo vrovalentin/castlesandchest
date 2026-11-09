@@ -147,7 +147,7 @@ namespace Game.View
             if (run != null && _mode == Mode.Play && !Busy)
                 Hints.Want("board", new Rect(L.Board.x + 20, L.Board.center.y - 150, L.Board.width - 40, 300),
                     "Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!");
-            if (run != null && _mode == Mode.Play && !Busy && !Hints.Showing && HasObstacles(run.Board))
+            if (run != null && _mode == Mode.Play && !Busy && Hints.Seen("board") && HasObstacles(run.Board))
                 Hints.Want("obstacles", new Rect(L.Board.x + 20, L.Board.center.y - 160, L.Board.width - 40, 320),
                     "Тут лёд и камни!\nБлок во льду не нажимается: взорви группу рядом, и лёд треснет.\nКамень не взрывается: он падает вниз и уходит с поля.");
             if (run != null)
