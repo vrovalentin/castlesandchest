@@ -5,7 +5,7 @@ namespace Game.View
     /// <summary>
     /// Background music from Resources/Music (made by tools/audio/make_music.py): one loop per screen,
     /// cross-faded when the screen changes. It can be turned off on its own, apart from the sound effects.
-    /// While the game is hidden (another tab, the phone's home screen) all sound pauses.
+    /// While the game is hidden or an ad is on, all sound pauses (Game.Platform.PauseGate).
     /// </summary>
     public sealed class Music : MonoBehaviour
     {
@@ -70,9 +70,5 @@ namespace Game.View
             _b.volume = Mathf.MoveTowards(_b.volume, 0, step);
             if (_b.isPlaying && _b.volume <= 0) _b.Stop();
         }
-
-        // Hidden tab or app in the background: everything stays quiet until the player is back.
-        private void OnApplicationFocus(bool focus) => AudioListener.pause = !focus;
-        private void OnApplicationPause(bool paused) => AudioListener.pause = paused;
     }
 }
