@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>{{{ PRODUCT_NAME }}}</title>
   <style>
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #2e231a; touch-action: none; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #2e231a; touch-action: none;
+      overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
     #unity-canvas { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: block; background: #2e231a; }
     #loader { position: fixed; left: 50%; top: 50%; width: 60%; max-width: 320px; transform: translate(-50%, -50%); text-align: center;
       font: bold 18px sans-serif; color: #f0e6d6; }
@@ -16,7 +17,11 @@
 <body>
   <canvas id="unity-canvas" tabindex="-1"></canvas>
   <div id="loader">Замок из сундуков<div id="bar"><div id="fill"></div></div></div>
+  <script src="platform.js"></script>
   <script>
+    // No long-press menu or text selection on phones (Yandex rule 1.6.1).
+    document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    document.addEventListener("selectstart", function (e) { e.preventDefault(); });
     // Full-window canvas for phones and the Yandex Games frame; the game lays itself out for any aspect.
     var canvas = document.getElementById("unity-canvas");
     var config = {
@@ -43,7 +48,8 @@
     script.onload = function () {
       createUnityInstance(canvas, config, function (p) {
         document.getElementById("fill").style.width = (100 * p) + "%";
-      }).then(function () {
+      }).then(function (unity) {
+        window.CastlesPlatform.unity = unity;
         document.getElementById("loader").remove();
       }).catch(function (e) { alert(e); });
     };

@@ -6,7 +6,7 @@ All game code and content lives here. Layers follow the project architecture doc
 - **Scripts/Content** - ScriptableObjects with game data, converted into Core models.
 - **Scripts/View** - MonoBehaviours that draw the board and play animations, driven by Core state.
 - **Scripts/UI** - menus, HUD, popups.
-- **Scripts/Platform** - `IPlatform` and its implementations for Yandex Games (WebGL) and Google Play (Android): ads, purchases, saves, leaderboards.
+- **Scripts/Platform** - `Game.Platform.Sdk`, the game's only door to the store: rewarded and fullscreen ads, cloud save, language, server time, «game ready», gameplay start/stop. `PauseGate` pauses sound and time while the tab is hidden or an ad is on. In WebGL it calls `Platform.jslib` → `window.CastlesPlatform` from `WebGLTemplates/Fullscreen/platform.js` (Yandex Games SDK; another store = another platform.js with the same functions). In the editor, tests and Android it is a stub: no cloud, and a rewarded ad pays at once.
 - **Data** - ScriptableObject assets.
 - **Art** - sprites, fonts, audio.
 - **Scenes** - game scenes.

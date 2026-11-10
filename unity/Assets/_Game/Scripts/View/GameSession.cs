@@ -1,5 +1,6 @@
 using System;
 using Game.Core;
+using Game.Platform;
 using UnityEngine;
 
 namespace Game.View
@@ -18,7 +19,8 @@ namespace Game.View
             Persistent = persistent;
         }
 
-        public static string Today => DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        /// <summary>Today by the store's server clock when there is one, so moving the phone's clock gives no extra gifts.</summary>
+        public static string Today => Sdk.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>Today's gift when it was just given (the build screen shows the login calendar), else null.</summary>
         public DailyGift? NewGift;
@@ -27,7 +29,7 @@ namespace Game.View
         public static GameSession Create(bool persistent)
         {
             var s = new GameSession(new GameLogic(DemoContent.Create()), persistent);
-            if (persistent) s.State = SaveStore.Load(s.Game.Catalog);
+            if (persistent) s.State = SaveStore.Load(s.Game.Catalog, Sdk.LoadCloud());
             if (s.State == null) s.State = s.Game.NewGame();
             s.NewGift = s.Game.DailyGrant(s.State, Today);
             if (persistent) s.TestStart(Application.absoluteURL);
@@ -53,7 +55,10 @@ namespace Game.View
 
         public void Save()
         {
-            if (Persistent) SaveStore.Save(SaveMapper.ToSave(State, Game.Catalog));
+            if (!Persistent) return;
+            string json = JsonUtility.ToJson(SaveMapper.ToSave(State, Game.Catalog));
+            SaveStore.Save(json);
+            Sdk.SaveCloud(json);
         }
 
         /// <summary>
@@ -86,35 +91,52 @@ namespace Game.View
         }
     }
 
-    /// <summary>Save slot in PlayerPrefs (works on Android and WebGL alike).</summary>
+    /// <summary>
+    /// Save slot in PlayerPrefs (works on Android and WebGL alike), plus the time it was written,
+    /// so that on start the newer of the local and the cloud save wins.
+    /// </summary>
     public static class SaveStore
     {
         private const string Key = "castles-and-chest-save";
+        private const string TimeKey = "castles-and-chest-save-t";
 
-        public static GameState Load(Catalog cat)
+        /// <summary>The newer of the local save and <paramref name="cloud"/>; null when neither can be read.</summary>
+        public static GameState Load(Catalog cat, CloudSave cloud = null)
         {
+            string local = PlayerPrefs.GetString(Key, "");
+            long.TryParse(PlayerPrefs.GetString(TimeKey, "0"), out long localT);
+            bool useCloud = cloud != null && (string.IsNullOrEmpty(local) || cloud.t > localT);
+            var state = Read(useCloud ? cloud.save : local, cat);
+            // The chosen one is broken: fall back to the other.
+            if (state == null && cloud != null) state = Read(useCloud ? local : cloud.save, cat);
+            return state;
+        }
+
+        private static GameState Read(string json, Catalog cat)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
             try
             {
-                string json = PlayerPrefs.GetString(Key, "");
-                if (string.IsNullOrEmpty(json)) return null;
                 return SaveMapper.FromSave(JsonUtility.FromJson<SaveData>(json), cat);
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[SaveStore] save could not be read, starting a new game: " + e.Message);
+                Debug.LogWarning("[SaveStore] save could not be read: " + e.Message);
                 return null;
             }
         }
 
-        public static void Save(SaveData data)
+        public static void Save(string json)
         {
-            PlayerPrefs.SetString(Key, JsonUtility.ToJson(data));
+            PlayerPrefs.SetString(Key, json);
+            PlayerPrefs.SetString(TimeKey, Sdk.NowMs.ToString(System.Globalization.CultureInfo.InvariantCulture));
             PlayerPrefs.Save();
         }
 
         public static void Clear()
         {
             PlayerPrefs.DeleteKey(Key);
+            PlayerPrefs.DeleteKey(TimeKey);
             PlayerPrefs.Save();
         }
     }

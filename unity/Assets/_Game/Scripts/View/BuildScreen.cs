@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Core;
+using Game.Platform;
 using UnityEngine;
 
 namespace Game.View
@@ -153,6 +154,8 @@ namespace Game.View
         {
             if (Game.IsLastCastle(State)) _s.RestartDemo();
             else { Game.NextCastle(State); _s.Save(); }
+            // A natural break between castles: the store may show a fullscreen ad here.
+            Sdk.Interstitial();
             _donePanel = false;
             _storageOpen = false;
             _chestsOpen = false;
@@ -161,16 +164,24 @@ namespace Game.View
         }
 
         /// <summary>
-        /// Tickets for an ad when they ran out. The ad itself is a stub until the Yandex SDK: the reward comes at once.
+        /// Tickets for a rewarded ad when they ran out. The tickets come once the ad was watched to the end
+        /// (at once in the editor). False when no ad is allowed now.
         /// </summary>
         public bool WatchAdForTickets()
         {
-            if (!Game.AdTickets(State)) return false;
-            _s.Save();
-            Sfx.Play("collect");
-            Say($"+{Game.Rules.AdTickets} билета за рекламу. Можно добывать!");
+            if (!Game.CanWatchAdForTickets(State)) return false;
+            Sdk.Rewarded(() =>
+            {
+                if (!Game.AdTickets(State)) return;
+                _s.Save();
+                Sfx.Play("collect");
+                Say($"+{Game.Rules.AdTickets} билета за рекламу. Можно добывать!");
+            }, () => Say(AdFailed));
             return true;
         }
+
+        /// <summary>Shown when a rewarded ad did not load or was closed early.</summary>
+        public const string AdFailed = "Реклама не досмотрена, награды нет. Попробуй ещё раз чуть позже.";
 
         /// <summary>Shows the «Начать сначала?» window.</summary>
         public void AskStartOver() => _askStartOver = true;
