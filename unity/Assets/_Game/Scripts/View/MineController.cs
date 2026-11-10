@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Core;
+using Game.Platform;
 using UnityEngine;
 
 namespace Game.View
@@ -277,12 +278,14 @@ namespace Game.View
         private void OutOfMovesButtons()
         {
             if (!State.Run.ExtraUsed && GUILayout.Button("+5 ходов · реклама", _button, GUILayout.Height(76)))
-            {
-                State.Run.Moves += 5;
-                State.Run.ExtraUsed = true;
-                _mode = Mode.Play;
-                _s.Save();
-            }
+                Sdk.Rewarded(() =>
+                {
+                    if (State.Run == null || State.Run.ExtraUsed) return;
+                    State.Run.Moves += 5;
+                    State.Run.ExtraUsed = true;
+                    _mode = Mode.Play;
+                    _s.Save();
+                }, AdFailed);
             GUILayout.Space(12);
             if (GUILayout.Button("Закончить", State.Run.ExtraUsed ? _button : _button2, GUILayout.Height(76))) FinishRun();
         }
@@ -302,39 +305,61 @@ namespace Game.View
         {
             if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button("Удвоить · реклама", _button, GUILayout.Height(76)))
             {
-                State.Chests.AddRange(_summary.Got);
-                _doubled = true;
-                _s.Save();
+                var got = _summary;
+                Sdk.Rewarded(() =>
+                {
+                    if (_doubled || _summary != got) return;
+                    State.Chests.AddRange(got.Got);
+                    _doubled = true;
+                    _s.Save();
+                }, AdFailed);
             }
             GUILayout.Space(12);
-            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(76))) _toBuild();
+            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(76)))
+            {
+                // After the run summary is a natural break: the store may show a fullscreen ad.
+                Sdk.Interstitial();
+                _toBuild();
+            }
             GUILayout.Space(12);
             if (Game.CanWatchAdForTickets(State))
             {
                 if (GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76))) WatchAdForTickets();
             }
-            else if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76))) StartRun();
+            else if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76)))
+            {
+                Sdk.Interstitial();
+                StartRun();
+            }
         }
 
-        /// <summary>Brooms and hammers for an ad (a stub until the platform SDK: the reward comes at once).</summary>
+        /// <summary>Brooms and hammers for a rewarded ad; they come once the ad was watched (at once in the editor).</summary>
         private void WatchAdForTools()
         {
-            if (!Game.AdTools(State)) return;
-            _s.Save();
-            _mode = Mode.Play;
-            Toast($"+{Game.Rules.AdTools} метлы и +{Game.Rules.AdTools} молотка за рекламу");
+            if (!Game.CanWatchAdForTools(State)) return;
+            Sdk.Rewarded(() =>
+            {
+                if (!Game.AdTools(State)) return;
+                _s.Save();
+                _mode = Mode.Play;
+                Toast($"+{Game.Rules.AdTools} метлы и +{Game.Rules.AdTools} молотка за рекламу");
+            }, AdFailed);
         }
 
-        /// <summary>
-        /// Tickets for an ad. The ad itself is a stub until the Yandex SDK: the reward comes at once.
-        /// </summary>
+        /// <summary>Tickets for a rewarded ad; they come once the ad was watched (at once in the editor).</summary>
         private void WatchAdForTickets()
         {
-            if (!Game.AdTickets(State)) return;
-            _s.Save();
-            // From the «Билеты кончились» window straight into a run; after a run the button becomes «Новый забег».
-            if (_mode == Mode.NoTickets) StartRun();
-            Toast($"+{Game.Rules.AdTickets} билета за рекламу. Билетов: {State.Tickets}");
+            if (!Game.CanWatchAdForTickets(State)) return;
+            Sdk.Rewarded(() =>
+            {
+                if (!Game.AdTickets(State)) return;
+                _s.Save();
+                // From the «Билеты кончились» window straight into a run; after a run the button becomes «Новый забег».
+                if (_mode == Mode.NoTickets) StartRun();
+                Toast($"+{Game.Rules.AdTickets} билета за рекламу. Билетов: {State.Tickets}");
+            }, AdFailed);
         }
+
+        private void AdFailed() => Toast(BuildScreen.AdFailed);
     }
 }
