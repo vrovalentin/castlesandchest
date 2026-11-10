@@ -1,6 +1,6 @@
 # Cuts the scaffolding kit (generated on a white background) for the build screen:
 #   section.png (one storey: two posts, deck on top, a brace), top.png (deck with a rail), ladder.png,
-#   debris1..3.png (piles at the foot of the building).
+#   debris1..3.png (piles at the foot of the building), jib.png (crane arm with a pulley), crate.png, rope.png.
 # White that touches the border, and large white areas inside (between ladder rungs, under the deck) go
 # transparent; small white highlights stay. Edges are softened and the white fringe is taken out.
 # Each piece is trimmed to its picture and scaled so its longer side is at most MAX px.
@@ -41,7 +41,7 @@ def cut(path):
     return img
 
 
-for name in ('section', 'top', 'ladder', 'debris1', 'debris2', 'debris3'):
+for name in ('section', 'top', 'ladder', 'debris1', 'debris2', 'debris3', 'jib', 'crate', 'rope'):
     p = os.path.join(src, name + '.png')
     if os.path.exists(p):
         img = cut(p)

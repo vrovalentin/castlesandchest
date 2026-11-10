@@ -41,6 +41,10 @@ namespace Game.View
         public static Texture2D ScaffoldTop => Load("UI/scaff_top");
         public static Texture2D ScaffoldLadder => Load("UI/scaff_ladder");
         public static Texture2D ScaffoldDebris(int i) => Load("UI/scaff_debris" + (i + 1));
+        /// <summary>Crane on the scaffolding: the jib with its pulley, a crate of stones on short ropes, and a piece of rope.</summary>
+        public static Texture2D ScaffoldJib => Load("UI/scaff_jib");
+        public static Texture2D ScaffoldCrate => Load("UI/scaff_crate");
+        public static Texture2D ScaffoldRope => Load("UI/scaff_rope");
 
         /// <summary>Closed chest with its stars, as on the board.</summary>
         public static void DrawChest(Rect cell, Chest chest)
