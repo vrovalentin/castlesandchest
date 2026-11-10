@@ -390,17 +390,18 @@ namespace Game.View
 
         // Where the jib is fixed to the post and where its pulley hangs, as fractions of the jib picture
         // (tools/art/cut_scaffold.py); and where the ring of the crate is, as a fraction of the crate picture's width.
-        private const float JibMountX = 0.96f, JibMountY = 0.2f, PulleyX = 0.05f, PulleyY = 0.9f, CrateRingX = 0.5f;
+        private const float JibMountX = 0.93f, JibMountY = 0.09f, PulleyX = 0.08f, PulleyY = 0.53f, CrateRingX = 0.5f;
 
         /// <summary>
         /// A wooden crane on top of the right scaffolding tower: its jib reaches over the next slot, and a crate of
         /// stones hangs from it on a rope, swaying a little. When a part is placed (<paramref name="dropT"/> 0 → 1)
-        /// the crate goes down and comes back up.
+        /// the crate goes down and comes back up empty.
         /// </summary>
         private void DrawCrane(Rect r, float postX, float postTop, int next, float dropT)
         {
             var jib = GameArt.ScaffoldJib;
-            var crate = GameArt.ScaffoldCrate;
+            // Full of stones; when a part is placed it goes down full and comes back up empty.
+            var crate = dropT < 1 && dropT >= 0.5f && GameArt.ScaffoldCrateEmpty != null ? GameArt.ScaffoldCrateEmpty : GameArt.ScaffoldCrate;
             var rope = GameArt.ScaffoldRope;
             if (jib == null || crate == null || rope == null || next < 0) return;
             if (!SlotSpot(new Rect(0, 0, 1, 1), next, out var target, out _)) return;
@@ -412,7 +413,7 @@ namespace Game.View
             var pulley = new Vector2(jx + PulleyX * jw, jy + PulleyY * jh);
             float dip = dropT < 1 ? Mathf.Sin(dropT * Mathf.PI) * 0.06f : 0;
             float ropeLen = 0.05f + dip;
-            float cw = 0.075f, ch = cw * crate.height / crate.width;
+            float cw = 0.085f, ch = cw * crate.height / crate.width;
             var m = GUI.matrix;
             var pivot = Place(r, new Rect(pulley.x, pulley.y, 0, 0)).position;
             GUIUtility.RotateAroundPivot(Mathf.Sin(Time.time * 1.3f) * 3f, pivot);
