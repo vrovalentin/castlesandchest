@@ -35,9 +35,17 @@ namespace Game.View
         public static Texture2D GoldButtonDown => Load("UI/ui_btn_gold_down");
         public static Texture2D MineBackground => Load("UI/bg_mine");
         public static Texture2D BuildBackground => Load("UI/bg_build");
-        /// <summary>Wooden pole and plank of the scaffolding around an unfinished building (tools/art/make_scaffold.py).</summary>
-        public static Texture2D ScaffoldPole => Load("UI/scaff_pole");
-        public static Texture2D ScaffoldPlank => Load("UI/scaff_plank");
+        /// <summary>Scaffolding kit for an unfinished building (tools/art/cut_scaffold.py): one storey, the top storey
+        /// with a rail, a ladder and three piles of building leftovers.</summary>
+        public static Texture2D ScaffoldSection => Load("UI/scaff_section");
+        public static Texture2D ScaffoldTop => Load("UI/scaff_top");
+        public static Texture2D ScaffoldLadder => Load("UI/scaff_ladder");
+        public static Texture2D ScaffoldDebris(int i) => Load("UI/scaff_debris" + (i + 1));
+        /// <summary>Crane on the scaffolding: the jib with its pulley, a crate on short ropes (with stones and empty), and a piece of rope.</summary>
+        public static Texture2D ScaffoldJib => Load("UI/scaff_jib");
+        public static Texture2D ScaffoldCrate => Load("UI/scaff_crate");
+        public static Texture2D ScaffoldCrateEmpty => Load("UI/scaff_crate_empty");
+        public static Texture2D ScaffoldRope => Load("UI/scaff_rope");
 
         /// <summary>Closed chest with its stars, as on the board.</summary>
         public static void DrawChest(Rect cell, Chest chest)
