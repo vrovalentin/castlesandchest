@@ -407,13 +407,24 @@ namespace Game.View
             if (!SlotSpot(new Rect(0, 0, 1, 1), next, out var target, out _)) return;
             float reach = Mathf.Clamp(postX - target.x, 0.08f, 0.35f);
             float jw = reach / (JibMountX - PulleyX), jh = Mathf.Min(0.14f, jw * jib.height / jib.width);
-            float jx = postX - JibMountX * jw, jy = postTop - JibMountY * jh;
+            float cw = 0.085f, ch = cw * crate.height / crate.width;
+            // The crate hangs right at the next slot. When the slot is higher than the scaffolding, the jib goes up
+            // on a mast above the tower's post, so the crate never hangs in front of what is already built.
+            float crateTop = target.y - ch / 2;
+            float mount = Mathf.Min(postTop, crateTop - 0.03f - (PulleyY - JibMountY) * jh);
+            if (mount < postTop)
+            {
+                var sec = GameArt.ScaffoldSection;
+                float mw = 0.016f;
+                if (sec != null)
+                    GUI.DrawTextureWithTexCoords(Place(r, new Rect(postX - mw / 2, mount, mw, postTop - mount + 0.01f)), sec, new Rect(0.02f, 0, 0.12f, 1));
+            }
+            float jx = postX - JibMountX * jw, jy = mount - JibMountY * jh;
             GUI.DrawTexture(Place(r, new Rect(jx, jy, jw, jh)), jib, ScaleMode.StretchToFill);
 
             var pulley = new Vector2(jx + PulleyX * jw, jy + PulleyY * jh);
             float dip = dropT < 1 ? Mathf.Sin(dropT * Mathf.PI) * 0.06f : 0;
-            float ropeLen = 0.05f + dip;
-            float cw = 0.085f, ch = cw * crate.height / crate.width;
+            float ropeLen = Mathf.Clamp(crateTop - pulley.y, 0.02f, 0.4f) + dip;
             var m = GUI.matrix;
             var pivot = Place(r, new Rect(pulley.x, pulley.y, 0, 0)).position;
             GUIUtility.RotateAroundPivot(Mathf.Sin(Time.time * 1.3f) * 3f, pivot);
