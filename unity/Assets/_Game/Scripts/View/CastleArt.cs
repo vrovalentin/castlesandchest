@@ -39,6 +39,11 @@ namespace Game.View
         public float FootRight { get; private set; } = 0.74f;
         public float FootBottom { get; private set; } = 0.98f;
 
+        /// <summary>The part of the picture that fits on the screen, left and right, as fractions of its side.
+        /// Set by the screen before drawing; the scaffolding stays inside it.</summary>
+        public float ViewLeft { get; set; } = 0f;
+        public float ViewRight { get; set; } = 1f;
+
         /// <summary>Loads the art of a castle. Null when the castle has no art yet or a layer is missing.</summary>
         public static CastleArt Load(CastleInfo castle)
         {
@@ -344,16 +349,21 @@ namespace Game.View
             if (!_scaffoldOn) return;
             float y = _scaffoldY, ground = FootBottom;
             if (ground - y < 0.25f) return;    // only the foundation so far: just the piles at the foot
-            // Two towers of storeys stand just outside the cut, on the left and on the right; between them only the
-            // top deck with its rail lies across the cut edge, so the finished walls below stay in sight.
-            const float inset = 0.015f;
-            float span = _scaffoldR - _scaffoldL - 2 * inset;
-            int mid = span < 0.1f ? 0 : Mathf.Max(1, Mathf.RoundToInt(span / 0.14f));
-            float w = mid > 0 ? span / mid : 0.13f;                       // one bay, the same in the towers and between
-            float lx = _scaffoldL + inset - w, rx = _scaffoldR - inset;   // left post of each tower
-            // The screen shows the building's own width, so the towers stay inside it rather than off the edges.
-            lx = Mathf.Max(lx, FootLeft);
-            rx = Mathf.Max(lx + w, Mathf.Min(rx, FootRight - w));
+            // Two towers of storeys stand just outside the building, on the left and on the right; between them only the
+            // top deck with its rail lies across at the cut, so the finished walls below stay in sight.
+            const float inset = 0.015f, edge = 0.01f, lw = 0.035f;
+            float inner = FootRight - FootLeft - 2 * inset;
+            int bays = Mathf.Max(1, Mathf.RoundToInt(inner / 0.14f));
+            float w = Mathf.Clamp(inner / bays, 0.1f, 0.15f);                 // one bay of a tower
+            // Little room beside a wide building: narrower towers, so they cover less of its edges.
+            w = Mathf.Max(0.07f, Mathf.Min(w, Mathf.Min(FootLeft + inset - ViewLeft - edge, ViewRight - edge - lw - 0.004f - (FootRight - inset))));
+            float lx = FootLeft + inset - w, rx = FootRight - inset;          // left post of each tower
+            // A wide building fills the screen: there the towers step in over its edges rather than off the screen.
+            lx = Mathf.Max(lx, ViewLeft + edge);
+            rx = Mathf.Max(lx + w, Mathf.Min(rx, ViewRight - edge - w - lw - 0.004f));
+            float gap = rx - (lx + w);
+            int mid = gap < 0.05f ? 0 : Mathf.Max(1, Mathf.RoundToInt(gap / w));
+            float step = mid > 0 ? gap / mid : w;
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
             float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
             float ty = y - TopDeck * th;
@@ -375,18 +385,18 @@ namespace Game.View
             const float keep = 0.6f;    // the top piece down to just under its deck
             for (int c = 0; c < mid; c++)
             {
-                float x0 = _scaffoldL + inset + c * w;
-                GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th * keep)), top, new Rect(0, 1 - keep, 1, keep));
+                float x0 = lx + w + c * step, k = step / w;
+                GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - TopPost * tw * k, ty, tw * k, th * keep)), top, new Rect(0, 1 - keep, 1, keep));
             }
-            // A ladder on the inner side of the right tower, from the ground up to the top deck, made of whole ladders one on another.
+            // A ladder on the outer side of the right tower, from the ground up to the top deck, made of whole ladders one on another.
             var ladder = GameArt.ScaffoldLadder;
             if (ladder != null)
             {
-                float lw = 0.035f, lh = lw * ladder.height / ladder.width, from = y - 0.03f;
+                float lh = lw * ladder.height / ladder.width, from = y - 0.03f;
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(rx - lw - 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(rx + w + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
             DrawCrane(r, rx, ty, next, dropT);
         }

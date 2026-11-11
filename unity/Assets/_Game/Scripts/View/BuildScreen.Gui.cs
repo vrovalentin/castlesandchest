@@ -340,6 +340,8 @@ namespace Game.View
             {
                 float t = _placedSlot >= 0 ? Mathf.Clamp01((Time.time - _placedAt) / DropTime) : 1;
                 var shaken = new Rect(pic.x + LandingShake(), pic.y, pic.width, pic.height);
+                Art.ViewLeft = (r.x - pic.x) / size;
+                Art.ViewRight = (r.xMax - pic.x) / size;
                 Art.DrawBuilt(shaken, State.Filled, next, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f), _placedSlot, t);
                 DrawLanding(pic);
                 return;
