@@ -361,7 +361,13 @@ namespace Game.View
             // A wide building fills the screen: there the towers step in over its edges rather than off the screen.
             lx = Mathf.Max(lx, ViewLeft + edge);
             rx = Mathf.Max(lx + w, Mathf.Min(rx, ViewRight - edge - w - lw - 0.004f));
-            float gap = rx - (lx + w);
+            // A tower only on a side the cut reaches; when only one corner is being built, the other side stays clear
+            // and the deck stops at the cut instead of running over the finished roofs.
+            const float near = 0.15f;
+            bool hasL = _scaffoldL - FootLeft < near, hasR = FootRight - _scaffoldR < near;
+            if (!hasL && !hasR) hasL = hasR = true;
+            float dl = hasL ? lx + w : _scaffoldL, dr = hasR ? rx : _scaffoldR;   // the deck between the towers
+            float gap = dr - dl;
             int mid = gap < 0.05f ? 0 : Mathf.Max(1, Mathf.RoundToInt(gap / w));
             float step = mid > 0 ? gap / mid : w;
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
@@ -369,6 +375,7 @@ namespace Game.View
             float ty = y - TopDeck * th;
             for (int t = 0; t < 2; t++)
             {
+                if (t == 0 ? !hasL : !hasR) continue;
                 float x0 = t == 0 ? lx : rx;
                 // Storeys down to the ground, the lowest cut off at it; the brace turns every other storey.
                 int j = 0;
@@ -385,10 +392,10 @@ namespace Game.View
             const float keep = 0.6f;    // the top piece down to just under its deck
             for (int c = 0; c < mid; c++)
             {
-                float x0 = lx + w + c * step, k = step / w;
+                float x0 = dl + c * step, k = step / w;
                 GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - TopPost * tw * k, ty, tw * k, th * keep)), top, new Rect(0, 1 - keep, 1, keep));
             }
-            // A ladder on the outer side of the right tower, from the ground up to the top deck, made of whole ladders one on another.
+            // A ladder on the outer side of the right tower (or the left one when it stands alone), from the ground up to the top deck, made of whole ladders one on another.
             var ladder = GameArt.ScaffoldLadder;
             if (ladder != null)
             {
@@ -396,9 +403,9 @@ namespace Game.View
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(rx + w + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(hasR ? rx + w + 0.004f : lx - lw - 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
-            DrawCrane(r, rx, ty, next, dropT);
+            DrawCrane(r, dr, ty, next, dropT);
         }
 
         // Where the jib is fixed to the post and where its pulley hangs, as fractions of the jib picture
