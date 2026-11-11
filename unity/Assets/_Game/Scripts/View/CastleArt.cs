@@ -351,6 +351,9 @@ namespace Game.View
             int mid = span < 0.1f ? 0 : Mathf.Max(1, Mathf.RoundToInt(span / 0.14f));
             float w = mid > 0 ? span / mid : 0.13f;                       // one bay, the same in the towers and between
             float lx = _scaffoldL + inset - w, rx = _scaffoldR - inset;   // left post of each tower
+            // The screen shows the building's own width, so the towers stay inside it rather than off the edges.
+            lx = Mathf.Max(lx, FootLeft);
+            rx = Mathf.Max(lx + w, Mathf.Min(rx, FootRight - w));
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
             float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
             float ty = y - TopDeck * th;
@@ -375,7 +378,7 @@ namespace Game.View
                 float x0 = _scaffoldL + inset + c * w;
                 GUI.DrawTextureWithTexCoords(Place(r, new Rect(x0 - TopPost * tw, ty, tw, th * keep)), top, new Rect(0, 1 - keep, 1, keep));
             }
-            // A ladder by the right tower, from the ground up to the top deck, made of whole ladders one on another.
+            // A ladder on the inner side of the right tower, from the ground up to the top deck, made of whole ladders one on another.
             var ladder = GameArt.ScaffoldLadder;
             if (ladder != null)
             {
@@ -383,7 +386,7 @@ namespace Game.View
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(rx + w + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(rx - lw - 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
             DrawCrane(r, rx, ty, next, dropT);
         }
