@@ -260,7 +260,7 @@ namespace Game.View
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
             if (State.Chests.Count > 0 && !have)
-                Hints.Want("chests", bubble, "Замок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.");
+                Hints.Want("chests", bubble, "<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.");
             else if (have)
                 Hints.Want("place", bubble, "Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».");
             else if (State.Chests.Count == 0)
