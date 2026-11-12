@@ -57,6 +57,9 @@ namespace Game.EditorTools
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.defaultWebScreenWidth = 540;
             PlayerSettings.defaultWebScreenHeight = 960;
+            // No «Made with Unity» screen (allowed on Personal since Unity 6): the game starts 2-3 s sooner.
+            PlayerSettings.SplashScreen.show = false;
+            PlayerSettings.SplashScreen.showUnityLogo = false;
         }
     }
 }

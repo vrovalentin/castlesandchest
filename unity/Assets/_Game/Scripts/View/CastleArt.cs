@@ -148,7 +148,7 @@ namespace Game.View
         private static bool _masonryTried;
         private static readonly int EdgeId = Shader.PropertyToID("_Edge"), AtId = Shader.PropertyToID("_At");
         /// <summary>How far from a part not built yet the bricks reach, as a fraction of the canvas side.</summary>
-        private const float CutReach = 0.04f;
+        private const float CutReach = 0.027f;
         /// <summary>Parts of the building itself. Only an edge against one of these not built yet is a cut;
         /// porches, lanterns, figurines and other things standing in front of the building are not.</summary>
         private static readonly string[] Structure = { "clay", "wall", "brick", "floor", "door", "window", "roof", "tiles", "spire", "chimney" };
