@@ -1,3 +1,4 @@
+# Old 8-bit-ish loops, kept for reference; the game now uses the calmer ones from make_music_calm.py.
 # Two original background loops, synthesized: a calm one for the building screen and a livelier one for the mine.
 # Usage: python3 make_music.py <output folder>   (writes music_build.ogg and music_mine.ogg; needs ffmpeg)
 # Each loop is rendered with its tail wrapped round to the start, so it repeats without a click or a gap.

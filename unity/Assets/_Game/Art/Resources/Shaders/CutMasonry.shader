@@ -11,8 +11,8 @@ Shader "Hidden/Game/CutMasonry"
         _MainTex ("Layer", 2D) = "white" {}
         _Edge ("Distance to unbuilt parts", 2D) = "white" {}
         _At ("Layer rect on the canvas", Vector) = (0, 0, 1, 1)
-        _Brick ("Brick size, canvas fractions", Vector) = (0.038, 0.017, 0, 0)
-        _Mortar ("Mortar width, canvas fractions", Float) = 0.0028
+        _Brick ("Brick size, canvas fractions", Vector) = (0.025, 0.0113, 0, 0)
+        _Mortar ("Mortar width, canvas fractions", Float) = 0.0019
     }
     SubShader
     {
