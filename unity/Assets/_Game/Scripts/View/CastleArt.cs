@@ -81,6 +81,7 @@ namespace Game.View
                 art.Lines[i] = Resources.Load<Texture2D>($"{dir}{prefix}_line_{i:00}");
                 art._layerAt[i] = at.TryGetValue($"{prefix}_{i:00}_{castle.Slots[i]}", out var lr) ? lr : Full01;
                 art._lineAt[i] = at.TryGetValue($"{prefix}_line_{i:00}", out var ln) ? ln : Full01;
+                if (i < 64 && System.Array.IndexOf(Structure, castle.Slots[i]) >= 0) art._structure |= 1UL << i;
             }
             return art;
         }
@@ -126,7 +127,118 @@ namespace Game.View
             return new Rect(x + at.x * side, y + at.y * side, at.width * side, at.height * side);
         }
 
-        private void DrawLayer(Rect r, int i) => GUI.DrawTexture(Place(r, _layerAt[i]), Layers[i], ScaleMode.StretchToFill);
+        private void DrawLayer(Rect r, int i, bool masonry = false)
+        {
+            // Only the building's own layers turn into bricks at a cut; vines, signs and such stay as drawn.
+            var mat = masonry && _cutsOn && i < 64 && (_structure & 1UL << i) != 0 ? MasonryMaterial : null;
+            if (mat != null && Event.current != null && Event.current.type == EventType.Repaint)
+            {
+                var at = _layerAt[i];
+                mat.SetTexture(EdgeId, _cuts);
+                mat.SetVector(AtId, new Vector4(at.x, at.y, at.width, at.height));
+                var c = GUI.color;
+                Graphics.DrawTexture(Place(r, at), Layers[i], Full01, 0, 0, 0, 0, new Color(c.r * 0.5f, c.g * 0.5f, c.b * 0.5f, c.a * 0.5f), mat);
+                return;
+            }
+            GUI.DrawTexture(Place(r, _layerAt[i]), Layers[i], ScaleMode.StretchToFill);
+        }
+
+        // Unfinished masonry at the cut edges of built layers (Shaders/CutMasonry).
+        private static Material _masonry;
+        private static bool _masonryTried;
+        private static readonly int EdgeId = Shader.PropertyToID("_Edge"), AtId = Shader.PropertyToID("_At");
+        /// <summary>How far from a part not built yet the bricks reach, as a fraction of the canvas side.</summary>
+        private const float CutReach = 0.04f;
+        /// <summary>Parts of the building itself. Only an edge against one of these not built yet is a cut;
+        /// porches, lanterns, figurines and other things standing in front of the building are not.</summary>
+        private static readonly string[] Structure = { "clay", "wall", "brick", "floor", "door", "window", "roof", "tiles", "spire", "chimney" };
+        private ulong _structure;
+        private Texture2D _cuts;
+        private ulong _cutsFor = ulong.MaxValue;
+        private bool _cutsOn;
+
+        private static Material MasonryMaterial
+        {
+            get
+            {
+                if (_masonryTried) return _masonry;
+                _masonryTried = true;
+                var sh = Resources.Load<Shader>("Shaders/CutMasonry");
+                if (sh != null && sh.isSupported) _masonry = new Material(sh) { hideFlags = HideFlags.HideAndDontSave };
+                return _masonry;
+            }
+        }
+
+        /// <summary>
+        /// The distance field the masonry shader reads: 0 where only parts not built yet stand, rising to 1 at
+        /// <see cref="CutReach"/> from them; made from the tap map once per set of built slots (two chamfer passes).
+        /// </summary>
+        private void UpdateCutEdges(bool[] filled)
+        {
+            ulong fm = 0;
+            for (int i = 0; i < filled.Length && i < 64; i++)
+                if (filled[i]) fm |= 1UL << i;
+            if (fm == _cutsFor) return;
+            _cutsFor = fm;
+            _cutsOn = false;
+            if (_hit == null || fm == 0 || MasonryMaterial == null) return;
+            int n = _hitSize;
+            const float big = 1e6f, diag = 1.41421356f;
+            var d = new float[n * n];
+            bool any = false;
+            for (int k = 0; k < n * n; k++)
+            {
+                ulong m = System.BitConverter.ToUInt64(_hit, k * 8);
+                bool open = (m & _structure & ~fm) != 0 && (m & fm) == 0;
+                d[k] = open ? 0 : big;
+                any |= open;
+            }
+            if (!any) return;
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    int k = y * n + x;
+                    float v = d[k];
+                    if (x > 0) v = Mathf.Min(v, d[k - 1] + 1);
+                    if (y > 0)
+                    {
+                        v = Mathf.Min(v, d[k - n] + 1);
+                        if (x > 0) v = Mathf.Min(v, d[k - n - 1] + diag);
+                        if (x < n - 1) v = Mathf.Min(v, d[k - n + 1] + diag);
+                    }
+                    d[k] = v;
+                }
+            for (int y = n - 1; y >= 0; y--)
+                for (int x = n - 1; x >= 0; x--)
+                {
+                    int k = y * n + x;
+                    float v = d[k];
+                    if (x < n - 1) v = Mathf.Min(v, d[k + 1] + 1);
+                    if (y < n - 1)
+                    {
+                        v = Mathf.Min(v, d[k + n] + 1);
+                        if (x < n - 1) v = Mathf.Min(v, d[k + n + 1] + diag);
+                        if (x > 0) v = Mathf.Min(v, d[k + n - 1] + diag);
+                    }
+                    d[k] = v;
+                }
+            if (_cuts == null)
+                _cuts = new Texture2D(n, n, TextureFormat.RGBA32, false, true)
+                    { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, hideFlags = HideFlags.HideAndDontSave };
+            var px = new Color32[n * n];
+            float reach = CutReach * n;
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    // A cell's distance is to the middle of the nearest open cell; half a cell less is to its edge.
+                    float v = Mathf.Clamp01((d[y * n + x] - 0.5f) / reach);
+                    byte b = (byte)Mathf.RoundToInt(v * 255);
+                    px[(n - 1 - y) * n + x] = new Color32(b, b, b, 255);   // texture rows go bottom-up
+                }
+            _cuts.SetPixels32(px);
+            _cuts.Apply(false);
+            _cutsOn = true;
+        }
 
         /// <summary>The outline of an empty slot, tinted by GUI.color.</summary>
         private void DrawLine(Rect r, int i)
@@ -240,6 +352,7 @@ namespace Game.View
             // Flower pots and bushes appear only once the castle in front of them is built.
             int last = Mathf.Min(_decorBefore, Layers.Length) - 1;
             bool decor = Decor != null && (last < 0 || filled[last]);
+            UpdateCutEdges(filled);
             for (int i = 0; i < Layers.Length; i++)
             {
                 if (i == _decorBefore && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
@@ -250,10 +363,10 @@ namespace Game.View
                     float fall = Mathf.Clamp01(dropT / 0.55f), k = 1 - fall;
                     float bounce = dropT > 0.55f ? Mathf.Sin((dropT - 0.55f) / 0.45f * Mathf.PI) * 0.012f : 0;
                     GUI.color = new Color(1, 1, 1, Mathf.Clamp01(dropT * 10));
-                    DrawLayer(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), i);
+                    DrawLayer(new Rect(r.x, r.y - (k * k * 0.12f + bounce) * r.height, r.width, r.height), i, true);
                     GUI.color = old;
                 }
-                else DrawLayer(r, i);
+                else DrawLayer(r, i, true);
             }
             if (_decorBefore >= Layers.Length && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
             if (next < 0 || next >= Layers.Length) return;
@@ -333,6 +446,8 @@ namespace Game.View
         // Where the posts and the deck are in the scaffolding pictures (tools/art/cut_scaffold.py), as fractions of
         // their width and height: the left post's middle, the distance between the posts, the top of the deck.
         private const float SecPost = 39 / 512f, SecSpan = 434 / 512f, SecDeck = 57 / 484f;
+        /// <summary>The left post of the storey picture, from its left to its right edge (no deck in it).</summary>
+        private const float SecPostL = 10 / 512f, SecPostR = 70 / 512f;
         private const float TopPost = 40 / 512f, TopSpan = 431 / 512f, TopDeck = 163 / 462f;
 
         /// <summary>
@@ -361,21 +476,31 @@ namespace Game.View
             // A wide building fills the screen: there the towers step in over its edges rather than off the screen.
             lx = Mathf.Max(lx, ViewLeft + edge);
             rx = Mathf.Max(lx + w, Mathf.Min(rx, ViewRight - edge - w - lw - 0.004f));
-            // A tower only on a side the cut reaches; when only one corner is being built, the other side stays clear
-            // and the deck stops at the cut instead of running over the finished roofs.
-            const float near = 0.15f;
-            bool hasL = _scaffoldL - FootLeft < near, hasR = FootRight - _scaffoldR < near;
-            if (!hasL && !hasR) hasL = hasR = true;
-            float dl = hasL ? lx + w : _scaffoldL, dr = hasR ? rx : _scaffoldR;   // the deck between the towers
+            // A tower on each side of the building, and the deck across the whole front between them.
+            float dl = lx + w, dr = rx;
             float gap = dr - dl;
-            int mid = gap < 0.05f ? 0 : Mathf.Max(1, Mathf.RoundToInt(gap / w));
+            // Single posts from the deck down to the ground between the towers: one on a narrow building, two on a wide one,
+            // so the deck never hangs in the air over a long span.
+            int posts = gap < 0.12f ? 0 : gap < 0.3f ? 1 : 2;
+            int mid = gap < 0.05f ? 0 : Mathf.Max(posts + 1, Mathf.RoundToInt(gap / w));
             float step = mid > 0 ? gap / mid : w;
             float tk = w / (TopSpan * top.width), sk = w / (SecSpan * sec.width);   // picture fractions per texture pixel
             float tw = top.width * tk, th = top.height * tk, sw = sec.width * sk, sh = sec.height * sk;
             float ty = y - TopDeck * th;
+            // The posts: the left post strip of a storey picture, storey on storey down to the ground (behind the deck).
+            float pw = (SecPostR - SecPostL) * sw;
+            for (int p = 1; p <= posts; p++)
+            {
+                float px = dl + Mathf.RoundToInt((float)mid * p / (posts + 1)) * step;
+                for (float sy = ty + th * 0.45f; sy < ground; sy += sh - 0.002f)
+                {
+                    float vis = Mathf.Min(1, (ground - sy + 0.004f) / sh);
+                    GUI.DrawTextureWithTexCoords(Place(r, new Rect(px - pw / 2, sy, pw, sh * vis)), sec,
+                        new Rect(SecPostL, 1 - vis, SecPostR - SecPostL, vis));
+                }
+            }
             for (int t = 0; t < 2; t++)
             {
-                if (t == 0 ? !hasL : !hasR) continue;
                 float x0 = t == 0 ? lx : rx;
                 // Storeys down to the ground, the lowest cut off at it; the brace turns every other storey.
                 int j = 0;
@@ -403,7 +528,7 @@ namespace Game.View
                 int n = Mathf.Max(1, Mathf.CeilToInt((ground - from) / lh));
                 lh = (ground - from) / n;
                 for (int i = 0; i < n; i++)
-                    GUI.DrawTexture(Place(r, new Rect(hasR ? rx + w + 0.004f : lx - lw - 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
+                    GUI.DrawTexture(Place(r, new Rect(rx + w + 0.004f, from + i * lh, lw, lh)), ladder, ScaleMode.StretchToFill);
             }
             DrawCrane(r, dr, ty, next, dropT);
         }

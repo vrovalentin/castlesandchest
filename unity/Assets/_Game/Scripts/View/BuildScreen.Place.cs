@@ -10,6 +10,10 @@ namespace Game.View
     /// </summary>
     public sealed partial class BuildScreen
     {
+        /// <summary>The knock when a part lands on the building (Resources/Sfx, made by tools/audio/make_place_sfx.py):
+        /// place_hammer, place_axe or place_saw.</summary>
+        private const string PlaceSound = "place_hammer";
+
         private const float FlyTime = 0.42f, RowFlyTime = 0.32f, DropTime = 0.5f;
         /// <summary>When, in the drop, the part touches down.</summary>
         private const float Contact = 0.55f * DropTime;
@@ -53,7 +57,8 @@ namespace Game.View
             if (_thudAt > 0 && Time.time >= _thudAt)
             {
                 _thudAt = -1;
-                Sfx.Play("thud", 1f, UnityEngine.Random.Range(0.94f, 1.06f));
+                Sfx.Play(PlaceSound, 1f, UnityEngine.Random.Range(0.94f, 1.06f));
+                Sfx.Play("thud", 0.45f, UnityEngine.Random.Range(0.94f, 1.06f));
                 Haptics.Tap(25);
             }
             if (_rowLeft > 0 && _flySlot < 0 && Time.time >= _rowNextAt)
