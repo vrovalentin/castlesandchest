@@ -161,7 +161,7 @@ namespace Game.View
             _chestsOpen = false;
             ResetPlacing();
             _pick.Clear();
-            // The map shows where the next building goes: its cloud blows away and its resident asks for it.
+            // The map shows where the next building goes: its pale picture appears and its resident asks for it.
             OpenMap(reveal: true);
         }
 

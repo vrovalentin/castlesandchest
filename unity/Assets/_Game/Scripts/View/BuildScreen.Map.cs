@@ -23,32 +23,29 @@ namespace Game.View
         public static Texture2D Thumb(string castleId) => Load("Map/thumb_" + castleId);
 
         /// <summary>
-        /// The clearings of the map along its road, as parts of the picture from its top left corner.
-        /// The n-th building of the catalog stands on the n-th clearing. Measured on the 1024 px picture
-        /// (art-source/karta/README.md in the project files): 1–2 beach, 3–8 forest and meadows, 9–11 snow,
-        /// 12–14 desert, 15–17 volcano.
+        /// Where each building stands on the map, beside its road: the bottom middle of the building, as parts of
+        /// the picture from its top left corner. The n-th building of the catalog stands on the n-th place.
+        /// Measured on the 1024 px picture (art-source/karta in the project files): 1–2 beach, 3–8 meadows and
+        /// forest, 9 upper meadow, 10–11 snow, 12–14 desert, 15–17 volcano.
         /// </summary>
         public static readonly Vector2[] Points =
         {
-            P(560, 889), P(465, 785), P(617, 749), P(644, 659), P(516, 598), P(337, 450), P(425, 372), P(325, 306),
-            P(400, 222), P(286, 168), P(281, 111), P(883, 496), P(863, 384), P(734, 305), P(805, 210), P(774, 127),
-            P(821, 87),
+            P(480, 885), P(350, 862), P(690, 800), P(560, 805), P(720, 690), P(870, 700), P(780, 590), P(560, 590),
+            P(440, 470), P(300, 300), P(390, 330), P(620, 330), P(730, 400), P(600, 200), P(380, 170), P(650, 150),
+            P(330, 90),
         };
 
         private static Vector2 P(float x, float y) => new Vector2(x / 1024f, y / 1024f);
-
-        /// <summary>The road from the snow down to the desert is not on the picture: it is drawn as dots, bending through here.</summary>
-        public static readonly Vector2 SnowToDesert = P(600, 300);
     }
 
-    /// <summary>The kingdom map: built buildings on their clearings, the next one waiting, the rest under clouds.</summary>
+    /// <summary>The kingdom map: built buildings beside the road, the next one pale, the places of the rest still empty land.</summary>
     public sealed partial class BuildScreen
     {
         private bool _mapOpen;
-        /// <summary>The clearing whose card is shown at the bottom.</summary>
+        /// <summary>The place whose card is shown at the bottom.</summary>
         private int _mapPick;
         private float _mapOpenedAt;
-        /// <summary>The clearing whose cloud blows away (the building that just became next), or -1.</summary>
+        /// <summary>The place whose pale building fades in (the building that just became next), or -1.</summary>
         private int _revealIndex = -1;
         private bool _revealSounded;
 
@@ -58,7 +55,7 @@ namespace Game.View
         /// <summary>True while the kingdom map is shown.</summary>
         public bool MapOpen => _mapOpen;
 
-        /// <summary>Opens the map on the building being built now. <paramref name="reveal"/>: its cloud blows away first.</summary>
+        /// <summary>Opens the map on the building being built now. <paramref name="reveal"/>: its pale picture fades in.</summary>
         public void OpenMap(bool reveal = false)
         {
             _mapOpen = true;
@@ -85,7 +82,7 @@ namespace Game.View
         {
             var map = MapArt.Map;
             var castles = Game.Catalog.Castles;
-            int built = Enumerable.Range(0, castles.Count).Count(i => SpotOf(i) == Spot.Built);
+            int built = Enumerable.Range(0, castles.Count).Count(k => SpotOf(k) == Spot.Built);
 
             // Sky above the picture, sea below it; the picture is a little wider than the screen so it fills more.
             GUI.color = Sky;
@@ -97,26 +94,13 @@ namespace Game.View
             float size = Mathf.Min(w * 1.15f, h - headerH - cardH * 0.6f);
             var mapRect = new Rect((w - size) / 2, headerH, size, size);
             if (map != null) GUI.DrawTexture(mapRect, map);
-            Vector2 At(int i) => new Vector2(mapRect.x + MapArt.Points[i].x * size, mapRect.y + MapArt.Points[i].y * size);
+            Vector2 At(int j) => new Vector2(mapRect.x + MapArt.Points[j].x * size, mapRect.y + MapArt.Points[j].y * size);
             int n = Mathf.Min(castles.Count, MapArt.Points.Length);
 
-            // The dotted road from the last snow clearing to the first desert one.
-            if (n > 11 && Event.current.type == EventType.Repaint)
-            {
-                Vector2 a = At(10), b = At(11), c = new Vector2(mapRect.x + MapArt.SnowToDesert.x * size, mapRect.y + MapArt.SnowToDesert.y * size);
-                var dot = UiArt.Disc(new Color32(0xff, 0xf0, 0xc8, 0xff), new Color32(0x96, 0x6e, 0x3c, 0xff), 4);
-                for (int k = 1; k < 24; k++)
-                {
-                    float t = k / 24f;
-                    var p = (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b;
-                    GUI.DrawTexture(new Rect(p.x - 5, p.y - 5, 10, 10), dot);
-                }
-            }
-
-            // Upper clearings first, so the lower buildings stand in front of them.
+            // Upper places first, so the lower buildings stand in front of them.
             float thumbH = size * 0.095f;
             float now = Time.time - _mapOpenedAt;
-            foreach (int i in Enumerable.Range(0, n).OrderBy(i => MapArt.Points[i].y))
+            foreach (int i in Enumerable.Range(0, n).OrderBy(k => MapArt.Points[k].y))
             {
                 var c = At(i);
                 var spot = SpotOf(i);
@@ -130,17 +114,15 @@ namespace Game.View
                     GUI.DrawTexture(shadow, UiArt.SoftDisc(new Color(0.12f, 0.08f, 0.04f, spot == Spot.Next ? 0.25f : 0.45f)));
                     if (spot == Spot.Next)
                     {
-                        // The next building: a pale outline of it, breathing a little.
+                        // The next building: a pale outline of it, breathing a little; just after «Далее» it fades in.
                         float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 3);
-                        GUI.color = new Color(1, 1, 1, 0.35f + 0.2f * pulse);
+                        float appear = i == _revealIndex ? Mathf.Clamp01((now - 0.5f) / 0.8f) : 1;
+                        GUI.color = new Color(1, 1, 1, (0.35f + 0.2f * pulse) * appear);
                         GUI.DrawTexture(r, thumb);
                         GUI.color = Color.white;
                     }
                     else GUI.DrawTexture(r, thumb);
                 }
-                // Locked clearings are under a cloud; the one that just opened loses its cloud in a puff.
-                float cloud = spot == Spot.Locked ? 1 : i == _revealIndex ? 1 - Mathf.Clamp01((now - 0.5f) / 0.8f) : 0;
-                if (cloud > 0) DrawCloud(c + new Vector2(0, -size * 0.01f), size * 0.06f * (1 + 0.4f * (1 - cloud)), cloud);
             }
             if (_revealIndex >= 0 && now > 0.5f && !_revealSounded) { _revealSounded = true; Sfx.Play("whoosh"); }
 
@@ -193,17 +175,6 @@ namespace Game.View
             string label = next ? "Строить" : "К стройке";
             if (GoldButton(new Rect(card.center.x - 160, card.yMax - 112, 320, 92), label, 34))
                 Later(CloseMap, click: false);
-        }
-
-        /// <summary>A soft white cloud from four puffs; <paramref name="alpha"/> fades it.</summary>
-        private static void DrawCloud(Vector2 c, float s, float alpha)
-        {
-            if (Event.current.type != EventType.Repaint) return;
-            var puff = UiArt.SoftDisc(new Color(1, 1, 1, 0.97f));
-            GUI.color = new Color(1, 1, 1, alpha);
-            foreach (var (dx, dy, r) in new[] { (-0.5f, 0.05f, 0.62f), (0f, -0.2f, 0.72f), (0.5f, 0.05f, 0.62f), (0f, 0.18f, 0.66f) })
-                GUI.DrawTexture(new Rect(c.x + (dx - r) * s, c.y + (dy - r) * s, 2 * r * s, 2 * r * s), puff);
-            GUI.color = Color.white;
         }
     }
 }
