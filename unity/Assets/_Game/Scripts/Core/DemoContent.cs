@@ -106,8 +106,10 @@ namespace Game.Core
                 "clay*6 floor wall*2 door window*2 brick floor wall floor roof spire roof*2 wall window tiles roof spire palm " +
                 "porch lantern*2 camel"), AllTiers("palm", "camel"));
 
-            var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10,
-                castle11, castle12, castle13, castle16, castle17, castle14, castle15 };
+            // In the order of the kingdom map, along its road: beach, forest and meadows, snow, desert, volcano.
+            // The dragon castle on the volcano is the finale.
+            var all = new[] { castle1, castle6, castle3, castle4, castle2, castle5, castle7, castle11, castle9, castle10,
+                castle13, castle8, castle17, castle12, castle16, castle14, castle15 };
             return new Catalog(new Rules(), Parts, all.Take(Math.Max(1, Math.Min(castles, all.Length))).ToArray());
         }
     }

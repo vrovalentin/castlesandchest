@@ -53,11 +53,11 @@ namespace Game.Core.Tests
         public void DemoContentIsValid()
         {
             CollectionAssert.IsEmpty(_cat.Validate());
-            Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
-            Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
-            Assert.AreEqual(23, _cat.Castles[2].Slots.Length);
-            Assert.AreEqual(24, _cat.Castles[3].Slots.Length);
-            CollectionAssert.AreEqual(new[] { 32, 28, 33, 28, 29, 56, 31, 27, 26, 31, 30, 30, 32 }, _cat.Castles.Skip(4).Select(c => c.Slots.Length).ToArray());
+            // Map order: beach, forest, snow, desert, volcano (see MapPoints in BuildScreen.Map.cs).
+            CollectionAssert.AreEqual(new[] { 1, 6, 3, 4, 2, 5, 7, 11, 9, 10, 13, 8, 17, 12, 16, 14, 15 },
+                _cat.Castles.Select(c => int.Parse(c.Id.Substring("castle_".Length))).ToArray());
+            CollectionAssert.AreEqual(new[] { 17, 28, 23, 24, 48, 32, 33, 31, 29, 56, 26, 28, 30, 27, 31, 30, 32 },
+                _cat.Castles.Select(c => c.Slots.Length).ToArray());
             Assert.AreEqual(17, _cat.Castles.Count);
             Assert.AreEqual("castle_15", _cat.Castles[16].Id, "the dragon castle is the finale");
             CollectionAssert.DoesNotContain(_cat.Castles[0].PartsOfTier(7), "baker", "a building's own parts stay in that building");

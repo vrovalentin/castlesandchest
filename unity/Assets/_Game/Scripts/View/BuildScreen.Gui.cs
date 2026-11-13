@@ -198,6 +198,11 @@ namespace Game.View
             bool hasNext = Game.NextSlot(State) >= 0;
             float cardsTop = hasNext ? tilesY - 14 - NextH : tilesY;
             float groundY = cardsTop - 30;
+            if (_mapOpen)
+            {
+                DrawMap(w, h);
+                return;
+            }
             AskHint(new Rect(x0 + 40, 150, colW - 80, 300));
             var bg = GameArt.BuildBackground;
             // The meadow fills the screen; its horizon (about 60% down the picture) sits a little behind the building site.
@@ -280,7 +285,11 @@ namespace Game.View
             var snd = new Rect(r.x + btn + 8, r.y, btn, btn);
             if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => _settingsOpen = true);
             GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted && Music.Off ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
-            float px = snd.xMax + 10;
+            // The kingdom map: its own picture, small, in the round button.
+            var mapBtn = new Rect(snd.xMax + 8, r.y, btn, btn);
+            if (GUI.Button(mapBtn, GUIContent.none, _roundBtn)) Later(() => OpenMap());
+            if (MapArt.Map != null) GUI.DrawTexture(new Rect(mapBtn.x + 8, mapBtn.y + 8, btn - 16, btn - 16), MapArt.Map, ScaleMode.ScaleAndCrop);
+            float px = mapBtn.xMax + 10;
             var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
             GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"{State.CastleIndex + 1}. {castle.Name}", title);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
@@ -845,21 +854,20 @@ namespace Game.View
             GUI.color = new Color(1, 1, 1, show);
             var card = new Rect(30, cardTop + (1 - show) * 120, w - 60, cardH);
             GUI.Box(card, GUIContent.none, _nightPanel);
-            var lines = new List<string> { $"Бонус за постройку: <color=#ffd66e>+{Scoring.Building(State.CastleIndex)}</color> очков. Всего: {State.Score}." };
+            // The resident thanks the player; what they get goes small under it.
+            var lines = new List<string> { Residents.Of(Game.CastleOf(State).Id).Done };
+            string reward = $"+{Scoring.Building(State.CastleIndex)} очков";
+            if (!last) reward += $" · +{Game.Rules.TicketsPerCastle} билета";
+            lines.Add($"<size=21><color=#ffd66e>{reward}</color></size>");
             if (!last)
             {
-                lines.Add($"Награда: <color=#ffd66e>+{Game.Rules.TicketsPerCastle} билета</color> на следующую постройку.");
                 var bp = Game.PreviewBurn(State);
                 var lost = new List<string>();
                 if (bp.Parts > 0) lost.Add($"деталей: {bp.Parts}");
                 if (bp.Chests > 0) lost.Add($"закрытых сундуков: {bp.Chests}");
-                lines.Add(lost.Count > 0 ? $"<size=19>Сгорят {string.Join(", ", lost)}. Фигурки остаются.</size>" : "<size=19>Склад пуст, сгорать нечему. Фигурки остаются.</size>");
+                if (lost.Count > 0) lines.Add($"<size=19>Сгорят {string.Join(", ", lost)}.</size>");
             }
-            else
-            {
-                lines.Add($"<color=#ffd66e>Все {Game.Catalog.Castles.Count} построек готовы!</color> Новые замки скоро появятся.");
-                lines.Add("<size=19>А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>");
-            }
+            else lines.Add("<size=19>Новые замки скоро появятся. А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>");
             _showText ??= new GUIStyle(_nightBody) { richText = true, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(card.x + 34, card.y + 26, card.width - 68, cardH - 160), string.Join("\n", lines), _showText);
             if (GoldButton(new Rect(card.center.x - 170, card.yMax - 126, 340, 100), last ? "Пройти заново" : "Далее", 40) && show >= 1)

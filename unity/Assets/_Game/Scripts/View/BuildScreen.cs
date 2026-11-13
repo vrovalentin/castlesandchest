@@ -161,6 +161,8 @@ namespace Game.View
             _chestsOpen = false;
             ResetPlacing();
             _pick.Clear();
+            // The map shows where the next building goes: its cloud blows away and its resident asks for it.
+            OpenMap(reveal: true);
         }
 
         /// <summary>
@@ -191,6 +193,7 @@ namespace Game.View
         /// <summary>The back button: closes the open window. False when nothing was open.</summary>
         public bool Back()
         {
+            if (_mapOpen) { CloseMap(); return true; }
             if (_reward != null) { CloseReward(); return true; }
             if (_settingsOpen) { _settingsOpen = false; return true; }
             if (_askStartOver) { _askStartOver = false; return true; }
@@ -207,6 +210,7 @@ namespace Game.View
             Pointer.Reset();
             _askStartOver = false;
             _storageOpen = false;
+            _mapOpen = false;
             ResetPlacing();
             _chestsOpen = false;
             _donePanel = false;

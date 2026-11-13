@@ -96,8 +96,9 @@ namespace Game.View.Tests
             var session = _app.Session;
             session.TestStart("http://192.168.1.235:8080/");
             Assert.AreEqual(0, session.State.CastleIndex, "a plain address changes nothing");
-            session.TestStart("http://192.168.1.235:8080/?castle=2&parts");
-            Assert.AreEqual(1, session.State.CastleIndex);
+            // The number is the place on the map: castle_2 (48 parts) is the fifth.
+            session.TestStart("http://192.168.1.235:8080/?castle=5&parts");
+            Assert.AreEqual(4, session.State.CastleIndex);
             Assert.AreEqual(48, session.State.Filled.Length);
             Assert.AreEqual(15, session.State.Count("clay"), "every part castle 2 needs is in storage");
             yield break;
@@ -118,7 +119,8 @@ namespace Game.View.Tests
             _app.Build.NextCastle();
             Assert.AreEqual(1, s.CastleIndex);
             Assert.AreEqual(tickets + 2, s.Tickets, "a new building gives 2 tickets");
-            Assert.AreEqual(48, s.Filled.Length);
+            Assert.AreEqual(28, s.Filled.Length, "the lighthouse is next on the map");
+            Assert.IsTrue(_app.Build.MapOpen, "the map opens on the next building");
             Assert.AreEqual(1, s.Count("dragon"), "figurines stay");
             yield break;
         }
@@ -178,23 +180,20 @@ namespace Game.View.Tests
                 "every layer sits inside the canvas of the blueprint");
             Assert.IsTrue(Enumerable.Range(0, 17).All(art.HasOutline), "every slot has an outline");
 
-            _app.Session.Game.NextCastle(_app.Session.State);
-            art = _app.Build.Art;
-            Assert.IsNotNull(art, "castle_2 layers in Art/Resources/Castles/castle_2");
-            Assert.AreEqual(48, art.Layers.Length);
-            Assert.IsTrue(Enumerable.Range(0, 48).All(art.HasOutline), "every slot of castle_2 has an outline");
-            // A tap on the gate finds it, on castle 2's own tap map.
-            var r = new Rect(0, 0, 1000, 1000);
-            Assert.AreEqual(20, art.SlotAt(r, new Vector2(500, 780), _app.Session.State.Filled, 0));
-
-            // Buildings 3-10 have their layers too.
-            foreach (int n in new[] { 23, 24, 32, 28, 33, 28, 29, 56 })
+            // Every other building has its layers too; castle 2's gate is found on its own tap map.
+            var game = _app.Session.Game;
+            for (int i = 1; i < game.Catalog.Castles.Count; i++)
             {
-                _app.Session.Game.NextCastle(_app.Session.State);
+                game.NextCastle(_app.Session.State);
+                var castle = game.CastleOf(_app.Session.State);
                 art = _app.Build.Art;
-                Assert.IsNotNull(art, $"building with {n} layers");
-                Assert.AreEqual(n, art.Layers.Length);
-                Assert.IsTrue(Enumerable.Range(0, n).All(art.HasOutline));
+                int n = castle.Slots.Length;
+                Assert.IsNotNull(art, $"{castle.Id} layers in Art/Resources/Castles/{castle.Id}");
+                Assert.AreEqual(n, art.Layers.Length, castle.Id);
+                Assert.IsTrue(Enumerable.Range(0, n).All(art.HasOutline), $"every slot of {castle.Id} has an outline");
+                Assert.IsNotNull(MapArt.Thumb(castle.Id), $"{castle.Id} has its picture for the map");
+                if (castle.Id == "castle_2")
+                    Assert.AreEqual(20, art.SlotAt(new Rect(0, 0, 1000, 1000), new Vector2(500, 780), _app.Session.State.Filled, 0));
             }
             yield return null;
         }
