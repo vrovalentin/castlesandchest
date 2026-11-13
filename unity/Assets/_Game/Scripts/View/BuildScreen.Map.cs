@@ -22,6 +22,20 @@ namespace Game.View
 
         public static Texture2D Thumb(string castleId) => Load("Map/thumb_" + castleId);
 
+        /// <summary>The flat side-view ground piece a building stands on, in the look of its land; meadow when that one is missing.</summary>
+        public static Texture2D Plinth(int place)
+        {
+            string land = Lands[Mathf.Clamp(place, 0, Lands.Length - 1)];
+            return Load("Map/plinth_" + land) ?? Load("Map/plinth_meadow");
+        }
+
+        /// <summary>The land of each place, for its plinth (tools/art/cut_plinths.py).</summary>
+        private static readonly string[] Lands =
+        {
+            "beach", "beach", "meadow", "meadow", "meadow", "forest", "forest", "meadow", "meadow",
+            "snow", "snow", "desert", "desert", "desert", "volcano", "volcano", "volcano",
+        };
+
         /// <summary>
         /// Where each building stands on the map, beside its road: the bottom middle of the building, as parts of
         /// the picture from its top left corner. The n-th building of the catalog stands on the n-th place.
@@ -38,7 +52,7 @@ namespace Game.View
         private static Vector2 P(float x, float y) => new Vector2(x / 1024f, y / 1024f);
     }
 
-    /// <summary>The kingdom map: built buildings beside the road, the next one pale, the places of the rest still empty land.</summary>
+    /// <summary>The kingdom map: built buildings on their plinths beside the road, the next one pale, the places of the rest still empty land.</summary>
     public sealed partial class BuildScreen
     {
         private bool _mapOpen;
@@ -108,10 +122,18 @@ namespace Game.View
                 if (spot != Spot.Locked && thumb != null)
                 {
                     float tw = thumbH * thumb.width / thumb.height;
-                    var r = new Rect(c.x - tw / 2, c.y + thumbH * 0.12f - thumbH, tw, thumbH);
-                    // Every building stands on a soft shadow of its own, not on a drawn platform.
-                    var shadow = new Rect(c.x - tw * 0.48f, c.y - thumbH * 0.06f, tw * 0.96f, thumbH * 0.24f);
-                    GUI.DrawTexture(shadow, UiArt.SoftDisc(new Color(0.12f, 0.08f, 0.04f, spot == Spot.Next ? 0.25f : 0.45f)));
+                    var r = new Rect(c.x - tw / 2, c.y - thumbH, tw, thumbH);
+                    // Every building stands on a flat ground piece of its land, all of one width.
+                    var plinth = MapArt.Plinth(i);
+                    if (plinth != null)
+                    {
+                        float pw = Mathf.Max(tw * 1.12f, size * 0.13f), ph = pw * plinth.height / plinth.width;
+                        var pr = new Rect(c.x - pw / 2, c.y - ph * 0.35f, pw, ph);
+                        GUI.DrawTexture(new Rect(pr.x, pr.y + ph * 0.45f, pw, ph * 0.4f), UiArt.SoftDisc(new Color(0.08f, 0.06f, 0.04f, 0.35f)));
+                        GUI.color = new Color(1, 1, 1, spot == Spot.Next ? 0.8f : 1);
+                        GUI.DrawTexture(pr, plinth);
+                        GUI.color = Color.white;
+                    }
                     if (spot == Spot.Next)
                     {
                         // The next building: a pale outline of it, breathing a little; just after «Далее» it fades in.
