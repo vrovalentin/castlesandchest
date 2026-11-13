@@ -63,6 +63,9 @@ namespace Game.View
         private int _revealIndex = -1;
         private bool _revealSounded;
 
+        /// <summary>Width of the plinths, as a part of the map's width.</summary>
+        private const float PlinthW = 0.065f;
+
         private static readonly Color Sky = new Color32(0x8c, 0xcd, 0xf2, 0xff);
         private static readonly Color Sea = new Color32(0x26, 0xa0, 0xd6, 0xff);
 
@@ -121,13 +124,15 @@ namespace Game.View
                 var thumb = MapArt.Thumb(castles[i].Id);
                 if (spot != Spot.Locked && thumb != null)
                 {
-                    float tw = thumbH * thumb.width / thumb.height;
-                    var r = new Rect(c.x - tw / 2, c.y - thumbH, tw, thumbH);
+                    // A building is as wide as its plinth at most: wide ones get lower, tall ones keep thumbH.
+                    float pw = size * PlinthW;
+                    float th = Mathf.Min(thumbH, pw * 0.95f * thumb.height / thumb.width), tw = th * thumb.width / thumb.height;
+                    var r = new Rect(c.x - tw / 2, c.y - th, tw, th);
                     // Every building stands on a flat ground piece of its land, all of one width.
                     var plinth = MapArt.Plinth(i);
                     if (plinth != null)
                     {
-                        float pw = Mathf.Max(tw * 1.12f, size * 0.13f), ph = pw * plinth.height / plinth.width;
+                        float ph = pw * plinth.height / plinth.width;
                         var pr = new Rect(c.x - pw / 2, c.y - ph * 0.35f, pw, ph);
                         GUI.DrawTexture(new Rect(pr.x, pr.y + ph * 0.45f, pw, ph * 0.4f), UiArt.SoftDisc(new Color(0.08f, 0.06f, 0.04f, 0.35f)));
                         GUI.color = new Color(1, 1, 1, spot == Spot.Next ? 0.8f : 1);
@@ -153,7 +158,7 @@ namespace Game.View
             {
                 var c = At(Mathf.Min(State.CastleIndex, n - 1));
                 float bob = Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 14;
-                GUI.DrawTexture(new Rect(c.x - 36, c.y - thumbH - 70 - bob, 72, 72), UiArt.Pointer, ScaleMode.ScaleToFit);
+                GUI.DrawTexture(new Rect(c.x - 36, c.y - thumbH * 0.8f - 70 - bob, 72, 72), UiArt.Pointer, ScaleMode.ScaleToFit);
             }
 
             // Taps: a built or the next building shows its card; a locked one says what to build first.
