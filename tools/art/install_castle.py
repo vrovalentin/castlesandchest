@@ -27,7 +27,7 @@ if not os.path.exists(dst + '.meta'):
 for f in glob.glob(f'{src}/{prefix}_*.png') + glob.glob(f'{src}/{cid}_full.png'):
     t = os.path.join(dst, os.path.basename(f))
     shutil.copy(f, t)
-    tmpl = 'c2_line_00.png' if '_line_' in f else 'c2_00_clay.png'
+    tmpl = 'c2_line_00.png' if '_line_' in f and os.path.exists(os.path.join(c2, 'c2_line_00.png.meta')) else 'c2_00_clay.png'
     meta_from(os.path.join(c2, tmpl + '.meta'), t)
 # drop layers from an earlier cut that no longer exist
 for f in glob.glob(f'{dst}/{prefix}_*.png'):

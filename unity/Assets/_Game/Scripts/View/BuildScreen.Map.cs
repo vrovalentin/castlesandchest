@@ -28,14 +28,14 @@ namespace Game.View
         /// <summary>
         /// Where the medallion of each building sits on the map: its centre, as parts of the picture from its top
         /// left corner. The n-th building of the catalog sits on the n-th place. Measured on the 1024 px picture
-        /// (art-source/karta in the project files): 1–9 beach, meadows and forest, 10–11 snow, 12–14 desert,
-        /// 15–17 volcano. x stays within 130..850: the picture is wider than the screen and its sides are cut off.
+        /// (art-source/karta in the project files): 1–9 beach, meadows and forest, 10–12 snow, 13–15 desert,
+        /// 16–18 volcano. x stays within 130..850: the picture is wider than the screen and its sides are cut off.
         /// </summary>
         public static readonly Vector2[] Points =
         {
             P(560, 905), P(320, 865), P(170, 760), P(390, 700), P(600, 770), P(810, 820), P(840, 650), P(640, 600),
-            P(430, 500), P(280, 370), P(150, 270), P(570, 330), P(820, 300), P(700, 190), P(500, 150), P(300, 90),
-            P(640, 75),
+            P(430, 500), P(340, 355), P(160, 330), P(270, 215), P(570, 330), P(820, 300), P(700, 190), P(500, 150),
+            P(300, 90), P(640, 75),
         };
 
         private static Vector2 P(float x, float y) => new Vector2(x / 1024f, y / 1024f);
