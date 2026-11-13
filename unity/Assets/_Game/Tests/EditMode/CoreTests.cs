@@ -319,7 +319,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Count("window"));
             Assert.AreEqual(1, s.Count("dragon"));
             Assert.AreEqual(0, s.Chests.Count);
-            Assert.AreEqual(48, s.Filled.Length);
+            Assert.AreEqual(_cat.Castles[1].Slots.Length, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
             Assert.IsFalse(_game.IsLastCastle(s));
             while (!_game.IsLastCastle(s)) _game.NextCastle(s);
@@ -551,7 +551,10 @@ namespace Game.Core.Tests
         public void BotPlaysTheSameGamesAsThePrototype()
         {
             var rng = new XorShift32(12345);
-            var bot = new BalanceBot(new GameLogic(DemoContent.Create(castles: 2)), rng);
+            // The prototype plays buildings 1 and 2; the map order puts others second, so pick them by id.
+            var full = DemoContent.Create();
+            var two = new Catalog(full.Rules, full.Parts, full.Castles.Where(c => c.Id == "castle_1" || c.Id == "castle_2").OrderBy(c => c.Id).ToArray());
+            var bot = new BalanceBot(new GameLogic(two), rng);
             var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {
