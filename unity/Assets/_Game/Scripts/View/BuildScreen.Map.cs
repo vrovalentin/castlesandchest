@@ -5,8 +5,9 @@ using UnityEngine;
 namespace Game.View
 {
     /// <summary>
-    /// Art of the kingdom map: the picture (Art/Resources/Map/map_kingdom.png) and a small picture of every
-    /// finished building (thumb_&lt;castle id&gt;.png), both made by tools/art/make_map_thumbs.py.
+    /// Art of the kingdom map: the picture (Art/Resources/Map/map_kingdom.jpg), a small picture of every finished
+    /// building (thumb_&lt;castle id&gt;.png) and its grey silhouette (sil_&lt;castle id&gt;.png), all made by
+    /// tools/art/make_map_thumbs.py.
     /// </summary>
     public static class MapArt
     {
@@ -22,57 +23,55 @@ namespace Game.View
 
         public static Texture2D Thumb(string castleId) => Load("Map/thumb_" + castleId);
 
-        /// <summary>The flat side-view ground piece a building stands on, in the look of its land; meadow when that one is missing.</summary>
-        public static Texture2D Plinth(int place)
-        {
-            string land = Lands[Mathf.Clamp(place, 0, Lands.Length - 1)];
-            return Load("Map/plinth_" + land) ?? Load("Map/plinth_meadow");
-        }
-
-        /// <summary>The land of each place, for its plinth (tools/art/cut_plinths.py).</summary>
-        private static readonly string[] Lands =
-        {
-            "beach", "beach", "meadow", "meadow", "meadow", "forest", "forest", "meadow", "meadow",
-            "snow", "snow", "desert", "desert", "desert", "volcano", "volcano", "volcano",
-        };
+        public static Texture2D Silhouette(string castleId) => Load("Map/sil_" + castleId);
 
         /// <summary>
-        /// Where each building stands on the map, beside its road: the bottom middle of the building, as parts of
-        /// the picture from its top left corner. The n-th building of the catalog stands on the n-th place.
-        /// Measured on the 1024 px picture (art-source/karta in the project files): 1–2 beach, 3–8 meadows and
-        /// forest, 9 upper meadow, 10–11 snow, 12–14 desert, 15–17 volcano.
+        /// Where the medallion of each building sits on the map: its centre, as parts of the picture from its top
+        /// left corner. The n-th building of the catalog sits on the n-th place. Measured on the 1024 px picture
+        /// (art-source/karta in the project files): 1–9 beach, meadows and forest, 10–11 snow, 12–14 desert,
+        /// 15–17 volcano. x stays within 130..850: the picture is wider than the screen and its sides are cut off.
         /// </summary>
         public static readonly Vector2[] Points =
         {
-            P(480, 885), P(350, 862), P(690, 800), P(560, 805), P(720, 690), P(870, 700), P(780, 590), P(560, 590),
-            P(440, 470), P(300, 300), P(390, 330), P(620, 330), P(730, 400), P(600, 200), P(380, 170), P(650, 150),
-            P(330, 90),
+            P(560, 905), P(320, 865), P(170, 760), P(390, 700), P(600, 770), P(810, 820), P(840, 650), P(640, 600),
+            P(430, 500), P(280, 370), P(150, 270), P(570, 330), P(820, 300), P(700, 190), P(500, 150), P(300, 90),
+            P(640, 75),
         };
 
         private static Vector2 P(float x, float y) => new Vector2(x / 1024f, y / 1024f);
     }
 
-    /// <summary>The kingdom map: built buildings on their plinths beside the road, the next one pale, the places of the rest still empty land.</summary>
+    /// <summary>
+    /// The kingdom map: every building in a round medallion joined by a dotted path. Built ones in colour in a gold
+    /// ring, the next one bigger and glowing under an arrow, the rest a grey silhouette.
+    /// </summary>
     public sealed partial class BuildScreen
     {
         private bool _mapOpen;
         /// <summary>The place whose card is shown at the bottom.</summary>
         private int _mapPick;
         private float _mapOpenedAt;
-        /// <summary>The place whose pale building fades in (the building that just became next), or -1.</summary>
+        /// <summary>The place whose medallion pops in (the building that just became next), or -1.</summary>
         private int _revealIndex = -1;
         private bool _revealSounded;
 
-        /// <summary>Width of the plinths, as a part of the map's width.</summary>
-        private const float PlinthW = 0.065f;
+        /// <summary>Radius of a medallion and of the next one, as a part of the map's width.</summary>
+        private const float MedalR = 0.0435f, MedalNextR = 0.053f;
 
         private static readonly Color Sky = new Color32(0x8c, 0xcd, 0xf2, 0xff);
         private static readonly Color Sea = new Color32(0x26, 0xa0, 0xd6, 0xff);
+        private static readonly Color MedalEdge = new Color32(0x6b, 0x47, 0x22, 0xff);
+        private static readonly Color MedalGold = new Color32(0xd9, 0xa4, 0x3c, 0xff);
+        private static readonly Color MedalFace = new Color32(0xff, 0xfa, 0xee, 0xff);
+        private static readonly Color MedalLocked = new Color32(0xe1, 0xe1, 0xe8, 0xff);
+        private static readonly Color MedalLockedRing = new Color32(0xc8, 0xc8, 0xd2, 0xff);
+        private static readonly Color PathBuilt = new Color32(0xff, 0xf6, 0xdc, 0xff);
+        private static readonly Color PathLocked = new Color32(0xe6, 0xe6, 0xee, 0xff);
 
         /// <summary>True while the kingdom map is shown.</summary>
         public bool MapOpen => _mapOpen;
 
-        /// <summary>Opens the map on the building being built now. <paramref name="reveal"/>: its pale picture fades in.</summary>
+        /// <summary>Opens the map on the building being built now. <paramref name="reveal"/>: its medallion pops in.</summary>
         public void OpenMap(bool reveal = false)
         {
             _mapOpen = true;
@@ -93,7 +92,7 @@ namespace Game.View
             return Game.IsComplete(State) ? Spot.Built : Spot.Next;
         }
 
-        private GUIStyle _mapTitle, _mapName, _mapLine;
+        private GUIStyle _mapTitle, _mapName, _mapLine, _numBuilt, _numNext, _numLocked;
 
         private void DrawMap(float w, float h)
         {
@@ -113,60 +112,50 @@ namespace Game.View
             if (map != null) GUI.DrawTexture(mapRect, map);
             Vector2 At(int j) => new Vector2(mapRect.x + MapArt.Points[j].x * size, mapRect.y + MapArt.Points[j].y * size);
             int n = Mathf.Min(castles.Count, MapArt.Points.Length);
-
-            // Upper places first, so the lower buildings stand in front of them.
-            float thumbH = size * 0.095f;
             float now = Time.time - _mapOpenedAt;
-            foreach (int i in Enumerable.Range(0, n).OrderBy(k => MapArt.Points[k].y))
+            float r0 = size * MedalR, r1 = size * MedalNextR;
+            float RadiusOf(int j) => SpotOf(j) == Spot.Next ? r1 : r0;
+
+            // The dotted path from each medallion to the next: cream where it is already walked, grey ahead.
+            if (Event.current.type == EventType.Repaint)
             {
-                var c = At(i);
-                var spot = SpotOf(i);
-                var thumb = MapArt.Thumb(castles[i].Id);
-                if (spot != Spot.Locked && thumb != null)
+                float step = size * 0.02f, dot = size * 0.005f;
+                var walked = UiArt.Disc(PathBuilt, MedalEdge, 2);
+                var ahead = UiArt.Disc(PathLocked, new Color(0.35f, 0.35f, 0.4f, 1), 2);
+                for (int i = 0; i + 1 < n; i++)
                 {
-                    // A building is as wide as its plinth at most: wide ones get lower, tall ones keep thumbH.
-                    float pw = size * PlinthW;
-                    float th = Mathf.Min(thumbH, pw * 0.95f * thumb.height / thumb.width), tw = th * thumb.width / thumb.height;
-                    var r = new Rect(c.x - tw / 2, c.y - th, tw, th);
-                    // Every building stands on a flat ground piece of its land, all of one width.
-                    var plinth = MapArt.Plinth(i);
-                    if (plinth != null)
+                    Vector2 a = At(i), b = At(i + 1);
+                    float len = Vector2.Distance(a, b), from = RadiusOf(i) + dot, to = len - RadiusOf(i + 1) - dot;
+                    if (to <= from) continue;
+                    int dots = Mathf.Max(1, Mathf.RoundToInt((to - from) / step));
+                    var tex = SpotOf(i + 1) == Spot.Locked ? ahead : walked;
+                    for (int k = 0; k <= dots; k++)
                     {
-                        float ph = pw * plinth.height / plinth.width;
-                        var pr = new Rect(c.x - pw / 2, c.y - ph * 0.35f, pw, ph);
-                        GUI.DrawTexture(new Rect(pr.x, pr.y + ph * 0.45f, pw, ph * 0.4f), UiArt.SoftDisc(new Color(0.08f, 0.06f, 0.04f, 0.35f)));
-                        GUI.color = new Color(1, 1, 1, spot == Spot.Next ? 0.8f : 1);
-                        GUI.DrawTexture(pr, plinth);
-                        GUI.color = Color.white;
+                        var p = Vector2.Lerp(a, b, (from + (to - from) * k / dots) / len);
+                        GUI.DrawTexture(new Rect(p.x - dot, p.y - dot, dot * 2, dot * 2), tex);
                     }
-                    if (spot == Spot.Next)
-                    {
-                        // The next building: a pale outline of it, breathing a little; just after «Далее» it fades in.
-                        float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 3);
-                        float appear = i == _revealIndex ? Mathf.Clamp01((now - 0.5f) / 0.8f) : 1;
-                        GUI.color = new Color(1, 1, 1, (0.35f + 0.2f * pulse) * appear);
-                        GUI.DrawTexture(r, thumb);
-                        GUI.color = Color.white;
-                    }
-                    else GUI.DrawTexture(r, thumb);
                 }
             }
+
+            // Medallions, upper ones first, so the lower ones lie over them.
+            foreach (int i in Enumerable.Range(0, n).OrderBy(k => MapArt.Points[k].y))
+                DrawMedal(i, At(i), RadiusOf(i), now);
             if (_revealIndex >= 0 && now > 0.5f && !_revealSounded) { _revealSounded = true; Sfx.Play("whoosh"); }
 
             // The arrow bobs over the next building.
             if (SpotOf(State.CastleIndex) == Spot.Next && Event.current.type == EventType.Repaint && now > 1.2f)
             {
                 var c = At(Mathf.Min(State.CastleIndex, n - 1));
-                float bob = Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 14;
-                GUI.DrawTexture(new Rect(c.x - 36, c.y - thumbH * 0.8f - 70 - bob, 72, 72), UiArt.Pointer, ScaleMode.ScaleToFit);
+                float bob = Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 12;
+                GUI.DrawTexture(new Rect(c.x - 30, c.y - r1 - 62 - bob, 60, 60), UiArt.Pointer, ScaleMode.ScaleToFit);
             }
 
             // Taps: a built or the next building shows its card; a locked one says what to build first.
             for (int i = 0; i < n; i++)
             {
                 var c = At(i);
-                var hit = new Rect(c.x - size * 0.06f, c.y - thumbH, size * 0.12f, thumbH + size * 0.04f);
-                if (!GUI.Button(hit, GUIContent.none, _invisible)) continue;
+                float rr = RadiusOf(i) * 1.15f;
+                if (!GUI.Button(new Rect(c.x - rr, c.y - rr, rr * 2, rr * 2), GUIContent.none, _invisible)) continue;
                 int pick = i;
                 if (SpotOf(i) == Spot.Locked)
                     Later(() => Say($"Сначала построй: {castles[State.CastleIndex].Name}."));
@@ -181,6 +170,61 @@ namespace Game.View
                 GUI.Box(new Rect(60, headerH + 20, w - 120, 96), _message, _toast);
 
             DrawMapCard(new Rect(24, h - cardH - 20, w - 48, cardH), Mathf.Clamp(_mapPick, 0, castles.Count - 1));
+        }
+
+        /// <summary>One medallion: shadow, (glow,) round face with a ring, the building or its silhouette, the number.</summary>
+        private void DrawMedal(int i, Vector2 c, float r, float now)
+        {
+            var spot = SpotOf(i);
+            var id = Game.Catalog.Castles[i].Id;
+            bool picked = i == _mapPick;
+            // The building that just became next pops in after the map has opened.
+            float appear = i == _revealIndex ? Mathf.Clamp01((now - 0.5f) / 0.5f) : 1;
+            if (appear <= 0) return;
+            float pop = appear < 1 ? Mathf.Sin(appear * Mathf.PI * 0.5f) * (1 + 0.15f * Mathf.Sin(appear * Mathf.PI)) : 1;
+            r *= pop;
+            if (Event.current.type != EventType.Repaint) return;
+
+            GUI.DrawTexture(new Rect(c.x - r + 3, c.y - r + 6, r * 2, r * 2), UiArt.SoftDisc(new Color(0, 0, 0, 0.45f)));
+            if (spot == Spot.Next)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 3);
+                float g = r * (1.45f + 0.08f * pulse);
+                GUI.DrawTexture(new Rect(c.x - g, c.y - g, g * 2, g * 2), UiArt.SoftDisc(new Color(1f, 0.86f, 0.43f, 0.75f)));
+            }
+            bool locked = spot == Spot.Locked;
+            var face = new Rect(c.x - r, c.y - r, r * 2, r * 2);
+            GUI.DrawTexture(face, UiArt.Disc(locked ? MedalLocked : MedalFace, MedalEdge, 2));
+            // The ring: gold for built and next, grey for locked; the picked medallion's ring is a little thicker.
+            // (Fixed widths in the 64 px texture: the textures are cached by their look.)
+            float ringPx = picked ? 6.5f : 5f, ring = r * ringPx / 32;
+            GUI.DrawTexture(face, UiArt.Disc(new Color(0, 0, 0, 0), locked ? MedalLockedRing : MedalGold, ringPx));
+
+            var pic = locked ? MapArt.Silhouette(id) : MapArt.Thumb(id);
+            if (pic != null)
+            {
+                float box = (r - ring) * 1.55f;
+                float ph = box, pw = ph * pic.width / pic.height;
+                if (pw > box) { pw = box; ph = pw * pic.height / pic.width; }
+                GUI.DrawTexture(new Rect(c.x - pw / 2, c.y - ph / 2 + r * 0.04f, pw, ph), pic);
+            }
+
+            // The number on a small plaque under the medallion.
+            if (_numBuilt == null)
+            {
+                GUIStyle Num(Color fill) => new GUIStyle(_pill)
+                {
+                    font = UiArt.BoldFont != null ? UiArt.BoldFont : _pill.font,
+                    alignment = TextAnchor.MiddleCenter, fontSize = 20, fontStyle = FontStyle.Normal, padding = new RectOffset(0, 0, 0, 0),
+                    border = new RectOffset(12, 12, 12, 12), normal = { background = UiArt.Round(fill, Color.white, 12, 3), textColor = Color.white },
+                };
+                _numBuilt = Num(new Color32(0x6d, 0xa8, 0x4e, 0xff));
+                _numNext = Num(new Color32(0xf0, 0x9a, 0x1c, 0xff));
+                _numLocked = Num(new Color32(0x9a, 0x9a, 0xa6, 0xff));
+            }
+            float bw = 40 * pop, bh = 28 * pop;
+            GUI.Label(new Rect(c.x - bw / 2, c.y + r - bh * 0.45f, bw, bh), (i + 1).ToString(),
+                spot == Spot.Built ? _numBuilt : spot == Spot.Next ? _numNext : _numLocked);
         }
 
         /// <summary>The card at the bottom: the resident, what they say, and the button back to building.</summary>

@@ -192,6 +192,7 @@ namespace Game.View.Tests
                 Assert.AreEqual(n, art.Layers.Length, castle.Id);
                 Assert.IsTrue(Enumerable.Range(0, n).All(art.HasOutline), $"every slot of {castle.Id} has an outline");
                 Assert.IsNotNull(MapArt.Thumb(castle.Id), $"{castle.Id} has its picture for the map");
+                Assert.IsNotNull(MapArt.Silhouette(castle.Id), $"{castle.Id} has its silhouette for the map");
                 if (castle.Id == "castle_2")
                     Assert.AreEqual(20, art.SlotAt(new Rect(0, 0, 1000, 1000), new Vector2(500, 780), _app.Session.State.Filled, 0));
             }
