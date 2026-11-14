@@ -16,13 +16,13 @@ CASTLES = os.path.join(ROOT, 'unity', 'Assets', '_Game', 'Art', 'Resources', 'Ca
 INC = os.path.join(ROOT, 'art_source', 'incoming')
 # The picture each building was cut from (with its figure), shown in the hidden "ref" layer.
 SOURCE = {
-    1: 'castle_1/castle_1_noporch_src.png', 2: 'castle_2/castle_2_src.png',
-    3: 'game1part4/pryanik3.png', 4: 'game1part4/melnica4.png', 5: 'game1part4/domicnaderevve5.png',
-    6: 'game1part4/mayak6.png', 7: 'game1part4/tikva7.png', 8: 'game1part4/traktir8.png',
-    9: 'game1part4/volshebnaya_bashnya9.png', 10: 'game1part4/ledyanoi_zamok10.png',
-    11: 'game1part5/grib1_full.png', 12: 'game1part5/chasi1_full.png', 13: 'game1part5/pagoda1_full.png',
-    14: 'game1part5/saeadvorec1_full.png', 15: 'game1part5/zamokdrakon1_full.png',
-    16: 'game1part5/pirate1_full.png', 17: 'game1part5/dvorecverblud1_full.png', 18: 'terem/terem_full.png',
+    1: 'castle_1/castle_1_noporch_src.png', 2: 'castle_2/castle_2_src_v2.png',
+    3: 'game1part4/pryanik3_v2.png', 4: 'game1part4/melnica4_v2.png', 5: 'game1part4/domicnaderevve5.png',
+    6: 'game1part4/mayak6_v2.png', 7: 'game1part4/tikva7_v2.png', 8: 'game1part4/traktir8_v2.png',
+    9: 'game1part4/volshebnaya_bashnya9_v2.png', 10: 'game1part4/ledyanoi_zamok10.png',
+    11: 'game1part5/grib1_full_v2.png', 12: 'game1part5/chasi1_full_v2.png', 13: 'game1part5/pagoda1_full_v2.png',
+    14: 'game1part5/saeadvorec1_full_v2.png', 15: 'game1part5/zamokdrakon1_full_v2.png',
+    16: 'game1part5/pirate1_full_v2.png', 17: 'game1part5/dvorecverblud1_full_v2.png', 18: 'terem/terem_full.png',
 }
 
 

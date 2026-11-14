@@ -8,6 +8,7 @@ import sys, os
 import numpy as np
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
+from cutlib import figure_of
 from recut import Cut, overlay
 
 c = Cut(sys.argv[1], sys.argv[2])
@@ -57,7 +58,8 @@ lantR = diff & c.box(810, 925, 430, 620)
 baker = (diff & c.box(225, 446, 460, 845) | diff & c.box(446, 492, 600, 760)) & ~lantL
 Fr, Fg, Fb = F[..., 0], F[..., 1], F[..., 2]
 baker &= ~((Fr > 180) & (Fr - Fg > 60) & (Fb > 120)) & ~((Fg > Fr + 15) & (Fg > Fb + 15)) & (Y < 838)
-baker = ndi.binary_fill_holes(ndi.binary_opening(baker, iterations=2))
+baker = figure_of(sys.argv[2], 'baker', ndi.binary_fill_holes(ndi.binary_opening(baker, iterations=2)))
+lantL &= ~baker; lantR &= ~baker
 porch = diff & c.box(420, 665, 660, 900) & ~baker
 
 slots = c.write(sys.argv[3], 'c3', 'castle_3', 'found', 6, [

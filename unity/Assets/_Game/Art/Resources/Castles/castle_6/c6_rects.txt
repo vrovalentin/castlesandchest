@@ -26,5 +26,5 @@ c6_23_spire 0 0 1024 104
 c6_24_porch 488 718 248 188
 c6_25_lantern 493 599 64 112
 c6_26_lantern 684 602 64 112
-c6_27_catsailor 526 690 124 168
+c6_27_catsailor 527 681 124 160
 c6_decor 0 0 4 4

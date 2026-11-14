@@ -8,6 +8,7 @@ import sys, os
 import numpy as np
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
+from cutlib import figure_of
 from recut import Cut, overlay
 
 c = Cut(sys.argv[1], sys.argv[2])
@@ -82,7 +83,7 @@ pots = np.zeros(on.shape, bool)
 for x0 in (141, 305, 649, 813):
     pots |= blob(c.box(x0, x0 + 66, 778, 874), 3)
 knight = ndi.binary_dilation(blob(c.box(582, 708, 712, 930), 8), iterations=3) & aFm
-princess = blob(c.box(446, 580, 318, 548), 4)
+princess = figure_of(sys.argv[2], 'princess', blob(c.box(446, 580, 318, 548), 4))
 pots &= ~knight
 porchL &= ~lantL & ~pots
 porchR &= ~lantR & ~pots & ~knight

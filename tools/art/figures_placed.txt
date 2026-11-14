@@ -1,0 +1,17 @@
+# Where the figures drawn on their own stand on their buildings (align_figures.py, run from art_source/incoming).
+# The scale and offset were found by matching, then the standing ones were sized so their feet stay on the ground.
+# old=<mask>: the figure cut before (now <full>_v2_<name>_old.png). Then: cut_house_N.py <clean> <full>_v2.png <out>.
+python3 ../../tools/art/align_figures.py castle_2/castle_2_clean_src.png castle_2/castle_2_src.png figures/2_princess.png princess 440,312,582,550 old=castle_2/castle_2_src_v2_princess_old.png@0,0 behind=castle_2/princess_rail_mask.png fixed=0.2978,366.0,312.0
+python3 ../../tools/art/align_figures.py game1part4/pryanik3_cut.png game1part4/pryanik3.png figures/3_baker.png baker 220,470,500,845 old=game1part4/pryanik3_v2_baker_old.png@0,0  fixed=0.3982,167.3,468.7
+python3 ../../tools/art/align_figures.py game1part4/melnica4_cut.png game1part4/melnica4.png figures/4_miller.png miller 612,640,870,995 old=game1part4/melnica4_v2_miller_old.png@0,0  fixed=0.3528,551.2,645.4
+python3 ../../tools/art/align_figures.py game1part4/mayak6_cut.png game1part4/mayak6.png figures/6_catsailor.png catsailor 522,686,652,860 old=game1part4/mayak6_v2_catsailor_old.png@0,0 fill=all fixed=0.2067,475.9,655.5
+python3 ../../tools/art/align_figures.py game1part4/tikva7_cut.png game1part4/tikva7.png figures/7_fairy.png fairy 694,556,870,800 old=game1part4/tikva7_v2_fairy_old.png@0,0  fixed=0.3319,603.0,516.0
+python3 ../../tools/art/align_figures.py game1part4/traktir8_cut.png game1part4/traktir8.png figures/8_innkeeper.png innkeeper 242,694,490,992 old=game1part4/traktir8_v2_innkeeper_old.png@0,0  fixed=0.3251,206.9,679.8
+python3 ../../tools/art/align_figures.py game1part4/volshebnaya_bashnya9_cut.png game1part4/volshebnaya_bashnya9.png figures/9_wizard.png wizard 238,612,550,1008 old=game1part4/volshebnaya_bashnya9_v2_wizard_old.png@0,0  fixed=0.4334,178.0,600.6
+python3 ../../tools/art/align_figures.py game1part5/grib1_cut.png game1part5/grib1_full.png figures/11_hedgehog.png hedgehog 238,632,480,958 old=game1part5/grib1_full_v2_hedgehog_old.png@0,0  fixed=0.4200,168.0,582.0
+python3 ../../tools/art/align_figures.py game1part5/chasi1_cut.png game1part5/chasi1_full.png figures/12_owl.png owl 516,686,646,840 old=game1part5/chasi1_full_v2_owl_old.png@0,0  fixed=0.1939,483.0,669.0
+python3 ../../tools/art/align_figures.py game1part5/pagoda1_cut.png game1part5/pagoda1_full.png figures/13_panda.png panda 518,642,682,828 old=game1part5/pagoda1_full_v2_panda_old.png@0,0  fixed=0.1933,501.0,642.0
+python3 ../../tools/art/align_figures.py game1part5/saeadvorec1_cut.png game1part5/saeadvorec1_full.png figures/14_mermaid.png mermaid 622,600,848,1004 old=game1part5/saeadvorec1_full_v2_mermaid_old.png@0,0  fixed=0.3744,537.0,636.0
+python3 ../../tools/art/align_figures.py game1part5/zamokdrakon1_cut.png game1part5/zamokdrakon1_full.png figures/15_dragon.png dragon 548,706,712,880 old=game1part5/zamokdrakon1_full_v2_dragon_old.png@0,0  fixed=0.2308,510.0,669.0
+python3 ../../tools/art/align_figures.py game1part5/pirate1_cut.png game1part5/pirate1_full.png figures/16_parrot.png parrot 626,632,728,768 old=game1part5/pirate1_full_v2_parrot_old.png@0,0  fixed=0.1532,603.0,615.0
+python3 ../../tools/art/align_figures.py game1part5/dvorecverblud1_cut.png game1part5/dvorecverblud1_full.png figures/17_camel.png camel 272,648,490,856 old=game1part5/dvorecverblud1_full_v2_camel_old.png@0,0  fixed=0.2657,258.0,618.0
