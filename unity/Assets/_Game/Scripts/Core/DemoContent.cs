@@ -110,7 +110,7 @@ namespace Game.Core
             // Building 18, the boyar terem, cut by tools/art/cut_house_18.py; it stands in the snow after the ice palace.
             var castle18 = new CastleInfo("castle_18", "Боярский терем", 30, 0.25, 0.2, Slots(
                 "clay*6 wall*2 floor*2 wall*2 door porch brick window*4 roof*3 floor*2 wall*5 tiles window*5 floor*2 bells floor " +
-                "tiles*2 roof tiles*2 roof*3 spire*5 lantern*2 sled emelya"), AllTiers("bells", "sled", "emelya"));
+                "tiles*2 roof tiles*2 roof*3 spire*5 sled emelya lantern*2"), AllTiers("bells", "sled", "emelya"));
 
             // In the order of the kingdom map, along its road: beach, forest and meadows, snow, desert, volcano.
             // The dragon castle on the volcano is the finale.

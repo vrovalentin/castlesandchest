@@ -1,6 +1,6 @@
 # Cut building 18, the boyar terem, by its drawing, bottom-up.
 #   terem_clean.png : without Emelya on his stove, the sled and the lanterns
-#   terem_full.png  : with them
+#   terem_full2.png : with them, made by terem_figure.py from emelya_src.png (Emelya drawn on his own)
 # The firs stand on the site from the start. Then the log basement, the gallery with its balustrade, carved
 # columns and windows in their nalichniki, the porch with its stairs and roof, the upper storeys with snowy
 # ledges, the bell tower, the tent roofs and onion domes, the golden roosters last.
@@ -8,10 +8,12 @@
 import sys, os
 import numpy as np
 from scipy import ndimage as ndi
+from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
 from recut import Cut, overlay
 
-c = Cut(sys.argv[1], sys.argv[2])
+clean_p, full_p = sys.argv[1], sys.argv[2]
+c = Cut(clean_p, full_p)
 X, Y = c.X, c.Y
 C = c.C
 r, g, b = C[..., 0], C[..., 1], C[..., 2]
@@ -85,11 +87,32 @@ c.merge('onionL', 'drumL'); c.merge('onionR', 'drumR'); c.merge('gable', 'emblem
 if len(sys.argv) > 4:
     overlay(c, sys.argv[4])
 
-D = c.full_only()
-emelya = D & c.box(600, 845, 470, 900)
-lanL = D & c.box(380, 432, 700, 790)
-lanR = D & c.box(575, 625, 700, 790)
-sled = D & c.box(285, 600, 760, 905) & ~emelya & ~lanL & ~lanR
+# Emelya, his stove, its lanterns and the sled were drawn on their own and put onto the clean terem
+# (terem_figure.py): the figure's own outline is the mask, not the difference of two pictures.
+fig_p = full_p.replace('.png', '_figure.png')
+D = np.array(Image.open(fig_p))[..., 3] > 110 if os.path.exists(fig_p) else c.full_only()
+# the lanterns hang on the stove's sides: only their dark iron and lit glass, not the white stove behind them
+Fu = c.F
+stove = (Fu.min(2) > 175) & (Fu.max(2) - Fu.min(2) < 40)
+def lantern(x0, x1):
+    m = D & c.box(x0, x1, 708, 784) & ~stove
+    lab, n = ndi.label(m)
+    m = np.isin(lab, 1 + np.argmax(ndi.sum(m, lab, range(1, n + 1)))) if n else m
+    # its light parts (the top ring, glints) inside its outline go with it: fill each row and column between its ends
+    rows, cols = np.zeros_like(m), np.zeros_like(m)
+    for y in np.flatnonzero(m.any(1)):
+        xs = np.flatnonzero(m[y]); rows[y, xs[0]:xs[-1] + 1] = True
+    for x in np.flatnonzero(m.any(0)):
+        ys = np.flatnonzero(m[:, x]); cols[ys[0]:ys[-1] + 1, x] = True
+    m = D & c.box(x0, x1, 700, 784) & (rows & cols | m)
+    lab, n = ndi.label(m)
+    return np.isin(lab, 1 + np.argmax(ndi.sum(m, lab, range(1, n + 1)))) if n else m
+lanL = lantern(594, 648)
+lanR = lantern(758, 814)
+sled = D & (X < 578) & ~lanL & ~lanR
+emelya = D & ~sled & ~ndi.binary_dilation(lanL | lanR, iterations=3)
+lab, n = ndi.label(emelya)
+emelya = np.isin(lab, 1 + np.flatnonzero(ndi.sum(emelya, lab, range(1, n + 1)) > 400))   # no slivers round the lanterns
 build = [
     ('wall', 'baseL'), ('wall', 'baseR'), ('floor', 'balL'), ('floor', 'balR'),
     ('wall', 'groundL'), ('wall', 'groundR'), ('door', 'door'), ('porch', 'stairs'), ('brick', 'cols'),
@@ -106,5 +129,5 @@ build = [
     ('spire', 'rkL'), ('spire', 'rkB'), ('spire', 'rkDL'), ('spire', 'rkDR'), ('spire', 'rkC'),
 ]
 slots = c.write(sys.argv[3], 'c18', 'castle_18', 'found', 6, build,
-                extra=[('lantern', lanL), ('lantern', lanR), ('sled', sled), ('emelya', emelya)], decor=fir)
+                extra=[('sled', sled), ('emelya', emelya), ('lantern', lanL), ('lantern', lanR)], decor=fir)
 print(' '.join(slots))
