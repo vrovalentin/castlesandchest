@@ -64,10 +64,13 @@ namespace Game.View
             var b = State?.Run?.Board;
             float aspect = b != null ? (b.Cols + 0.3f) / (b.Rows + 0.3f) : 1f;
             float bh = Mathf.Min(maxH, inner / aspect);
-            // «Добыто» sits at the bottom like a tray; the board is centred in the space above it.
+            // «Добыто» sits at the bottom like a tray. Spare height on tall phones goes in three even gaps
+            // (under the bar, above the board, under it), so no single empty hole shows.
             r.Got = new Rect(x0 + pad, h - pad - gotMin, inner, gotMin);
-            float spare = Mathf.Max(0, r.Got.y - gap - top - bh);
-            r.Board = new Rect(x0 + pad, top + spare / 2, inner, bh);
+            float g = Mathf.Max(0, r.Got.y - gap - top - bh) / 3f;
+            r.Needs.y += g;
+            r.Tools.y += g;
+            r.Board = new Rect(x0 + pad, top + 2 * g, inner, bh);
             return r;
         }
 
@@ -171,10 +174,11 @@ namespace Game.View
             }
 
             if (line != null && !(_toast != null && Time.time < _toastUntil))
-                GUI.Box(new Rect(L.Board.x + 24, L.Board.yMax - 112, L.Board.width - 48, 96), line, _toastStyle);
+                GUI.Box(new Rect(L.Got.x, L.Got.y + 8, L.Got.width, L.Got.height - 16), line, _toastStyle);
             if (_toast != null && Time.time < _toastUntil)
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
+            if (_mode == Mode.Play) _panelMode = Mode.Play;
             if (_mode == Mode.OutOfMoves) Panel(w, h, Loc.T("Ходы кончились"), OutOfMovesText(), OutOfMovesButtons);
             else if (_mode == Mode.Summary) Panel(w, h, SummaryTitle(), SummaryText(), SummaryButtons, SummaryChests);
             else if (_mode == Mode.ConfirmRestart) Panel(w, h, Loc.T("Начать заново?"), RestartText(), RestartButtons);
@@ -475,6 +479,8 @@ namespace Game.View
         }
 
         private float _panelInnerW = 520;
+        private Mode _panelMode;
+        private float _panelAt;
         /// <summary>Height the panel's content took last frame, so the window fits it without a gap.</summary>
         private float _contentH = 140;
 
@@ -485,7 +491,14 @@ namespace Game.View
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 560);
+            bool ribbon0 = GameArt.Ribbon != null;
+            float textH = string.IsNullOrEmpty(text) ? 0 : _panelBody.CalcHeight(new GUIContent(text), pw - 80);
+            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : (ribbon0 ? 136 : 72) + 20 + textH + 30 + 176);
+            // Fast taps on the board must not land on a window that has just opened under the finger
+            // (they ended the run and started a new one for a ticket).
+            if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; }
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = wasEnabled && Time.unscaledTime - _panelAt > 0.7f;
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
@@ -510,6 +523,7 @@ namespace Game.View
             GUILayout.FlexibleSpace();
             buttons();
             GUILayout.EndArea();
+            GUI.enabled = wasEnabled;
         }
     }
 }
