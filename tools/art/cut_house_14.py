@@ -6,7 +6,7 @@ import sys, os
 import numpy as np
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import figure_of, load_pair, write_castle, Shapes, claim, full_only, slots_of, settle
+from cutlib import load_pair, write_castle, Shapes, claim, full_only, slots_of, settle
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C, F, aC, aF = load_pair(clean_p, full_p)
@@ -54,5 +54,5 @@ SLOTS = slots_of('wall:lowL wall:lowR tiles:shellL tiles:shellR window:winL wind
                  'spire:spSL spire:spSR spire:spTL spire:spTR pearl:pearl porch:porch lantern:lanL lantern:lanR', R, found, 6)
 SLOTS = settle(SLOTS, found)
 D = full_only(F, C, aF)
-SLOTS += [('mermaid', figure_of(full_p, 'mermaid', D & S.box(630, 840, 600, 1010)), 'full')]
+SLOTS += [('mermaid', D & S.box(630, 840, 600, 1010), 'full')]
 write_castle(out, 'c14', 'castle_14', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

@@ -6,7 +6,7 @@ import sys, os
 import numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import figure_of, cutout, write_castle, split_even, Shapes, claim, full_only
+from cutlib import cutout, write_castle, split_even, Shapes, claim, full_only
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -48,9 +48,9 @@ SLOTS += [('wall', R['bandA'], 'clean'), ('wall', R['bandB'], 'clean'), ('window
           ('roof', R['roof'], 'clean'), ('spire', R['spire'], 'clean')]
 
 D = full_only(F, C, aF)
-cat = figure_of(full_p, 'catsailor', D & S.box(528, 645, 692, 852))
-lantL = D & S.box(495, 555, 598, 705) & ~cat
-lantR = D & S.box(686, 750, 598, 708) & ~cat
+cat = D & S.box(528, 645, 692, 852)
+lantL = D & S.box(495, 555, 598, 705)
+lantR = D & S.box(686, 750, 598, 708)
 steps = D & S.box(490, 735, 720, 905) & ~cat & ~lantL & ~lantR
 SLOTS += [('porch', steps, 'full'), ('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('catsailor', cat, 'full')]
 

@@ -7,7 +7,7 @@ import numpy as np
 from scipy import ndimage as ndi
 from PIL import Image
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import figure_of, settle, cutout, write_castle, split_even, Shapes, claim, full_only
+from cutlib import settle, cutout, write_castle, split_even, Shapes, claim, full_only
 
 clean_p, full_p, out = sys.argv[1], sys.argv[2], sys.argv[3]
 C = np.array(Image.open(clean_p).convert('RGB')).astype(np.int32)
@@ -55,8 +55,7 @@ SLOTS = settle(SLOTS, found)
 D = full_only(F, C, aF)
 lantL = D & (S.box(170, 335, 430, 655) | S.box(460, 522, 676, 795))
 lantR = D & (S.box(755, 855, 580, 725) | S.box(664, 724, 686, 802))
-wizard = figure_of(full_p, 'wizard', D & S.box(238, 548, 612, 1000) & ~lantL)
-lantL &= ~wizard; lantR &= ~wizard
+wizard = D & S.box(238, 548, 612, 1000) & ~lantL
 SLOTS += [('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('wizard', wizard, 'full')]
 
 write_castle(out, 'c9', 'castle_9', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)

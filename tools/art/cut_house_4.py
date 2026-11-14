@@ -9,7 +9,6 @@ import sys, os
 import numpy as np
 from scipy import ndimage as ndi
 sys.path.insert(0, os.path.dirname(__file__))
-from cutlib import figure_of
 from recut import Cut, overlay
 
 c = Cut(sys.argv[1], sys.argv[2])
@@ -55,8 +54,6 @@ lantL = diff & c.box(436, 500, 664, 772)
 miller = diff & (X >= 618) & (Y >= 646) & ~lantR
 Fr, Fg, Fb = F[..., 0], F[..., 1], F[..., 2]
 miller &= ~((X < 650) & ((Y < 762) | (Y > 832))) & ~((Fr > 150) & (Fr - Fg > 70) & (Y < 700) & (X < 690))
-miller = figure_of(sys.argv[2], 'miller', miller)
-lantL &= ~miller; lantR &= ~miller
 porch_all = diff & c.box(424, 700, 570, 935) & ~miller & ~lantL & ~lantR
 door = porch_all & c.round(504, 602, 688, 846)
 porch = porch_all & ~door
