@@ -632,5 +632,26 @@ namespace Game.Core.Tests
             Assert.AreEqual(2, s.CastleIndex);
             Assert.IsTrue(s.Filled[0]);
         }
+
+        [Test]
+        public void TextsTranslateToEnglishAndBack()
+        {
+            try
+            {
+                Loc.Load("# comment\nСклад\tStorage\nОчки: {0}\tPoints: {0}\nбилет|билета|билетов\tticket|tickets\nдва\\nряда\ttwo\\nrows\n");
+                Loc.SetLanguage("en-US");
+                Assert.AreEqual("Storage", Loc.T("Склад"));
+                Assert.AreEqual("Points: 5", Loc.F("Очки: {0}", 5));
+                Assert.AreEqual("Нет перевода", Loc.T("Нет перевода"), "missing stays Russian");
+                Assert.AreEqual("ticket", Loc.Plural(1, "билет", "билета", "билетов"));
+                Assert.AreEqual("tickets", Loc.Plural(3, "билет", "билета", "билетов"));
+                Assert.AreEqual("two\nrows", Loc.T("два\nряда"));
+                Loc.SetLanguage("be");
+                Assert.AreEqual("Склад", Loc.T("Склад"));
+                Assert.AreEqual("билетов", Loc.Plural(5, "билет", "билета", "билетов"));
+                Assert.AreEqual("билета", Loc.Plural(22, "билет", "билета", "билетов"));
+            }
+            finally { Loc.SetLanguage("ru"); Loc.Load(null); }
+        }
     }
 }
