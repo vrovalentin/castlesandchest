@@ -254,7 +254,7 @@ namespace Game.View
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
             // The arrow says where, one short line says why: no walls of text for a new player.
             if (have) Pointer.Show("place", _placeAt, caption: Loc.T("Замок строится снизу вверх"), side: true);
-            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true, caption: Loc.T("В сундуках детали для замка"));
+            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true); // the tile says «Сундуки» itself
             else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt, into: true); // the button says «Добывать» itself
         }
 

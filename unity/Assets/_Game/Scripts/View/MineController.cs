@@ -29,6 +29,8 @@ namespace Game.View
         private Camera _cam;
         private Mode _mode;
         private RunSummary _summary;
+        /// <summary>When the finger last went down anywhere: windows wait until it stops tapping.</summary>
+        private float _lastDownAt = -10;
         private string _toast;
         private float _toastUntil;
         private Vector2 _lastScreen;
@@ -141,6 +143,7 @@ namespace Game.View
         {
             if (_s == null) return;
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
+            if (Input.GetMouseButtonDown(0)) _lastDownAt = Time.unscaledTime;
             if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
             // No hotControl check: a control left hot (after a hint or a screen switch) swallowed the first tap.
             // Nothing of the HUD overlaps the board, and TryGetCell only hits board cells.
@@ -292,7 +295,7 @@ namespace Game.View
         {
             int n = _summary.Got.Count * (_doubled ? 2 : 1);
             if (n > 0) return Loc.F("{0} {1}!", n, Plural(n, "сундук", "сундука", "сундуков"));
-            return _summary.NewRecord ? Loc.T("Сундуков нет, зато рекорд!") : Loc.T("В этот раз без сундуков");
+            return Loc.T("Без сундуков");
         }
 
         private string SummaryText()

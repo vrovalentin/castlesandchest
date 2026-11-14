@@ -495,10 +495,11 @@ namespace Game.View
             float textH = string.IsNullOrEmpty(text) ? 0 : _panelBody.CalcHeight(new GUIContent(text), pw - 80);
             float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : (ribbon0 ? 136 : 72) + 20 + textH + 30 + 176);
             // Fast taps on the board must not land on a window that has just opened under the finger
-            // (they ended the run and started a new one for a ticket).
+            // (they took the ad for +5 moves, ended the run and started a new one for a ticket). The buttons
+            // wake up only once the window has been open a moment AND the finger has stopped tapping.
             if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; }
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = wasEnabled && Time.unscaledTime - _panelAt > 0.7f;
+            GUI.enabled = wasEnabled && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 0.6f;
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
