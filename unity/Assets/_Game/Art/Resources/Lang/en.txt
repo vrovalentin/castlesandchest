@@ -157,7 +157,7 @@
 Посмотри рекламу и получи {0} билета. Или жди завтра: придут новые.	Watch an ad and get {0} tickets. Or wait until tomorrow: new ones will come.
 Новые билеты придут завтра.	New tickets arrive tomorrow.
 +{0} билета · реклама	+{0} tickets · ad
-На Стройку	To the Site
+На стройку	To the Site
 Нет инструментов	Out of tools
 Посмотри рекламу и получи {0} метлы и {1} молотка. Или жди завтра: придут новые.	Watch an ad and get {0} brooms and {1} hammers. Or wait until tomorrow: new ones will come.
 +{0} и +{1} · реклама	+{0} and +{1} · ad
@@ -202,7 +202,7 @@
 Сгорело на поле: {0}.	Burned on the board: {0}.
 Всего сундуков ждёт на Стройке: {0}	Chests waiting at the building site: {0}
 Удвоить · реклама	Double · ad
-Открывать на Стройке	Open at the Site
+Открывать на стройке	Open at the Site
 Новый забег (билетов: {0})	New run (tickets: {0})
 +{0} метлы и +{1} молотка за рекламу	+{0} brooms and +{1} hammers for the ad
 +{0} билета за рекламу. Билетов: {1}	+{0} tickets for the ad. Tickets: {1}
@@ -274,3 +274,6 @@
 Сундуки добывают в шахте	Chests come from the mine
 Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!	Tap 2+ matching blocks.\n4+ make a chest!
 Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля.	Ice cracks when blocks pop next to it.\nStones don't pop, they fall off the field.
+{0} {1} на поле	{0} {1} on the field
+сундук сгорел|сундука сгорели|сундуков сгорели	chest burned|chests burned
+Твои данные	Your data

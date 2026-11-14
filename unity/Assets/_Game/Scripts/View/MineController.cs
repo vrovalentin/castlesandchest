@@ -142,7 +142,8 @@ namespace Game.View
             if (_s == null) return;
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
             if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
-            if (GUIUtility.hotControl != 0) return;
+            // No hotControl check: a control left hot (after a hint or a screen switch) swallowed the first tap.
+            // Nothing of the HUD overlaps the board, and TryGetCell only hits board cells.
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
             if (_view.TryGetCell(world, out int r, out int c)) TryTap(r, c);
         }
@@ -163,6 +164,9 @@ namespace Game.View
             var frames = new List<Frame>();
             var res = Game.Tap(State, r, c, _rng, p => frames.Add(BoardView.Capture(board, p)));
             if (res == null) return false;
+            // The first-run lines over the board are learned once the player makes a move.
+            if (!Hints.Seen("board")) Hints.MarkSeen("board");
+            else if (_obstacleLine) Hints.MarkSeen("obstacles");
             StartCoroutine(PlayThen(frames, () =>
             {
                 if (res.Chests.Count >= 2) Toast(Loc.F("Серия: {0} сундука за ход!", res.Chests.Count));
@@ -297,7 +301,7 @@ namespace Game.View
             lines.Add(_summary.NewRecord ? Loc.F("Очки: {0} · новый рекорд!", _summary.Score)
                 : Loc.F("Очки: {0} · рекорд {1}", _summary.Score, Mathf.Max(_summary.PrevBest, _summary.Score)));
             if (_summary.Left > 0 && !_summary.Kept)
-                lines.Add(Loc.F("{0} {1} остались на поле", _summary.Left, Plural(_summary.Left, "сундук", "сундука", "сундуков")));
+                lines.Add(Loc.F("{0} {1} на поле", _summary.Left, Plural(_summary.Left, "сундук сгорел", "сундука сгорели", "сундуков сгорели")));
             return string.Join("\n", lines);
         }
 
@@ -315,7 +319,7 @@ namespace Game.View
                 }, AdFailed);
             }
             GUILayout.Space(12);
-            if (_toBuild != null && GUILayout.Button(Loc.T("Открывать на Стройке"), _button, GUILayout.Height(76)))
+            if (_toBuild != null && GUILayout.Button(Loc.T("Открывать на стройке"), _button, GUILayout.Height(76)))
             {
                 // After the run summary is a natural break: the store may show a fullscreen ad.
                 Sdk.Interstitial();

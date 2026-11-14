@@ -34,6 +34,7 @@ namespace Game.View
             _gotBox, _gotTitle, _gotEmpty, _toastStyle, _dim, _panel, _panelTitle, _panelBody, _button, _button2;
 
         private readonly List<float> _gotAt = new List<float>();
+        private bool _obstacleLine;
 
         /// <summary>Screen pixels per virtual HUD pixel.</summary>
         private static float HudScale => Mathf.Max(0.01f, Mathf.Min(Screen.width / 720f, Screen.height / 1280f));
@@ -63,9 +64,10 @@ namespace Game.View
             var b = State?.Run?.Board;
             float aspect = b != null ? (b.Cols + 0.3f) / (b.Rows + 0.3f) : 1f;
             float bh = Mathf.Min(maxH, inner / aspect);
-            float spare = Mathf.Max(0, h - pad - top - bh - gap - gotMin);
-            r.Board = new Rect(x0 + pad, top + spare * 0.4f, inner, bh);
-            r.Got = new Rect(x0 + pad, r.Board.yMax + gap, inner, gotMin);
+            // «Добыто» sits at the bottom like a tray; the board is centred in the space above it.
+            r.Got = new Rect(x0 + pad, h - pad - gotMin, inner, gotMin);
+            float spare = Mathf.Max(0, r.Got.y - gap - top - bh);
+            r.Board = new Rect(x0 + pad, top + spare / 2, inner, bh);
             return r;
         }
 
@@ -146,12 +148,18 @@ namespace Game.View
             var L = Layout();
 
             var run = State.Run;
-            if (run != null && _mode == Mode.Play && !Busy)
-                Hints.Want("board", new Rect(L.Board.x + 40, L.Board.center.y - 110, L.Board.width - 80, 220),
-                    Loc.T("Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!"));
-            if (run != null && _mode == Mode.Play && !Busy && Hints.Seen("board") && HasObstacles(run.Board))
-                Hints.Want("obstacles", new Rect(L.Board.x + 40, L.Board.center.y - 120, L.Board.width - 80, 240),
-                    Loc.T("Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля."));
+            // First-run lines in a strip under the board: they don't block the board and go away after a move.
+            string line = null;
+            _obstacleLine = false;
+            if (run != null && _mode == Mode.Play)
+            {
+                if (!Hints.Seen("board")) line = Loc.T("Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!");
+                else if (!Hints.Seen("obstacles") && HasObstacles(run.Board))
+                {
+                    line = Loc.T("Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля.");
+                    _obstacleLine = true;
+                }
+            }
             if (run != null)
             {
                 GUI.enabled = !Busy && _mode == Mode.Play;
@@ -162,6 +170,8 @@ namespace Game.View
                 DrawGot(L.Got, run.Got);
             }
 
+            if (line != null && !(_toast != null && Time.time < _toastUntil))
+                GUI.Box(new Rect(L.Board.x + 24, L.Board.yMax - 112, L.Board.width - 48, 96), line, _toastStyle);
             if (_toast != null && Time.time < _toastUntil)
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
@@ -174,7 +184,7 @@ namespace Game.View
                 if (Game.CanWatchAdForTickets(State) && GUILayout.Button(Loc.F("+{0} билета · реклама", Game.Rules.AdTickets), _button2, GUILayout.Height(76)))
                     WatchAdForTickets();
                 GUILayout.Space(12);
-                if (_toBuild != null && GUILayout.Button(Loc.T("На Стройку"), _button, GUILayout.Height(76))) _toBuild();
+                if (_toBuild != null && GUILayout.Button(Loc.T("На стройку"), _button, GUILayout.Height(76))) _toBuild();
             });
             else if (_mode == Mode.NoTools) Panel(w, h, Loc.T("Нет инструментов"),
                 Loc.F("Посмотри рекламу и получи {0} метлы и {1} молотка. Или жди завтра: придут новые.", Game.Rules.AdTools, Game.Rules.AdTools), () =>
@@ -475,7 +485,7 @@ namespace Game.View
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 700);
+            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 560);
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;

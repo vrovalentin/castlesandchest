@@ -33,7 +33,7 @@ namespace Game.View
         /// With <paramref name="into"/> its tip goes down to the middle of the target, so it stays off what is above.
         /// A <paramref name="caption"/> is one short line in a dark pill above the arrow.
         /// </summary>
-        public static void Show(string lesson, Rect target, bool into = false, string caption = null)
+        public static void Show(string lesson, Rect target, bool into = false, string caption = null, bool side = false)
         {
             if (Done(lesson) || Event.current.type != EventType.Repaint) return;
             const float size = 92;
@@ -53,8 +53,9 @@ namespace Game.View
             var sz = _caption.CalcSize(c);
             float w = Screen.width / Mathf.Max(0.01f, GUI.matrix.m00);
             float x = Mathf.Clamp(target.center.x - sz.x / 2, 12, Mathf.Max(12, w - 12 - sz.x));
-            // Fixed height above the arrow's highest point, so the line stays still while the arrow bobs.
-            GUI.Label(new Rect(x, tipY - size - 18 - 10 - sz.y, sz.x, sz.y), c, _caption);
+            // Beside the arrow (to its left), or at a fixed height above its highest point; either way it stays still while the arrow bobs.
+            if (side) GUI.Label(new Rect(Mathf.Max(12, target.center.x - size / 2 - 8 - sz.x), tipY - size / 2 - 9 - sz.y / 2, sz.x, sz.y), c, _caption);
+            else GUI.Label(new Rect(x, tipY - size - 18 - 10 - sz.y, sz.x, sz.y), c, _caption);
         }
     }
 }

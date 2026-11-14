@@ -253,9 +253,9 @@ namespace Game.View
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
             // The arrow says where, one short line says why: no walls of text for a new player.
-            if (have) Pointer.Show("place", _placeAt, caption: Loc.T("Замок строится снизу вверх"));
+            if (have) Pointer.Show("place", _placeAt, caption: Loc.T("Замок строится снизу вверх"), side: true);
             else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true, caption: Loc.T("В сундуках детали для замка"));
-            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt, caption: Loc.T("Сундуки добывают в шахте"));
+            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt, into: true, caption: Loc.T("Сундуки добывают в шахте"));
         }
 
         // ---------- header ----------
@@ -1079,7 +1079,7 @@ namespace Game.View
         {
             float pw = Mathf.Min(640, w - 40), ph = Mathf.Min(h - 80, 900);
             var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
-            NightWindow(r, Loc.T("Конфиденциальность"));
+            NightWindow(r, Loc.T("Твои данные"));
             var body = new GUIStyle(_nightBody) { fontSize = 21, alignment = TextAnchor.UpperLeft };
             body.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
             GUI.Label(new Rect(r.x + 50, r.y + 110, r.width - 100, r.height - 260), Loc.T(PrivacyText), body);
