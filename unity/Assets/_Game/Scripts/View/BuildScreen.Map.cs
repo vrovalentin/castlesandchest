@@ -54,6 +54,10 @@ namespace Game.View
         /// <summary>The place whose medallion pops in (the building that just became next), or -1.</summary>
         private int _revealIndex = -1;
         private bool _revealSounded;
+        /// <summary>Left edge of the map on screen when it is wider than the screen (NaN: centre it on the next building).</summary>
+        private float _mapPanX = float.NaN;
+        private float _dragFromX, _dragPanX;
+        private bool _dragging, _dragMoved;
 
         /// <summary>Radius of a medallion and of the next one, as a part of the map's width.</summary>
         private const float MedalR = 0.0435f, MedalNextR = 0.053f;
@@ -79,6 +83,8 @@ namespace Game.View
             _mapOpenedAt = Time.time;
             _revealIndex = reveal ? State.CastleIndex : -1;
             _revealSounded = false;
+            _mapPanX = float.NaN;
+            _dragging = false;
         }
 
         public void CloseMap() => _mapOpen = false;
@@ -106,9 +112,18 @@ namespace Game.View
             GUI.color = Sea;
             GUI.DrawTexture(new Rect(0, h / 2, w, h / 2), Texture2D.whiteTexture);
             GUI.color = Color.white;
+            // The map fills the height from the title down to the card (its sea runs a little under the card). On a
+            // tall phone it is wider than the screen: it opens on the next building and slides sideways under a finger.
             const float headerH = 128, cardH = 300;
-            float size = Mathf.Min(w * 1.15f, h - headerH - cardH * 0.6f);
-            var mapRect = new Rect((w - size) / 2, headerH, size, size);
+            float size = h - cardH - 20 - headerH + 40;
+            // Narrower than the screen: centred, nothing to slide. Wider: its edges stay at the screen's edges.
+            float minX = size <= w ? (w - size) / 2 : w - size, maxX = size <= w ? minX : 0;
+            if (size <= w) _mapPanX = minX;
+            else if (float.IsNaN(_mapPanX))
+                _mapPanX = w / 2 - MapArt.Points[Mathf.Clamp(State.CastleIndex, 0, MapArt.Points.Length - 1)].x * size;
+            _mapPanX = Mathf.Clamp(_mapPanX, minX, maxX);
+            DragMap(new Rect(0, headerH, w, h - cardH - 20 - headerH), minX, maxX);
+            var mapRect = new Rect(_mapPanX, headerH, size, size);
             if (map != null) GUI.DrawTexture(mapRect, map);
             Vector2 At(int j) => new Vector2(mapRect.x + MapArt.Points[j].x * size, mapRect.y + MapArt.Points[j].y * size);
             int n = Mathf.Min(castles.Count, MapArt.Points.Length);
@@ -170,6 +185,32 @@ namespace Game.View
                 GUI.Box(new Rect(60, headerH + 20, w - 120, 96), _message, _toast);
 
             DrawMapCard(new Rect(24, h - cardH - 20, w - 48, cardH), Mathf.Clamp(_mapPick, 0, castles.Count - 1));
+        }
+
+        /// <summary>
+        /// Sliding the map sideways. A press that moves more than a little is a drag: it does not tap the medallion
+        /// it started on. Handled before the medallions' buttons, so they never see a drag.
+        /// </summary>
+        private void DragMap(Rect area, float minX, float maxX)
+        {
+            var e = Event.current;
+            if (minX >= maxX) { _dragging = false; return; }
+            switch (e.type)
+            {
+                case EventType.MouseDown when area.Contains(e.mousePosition):
+                    _dragging = true; _dragMoved = false;
+                    _dragFromX = e.mousePosition.x; _dragPanX = _mapPanX;
+                    break;
+                case EventType.MouseDrag when _dragging:
+                    float dx = e.mousePosition.x - _dragFromX;
+                    if (Mathf.Abs(dx) > 12) _dragMoved = true;
+                    if (_dragMoved) { _mapPanX = Mathf.Clamp(_dragPanX + dx, minX, maxX); e.Use(); }
+                    break;
+                case EventType.MouseUp when _dragging:
+                    _dragging = false;
+                    if (_dragMoved) { GUIUtility.hotControl = 0; e.Use(); }
+                    break;
+            }
         }
 
         /// <summary>One medallion: shadow, (glow,) round face with a ring, the building or its silhouette, the number.</summary>
