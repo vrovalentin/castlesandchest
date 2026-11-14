@@ -1,4 +1,5 @@
 using UnityEngine;
+using Game.Core;
 
 namespace Game.View
 {
@@ -15,7 +16,8 @@ namespace Game.View
             new Color32(0x8e, 0x5b, 0xd6, 0xff),
         };
 
-        public static readonly string[] BlockNames = { "зелёный", "коричневый", "серый", "синий", "фиолетовый" };
+        private static readonly string[] BlockNamesRu = { "зелёный", "коричневый", "серый", "синий", "фиолетовый" };
+        public static string[] BlockNames => System.Array.ConvertAll(BlockNamesRu, Loc.T);
 
         public static readonly Color32 Background = new Color32(0xf3, 0xea, 0xd8, 0xff);
         /// <summary>The mine is dark so the blocks stand out: dark brown tray on an even darker screen.</summary>
@@ -36,7 +38,8 @@ namespace Game.View
             new Color32(0xe0, 0x6a, 0xa6, 0xff),
         };
 
-        public static readonly string[] TierNames = { "", "Глина", "Кирпичи", "Стенки", "Перекрытия и кровля", "Окна и двери", "Декор", "Фигурки" };
+        private static readonly string[] TierNamesRu = { "", "Глина", "Кирпичи", "Стенки", "Перекрытия и кровля", "Окна и двери", "Декор", "Фигурки" };
+        public static string[] TierNames => System.Array.ConvertAll(TierNamesRu, Loc.T);
 
         public static Color Tier(int tier) => Tiers[Mathf.Clamp(tier, 0, Tiers.Length - 1)];
 

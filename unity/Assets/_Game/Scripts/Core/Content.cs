@@ -12,15 +12,17 @@ namespace Game.Core
     {
         public readonly string Id;
         public readonly int Tier;
-        /// <summary>Display name (later a localisation key).</summary>
-        public readonly string Name;
-        public PartInfo(string id, int tier, string name = null) { Id = id; Tier = tier; Name = name ?? id; }
+        private readonly string _name;
+        /// <summary>Display name in the player's language.</summary>
+        public string Name => Loc.T(_name);
+        public PartInfo(string id, int tier, string name = null) { Id = id; Tier = tier; _name = name ?? id; }
     }
 
     public sealed class CastleInfo
     {
         public readonly string Id;
-        public readonly string Name;
+        private readonly string _name;
+        public string Name => Loc.T(_name);
         public readonly int Moves;
         /// <summary>Share of the cheapest colour (tier 1) among new blocks.</summary>
         public readonly double TrashShare;
@@ -33,7 +35,7 @@ namespace Game.Core
         public CastleInfo(string id, string name, int moves, double trashShare, double helpChance,
             string[] slots, Dictionary<int, string[]> tierParts)
         {
-            Id = id; Name = name; Moves = moves; TrashShare = trashShare; HelpChance = helpChance;
+            Id = id; _name = name; Moves = moves; TrashShare = trashShare; HelpChance = helpChance;
             Slots = slots; _tierParts = tierParts;
         }
 

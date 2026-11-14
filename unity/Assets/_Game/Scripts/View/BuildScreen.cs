@@ -93,12 +93,12 @@ namespace Game.View
             int next = Game.NextSlot(State);
             if (slot != next)
             {
-                Say($"Замок строится снизу вверх. Сначала: {Game.Catalog.NameOf(slots[next]).ToLowerInvariant()}.");
+                Say(Loc.F("Замок строится снизу вверх. Сначала: {0}.", Game.Catalog.NameOf(slots[next]).ToLowerInvariant()));
                 return false;
             }
             if (!Game.Place(State, slot))
             {
-                Say($"{Game.Catalog.NameOf(id)}: нет на складе. {WhereFrom(id)}");
+                Say(Loc.F("{0}: нет на складе. {1}", Game.Catalog.NameOf(id), WhereFrom(id)));
                 return false;
             }
             _placedSlot = slot;
@@ -123,7 +123,7 @@ namespace Game.View
             if (slot < 0 || slot >= slots.Length) return false;
             if (State.Filled[slot])
             {
-                Say($"{Game.Catalog.NameOf(slots[slot])}: уже на месте.");
+                Say(Loc.F("{0}: уже на месте.", Game.Catalog.NameOf(slots[slot])));
                 return false;
             }
             return PlaceSlot(slot);
@@ -146,7 +146,7 @@ namespace Game.View
             Haptics.Tap(30);
             _mergedId = target;
             _mergedAt = Time.time;
-            Say($"Собрано: {Game.Catalog.NameOf(target)}");
+            Say(Loc.F("Собрано: {0}", Game.Catalog.NameOf(target)));
             return true;
         }
 
@@ -178,13 +178,13 @@ namespace Game.View
                 if (!Game.AdTickets(State)) return;
                 _s.Save();
                 Sfx.Play("collect");
-                Say($"+{Game.Rules.AdTickets} билета за рекламу. Можно добывать!");
+                Say(Loc.F("+{0} билета за рекламу. Можно добывать!", Game.Rules.AdTickets));
             }, () => Say(AdFailed));
             return true;
         }
 
         /// <summary>Shown when a rewarded ad did not load or was closed early.</summary>
-        public const string AdFailed = "Реклама не досмотрена, награды нет. Попробуй ещё раз чуть позже.";
+        public static string AdFailed => Loc.T("Реклама не досмотрена, награды нет. Попробуй ещё раз чуть позже.");
 
         /// <summary>Shows the «Начать сначала?» window.</summary>
         public void AskStartOver() => _askStartOver = true;
@@ -234,10 +234,10 @@ namespace Game.View
             int t = Game.Catalog.TierOf(id);
             var rules = Game.Rules;
             var ways = new List<string>();
-            if (t > 1) ways.Add($"собрать из 2 деталей {t - 1}-го уровня");
-            if (t <= rules.ColorTiers) ways.Add($"{Palette.BlockNames[t - 1]} сундук");
-            if (t >= 6) ways.Add($"{Palette.BlockNames[rules.ColorTiers - 1]} сундук ★4–5");
-            return "Где взять: " + string.Join(", ", ways) + ".";
+            if (t > 1) ways.Add(Loc.F("собрать из 2 деталей {0}-го уровня", t - 1));
+            if (t <= rules.ColorTiers) ways.Add(Loc.F("{0} сундук", Palette.BlockNames[t - 1]));
+            if (t >= 6) ways.Add(Loc.F("{0} сундук ★4–5", Palette.BlockNames[rules.ColorTiers - 1]));
+            return Loc.T("Где взять: ") + string.Join(", ", ways) + ".";
         }
 
         private void Say(string text)

@@ -16,7 +16,17 @@
 </head>
 <body>
   <canvas id="unity-canvas" tabindex="-1"></canvas>
-  <div id="loader">Замок из сундуков<div id="bar"><div id="fill"></div></div></div>
+  <div id="loader"><span id="title">Замок из сундуков</span><div id="bar"><div id="fill"></div></div></div>
+  <script>
+    // English title for players outside the Russian-speaking languages (Yandex puts ?lang= in the address).
+    (function () {
+      var m = /[?&]lang=([a-z]+)/.exec(location.search), l = (m ? m[1] : (navigator.language || "ru")).toLowerCase();
+      if (!/^(ru|be|uk|kk|uz)/.test(l)) {
+        document.getElementById("title").textContent = document.title = "Castle of Chests";
+        document.documentElement.lang = "en";
+      }
+    })();
+  </script>
   <script src="platform.js"></script>
   <script>
     // No long-press menu or text selection on phones (Yandex rule 1.6.1).

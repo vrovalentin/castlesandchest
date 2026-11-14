@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Game.Core;
 
 namespace Game.View
 {
@@ -198,13 +199,13 @@ namespace Game.View
                 if (!GUI.Button(new Rect(c.x - rr, c.y - rr, rr * 2, rr * 2), GUIContent.none, _invisible)) continue;
                 int pick = i;
                 if (SpotOf(i) == Spot.Locked)
-                    Later(() => Say($"Сначала построй: {castles[State.Frontier].Name}."));
+                    Later(() => Say(Loc.F("Сначала построй: {0}.", castles[State.Frontier].Name)));
                 else Later(() => _mapPick = pick);
             }
 
             // Title on top.
             _mapTitle ??= new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, fontSize = 28, padding = new RectOffset(10, 10, 4, 4) };
-            GUI.Label(new Rect(24, 22, w - 48, 84), $"Королевство · построено {built} из {castles.Count}", _mapTitle);
+            GUI.Label(new Rect(24, 22, w - 48, 84), Loc.F("Королевство · построено {0} из {1}", built, castles.Count), _mapTitle);
 
             if (_message != null && Time.time < _messageUntil)
                 GUI.Box(new Rect(60, headerH + 20, w - 120, 96), _message, _toast);
@@ -314,16 +315,16 @@ namespace Game.View
             var btn = new Rect(card.center.x - 170, card.yMax - 112, 340, 92);
             if (i == State.CastleIndex)
             {
-                if (GoldButton(btn, next || State.Replaying ? "Строить" : "К стройке", 34)) Later(CloseMap, click: false);
+                if (GoldButton(btn, next || State.Replaying ? Loc.T("Строить") : Loc.T("К стройке"), 34)) Later(CloseMap, click: false);
             }
             else if (State.Replaying && i == State.HomeIndex)
             {
-                if (GoldButton(btn, next ? "Вернуться к стройке" : "Вернуться", 30))
+                if (GoldButton(btn, next ? Loc.T("Вернуться к стройке") : Loc.T("Вернуться"), 30))
                     Later(() => { Game.EndReplay(State); _s.Save(); ResetPlacing(); _pick.Clear(); CloseMap(); }, click: false);
             }
             else if (Game.CanReplay(State, i))
             {
-                if (GoldButton(btn, "Построить заново", 32))
+                if (GoldButton(btn, Loc.T("Построить заново"), 32))
                     Later(() => { Game.StartReplay(State, i); _s.Save(); ResetPlacing(); _pick.Clear(); CloseMap(); }, click: false);
             }
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Core;
 
 namespace Game.View
 {
@@ -12,7 +13,9 @@ namespace Game.View
         {
             /// <summary>Part id of the figurine used as the portrait; null when the narrator speaks.</summary>
             public string Portrait;
-            public string Start, Done;
+            private string _start, _done;
+            public string Start { get => Loc.T(_start); set => _start = value; }
+            public string Done { get => Loc.T(_done); set => _done = value; }
         }
 
         private static readonly Dictionary<string, Resident> ByCastle = new Dictionary<string, Resident>

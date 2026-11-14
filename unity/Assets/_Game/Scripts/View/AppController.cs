@@ -40,6 +40,7 @@ namespace Game.View
         private void Boot()
         {
             Sdk.ReadStart();
+            SetLanguage();
             Session = GameSession.Create(!NoSaves);
             Mine = new GameObject("Mine").AddComponent<MineController>();
             Mine.transform.SetParent(transform, false);
@@ -48,6 +49,29 @@ namespace Game.View
             Build.Init(Session, ShowMine);
             if (Session.State.Run != null) ShowMine(); else ShowBuild();
             StartCoroutine(ReadyAfterFirstFrame());
+        }
+
+        /// <summary>
+        /// Russian or English: in the browser the store's language (Yandex knows the player's), on a phone the
+        /// phone's language, in the editor and tests Russian. «?lang=en» in the page address forces one (for checks).
+        /// </summary>
+        private static void SetLanguage()
+        {
+            string lang = Application.platform switch
+            {
+                RuntimePlatform.WebGLPlayer => Sdk.Lang,
+                RuntimePlatform.Android => Application.systemLanguage switch
+                {
+                    SystemLanguage.Russian or SystemLanguage.Belarusian or SystemLanguage.Ukrainian => "ru",
+                    _ => "en",
+                },
+                _ => "ru",
+            };
+            var url = Application.absoluteURL ?? "";
+            int at = url.IndexOf("lang=", System.StringComparison.Ordinal);
+            if (at >= 0 && url.Length >= at + 7) lang = url.Substring(at + 5, 2);
+            Loc.SetLanguage(lang);
+            Loc.Load(Resources.Load<TextAsset>("Lang/en")?.text);
         }
 
         // The first frame is drawn: the store can hide its loading screen and count gameplay from here.
