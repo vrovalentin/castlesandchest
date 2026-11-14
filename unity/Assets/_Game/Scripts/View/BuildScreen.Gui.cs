@@ -204,9 +204,10 @@ namespace Game.View
                 return;
             }
             AskHint(new Rect(x0 + 40, 150, colW - 80, 300));
-            var bg = GameArt.BuildBackground;
-            // The meadow fills the screen; its horizon (about 60% down the picture) sits a little behind the building site.
-            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, 0.6f, groundY - 150);
+            // The land of the building's zone (beach, meadow, snow, desert, volcano) fills the screen; where its open
+            // ground begins sits a little behind the building site.
+            var (bg, horizon) = MapArt.BackgroundOf(State.CastleIndex);
+            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, horizon, groundY - 150);
             if (_donePanel)
             {
                 // The finished building gets the whole screen; the page comes back with the next building.

@@ -3,14 +3,15 @@ using UnityEditor;
 namespace Game.EditorTools
 {
     /// <summary>
-    /// Import settings of the kingdom map pictures (Art/Resources/Map): no mipmaps (they are drawn at about their own
+    /// Import settings of the kingdom map pictures (Art/Resources/Map) and the zone backgrounds (Art/Resources/Backgrounds): no mipmaps (they are drawn at about their own
     /// size), at most 1024 px, compressed. The map is a JPEG of ~300 KB; in a build it takes about as much.
     /// </summary>
     public sealed class MapTextureImport : AssetPostprocessor
     {
         private void OnPreprocessTexture()
         {
-            if (!assetPath.Replace('\\', '/').Contains("/Art/Resources/Map/")) return;
+            string path = assetPath.Replace('\\', '/');
+            if (!path.Contains("/Art/Resources/Map/") && !path.Contains("/Art/Resources/Backgrounds/")) return;
             var ti = (TextureImporter)assetImporter;
             ti.textureType = TextureImporterType.Default;
             ti.mipmapEnabled = false;

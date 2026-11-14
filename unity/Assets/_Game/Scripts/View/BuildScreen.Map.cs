@@ -25,6 +25,30 @@ namespace Game.View
 
         public static Texture2D Silhouette(string castleId) => Load("Map/sil_" + castleId);
 
+        /// <summary>The land of each place on the map, in catalog order: 1–2 beach, 3–9 meadows and forest, 10–12 snow,
+        /// 13–15 desert, 16–18 volcano.</summary>
+        private static readonly string[] Zones =
+        {
+            "beach", "beach", "meadow", "meadow", "meadow", "meadow", "meadow", "meadow", "meadow",
+            "snow", "snow", "snow", "desert", "desert", "desert", "volcano", "volcano", "volcano",
+        };
+
+        /// <summary>How far down each zone's background (Backgrounds/bg_&lt;zone&gt;.jpg) its open ground begins.</summary>
+        private static readonly Dictionary<string, float> Horizon = new Dictionary<string, float>
+        {
+            ["beach"] = 0.53f, ["meadow"] = 0.56f, ["snow"] = 0.5f, ["desert"] = 0.53f, ["volcano"] = 0.45f,
+        };
+
+        public static string ZoneOf(int place) => Zones[Mathf.Clamp(place, 0, Zones.Length - 1)];
+
+        /// <summary>The building site's background for a place, and where its ground begins (as a part of its height).</summary>
+        public static (Texture2D tex, float horizon) BackgroundOf(int place)
+        {
+            string zone = ZoneOf(place);
+            var t = Load("Backgrounds/bg_" + zone);
+            return t != null ? (t, Horizon[zone]) : (GameArt.BuildBackground, 0.6f);
+        }
+
         /// <summary>
         /// Where the medallion of each building sits on the map: its centre, as parts of the picture from its top
         /// left corner. The n-th building of the catalog sits on the n-th place. Measured on the 1024 px picture
