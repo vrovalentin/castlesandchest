@@ -53,13 +53,13 @@ namespace Game.Core.Tests
         public void DemoContentIsValid()
         {
             CollectionAssert.IsEmpty(_cat.Validate());
-            Assert.AreEqual(17, _cat.Castles[0].Slots.Length);
-            Assert.AreEqual(48, _cat.Castles[1].Slots.Length);
-            Assert.AreEqual(23, _cat.Castles[2].Slots.Length);
-            Assert.AreEqual(24, _cat.Castles[3].Slots.Length);
-            CollectionAssert.AreEqual(new[] { 32, 28, 33, 28, 29, 56, 31, 27, 26, 31, 30, 30, 32 }, _cat.Castles.Skip(4).Select(c => c.Slots.Length).ToArray());
-            Assert.AreEqual(17, _cat.Castles.Count);
-            Assert.AreEqual("castle_15", _cat.Castles[16].Id, "the dragon castle is the finale");
+            // Map order: beach, forest, snow, desert, volcano (see MapPoints in BuildScreen.Map.cs).
+            CollectionAssert.AreEqual(new[] { 1, 6, 3, 4, 2, 5, 7, 11, 9, 10, 18, 13, 8, 17, 12, 16, 14, 15 },
+                _cat.Castles.Select(c => int.Parse(c.Id.Substring("castle_".Length))).ToArray());
+            CollectionAssert.AreEqual(new[] { 17, 28, 23, 24, 48, 32, 33, 31, 29, 56, 56, 26, 28, 30, 27, 31, 30, 32 },
+                _cat.Castles.Select(c => c.Slots.Length).ToArray());
+            Assert.AreEqual(18, _cat.Castles.Count);
+            Assert.AreEqual("castle_15", _cat.Castles[17].Id, "the dragon castle is the finale");
             CollectionAssert.DoesNotContain(_cat.Castles[0].PartsOfTier(7), "baker", "a building's own parts stay in that building");
         }
 
@@ -319,7 +319,7 @@ namespace Game.Core.Tests
             Assert.AreEqual(0, s.Count("window"));
             Assert.AreEqual(1, s.Count("dragon"));
             Assert.AreEqual(0, s.Chests.Count);
-            Assert.AreEqual(48, s.Filled.Length);
+            Assert.AreEqual(_cat.Castles[1].Slots.Length, s.Filled.Length);
             Assert.AreEqual(0, s.Runs);
             Assert.IsFalse(_game.IsLastCastle(s));
             while (!_game.IsLastCastle(s)) _game.NextCastle(s);
@@ -551,7 +551,10 @@ namespace Game.Core.Tests
         public void BotPlaysTheSameGamesAsThePrototype()
         {
             var rng = new XorShift32(12345);
-            var bot = new BalanceBot(new GameLogic(DemoContent.Create(castles: 2)), rng);
+            // The prototype plays buildings 1 and 2; the map order puts others second, so pick them by id.
+            var full = DemoContent.Create();
+            var two = new Catalog(full.Rules, full.Parts, full.Castles.Where(c => c.Id == "castle_1" || c.Id == "castle_2").OrderBy(c => c.Id).ToArray());
+            var bot = new BalanceBot(new GameLogic(two), rng);
             var expected = new[] { new[] { 4, 16, 21, 98, 49 }, new[] { 4, 16, 31, 82, 33 }, new[] { 5, 21, 30, 108, 59 } };
             foreach (var exp in expected)
             {
@@ -578,6 +581,56 @@ namespace Game.Core.Tests
                 TestContext.WriteLine($"{_cat.Castles[i].Id}: median {sorted[sorted.Count / 2]} runs, max {sorted.Last()}");
                 Assert.Less(sorted.Last(), BalanceBot.MaxRuns, _cat.Castles[i].Id);
             }
+        }
+
+        [Test]
+        public void BuiltCastleCanBeBuiltAgainAndTheCastleBeingBuiltWaits()
+        {
+            var s = _game.NewGame();
+            _game.NextCastle(s); _game.NextCastle(s);           // building castle 3
+            s.Filled[0] = s.Filled[1] = true;
+            s.Inventory["wall"] = 4;
+            int score = s.Score, built = s.Built, tickets = s.Tickets;
+
+            Assert.IsFalse(_game.CanReplay(s, 2), "the castle being built is not built yet");
+            Assert.IsFalse(_game.CanReplay(s, 3), "locked");
+            Assert.IsTrue(_game.StartReplay(s, 0));
+            Assert.IsTrue(s.Replaying);
+            Assert.AreEqual(0, s.CastleIndex);
+            Assert.AreEqual(2, s.Frontier);
+            Assert.IsTrue(s.Filled.All(f => !f), "built again from empty");
+            Assert.AreEqual(4, s.Count("wall"), "storage stays");
+
+            // Finish it: points for the parts only; then «Далее» goes home, nothing burns, no tickets.
+            var slots = _game.CastleOf(s).Slots;
+            foreach (var id in slots) s.Add(id, 1);
+            for (int k = 0; k < slots.Length; k++) Assert.IsTrue(_game.Place(s, k));
+            int partsOnly = s.Score - score;
+            Assert.IsTrue(_game.IsComplete(s));
+            Assert.IsFalse(_game.IsLastCastle(s));
+            _game.NextCastle(s);
+            Assert.IsFalse(s.Replaying);
+            Assert.AreEqual(2, s.CastleIndex);
+            Assert.IsTrue(s.Filled[0] && s.Filled[1] && !s.Filled[2], "the waiting castle as it was left");
+            Assert.AreEqual(4, s.Count("wall"));
+            Assert.AreEqual(tickets, s.Tickets);
+            Assert.AreEqual(built, s.Built);
+            Assert.AreEqual(slots.Sum(id => Scoring.Place(_cat.TierOf(id))), partsOnly, "points for the parts, no building bonus");
+        }
+
+        [Test]
+        public void ReplayCanSwitchToAnotherBuiltCastleOrGoHome()
+        {
+            var s = _game.NewGame();
+            _game.NextCastle(s); _game.NextCastle(s);
+            s.Filled[0] = true;
+            Assert.IsTrue(_game.StartReplay(s, 1));
+            Assert.IsFalse(_game.CanReplay(s, 1), "already being built again");
+            Assert.IsTrue(_game.StartReplay(s, 0));
+            Assert.AreEqual(2, s.HomeIndex);
+            _game.EndReplay(s);
+            Assert.AreEqual(2, s.CastleIndex);
+            Assert.IsTrue(s.Filled[0]);
         }
     }
 }

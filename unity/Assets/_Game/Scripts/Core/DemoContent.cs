@@ -32,6 +32,7 @@ namespace Game.Core
             new PartInfo("nest", 6, "Гнездо"),
             new PartInfo("hedgehog", 7, "Ёжик"), new PartInfo("owl", 7, "Сова"), new PartInfo("panda", 7, "Панда"),
             new PartInfo("mermaid", 7, "Русалочка"), new PartInfo("parrot", 7, "Попугай"), new PartInfo("camel", 7, "Верблюжонок"),
+            new PartInfo("sled", 5, "Сани"), new PartInfo("emelya", 7, "Емеля"),
         };
 
         /// <summary>The parts every castle offers; the rest belong to one building each.</summary>
@@ -106,8 +107,15 @@ namespace Game.Core
                 "clay*6 floor wall*2 door window*2 brick floor wall floor roof spire roof*2 wall window tiles roof spire palm " +
                 "porch lantern*2 camel"), AllTiers("palm", "camel"));
 
-            var all = new[] { castle1, castle2, castle3, castle4, castle5, castle6, castle7, castle8, castle9, castle10,
-                castle11, castle12, castle13, castle16, castle17, castle14, castle15 };
+            // Building 18, the boyar terem, cut by tools/art/cut_house_18.py; it stands in the snow after the ice palace.
+            var castle18 = new CastleInfo("castle_18", "Боярский терем", 30, 0.25, 0.2, Slots(
+                "clay*6 wall*2 floor*2 wall*2 door porch brick window*4 roof*3 floor*2 wall*5 tiles window*5 floor*2 bells floor " +
+                "tiles*2 roof tiles*2 roof*3 spire*5 sled emelya lantern*2"), AllTiers("bells", "sled", "emelya"));
+
+            // In the order of the kingdom map, along its road: beach, forest and meadows, snow, desert, volcano.
+            // The dragon castle on the volcano is the finale.
+            var all = new[] { castle1, castle6, castle3, castle4, castle2, castle5, castle7, castle11, castle9, castle10,
+                castle18, castle13, castle8, castle17, castle12, castle16, castle14, castle15 };
             return new Catalog(new Rules(), Parts, all.Take(Math.Max(1, Math.Min(castles, all.Length))).ToArray());
         }
     }
