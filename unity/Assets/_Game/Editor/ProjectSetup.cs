@@ -65,8 +65,10 @@ namespace Game.EditorTools
             foreach (var t in new[] { UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.NamedBuildTarget.Android })
             {
                 PlayerSettings.SetManagedStrippingLevel(t, ManagedStrippingLevel.High);
-                PlayerSettings.SetIl2CppCodeGeneration(t, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
-            }
+            // Compiling for size is for the web download only: on Android a full IL2CPP rebuild for size needs more
+            // memory than the build PC has, and the APK size matters less (Google Play).
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.Android, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSpeed);
             PlayerSettings.stripEngineCode = true;
         }
     }
