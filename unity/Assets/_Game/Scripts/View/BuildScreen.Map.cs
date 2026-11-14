@@ -57,7 +57,7 @@ namespace Game.View
         /// <summary>Left edge of the map on screen when it is wider than the screen (NaN: centre it on the next building).</summary>
         private float _mapPanX = float.NaN;
         private float _dragFromX, _dragPanX;
-        private bool _dragging, _dragMoved;
+        private bool _mapDragging, _mapDragMoved;
 
         /// <summary>Radius of a medallion and of the next one, as a part of the map's width.</summary>
         private const float MedalR = 0.0435f, MedalNextR = 0.053f;
@@ -84,7 +84,7 @@ namespace Game.View
             _revealIndex = reveal ? State.CastleIndex : -1;
             _revealSounded = false;
             _mapPanX = float.NaN;
-            _dragging = false;
+            _mapDragging = false;
         }
 
         public void CloseMap() => _mapOpen = false;
@@ -194,21 +194,21 @@ namespace Game.View
         private void DragMap(Rect area, float minX, float maxX)
         {
             var e = Event.current;
-            if (minX >= maxX) { _dragging = false; return; }
+            if (minX >= maxX) { _mapDragging = false; return; }
             switch (e.type)
             {
                 case EventType.MouseDown when area.Contains(e.mousePosition):
-                    _dragging = true; _dragMoved = false;
+                    _mapDragging = true; _mapDragMoved = false;
                     _dragFromX = e.mousePosition.x; _dragPanX = _mapPanX;
                     break;
-                case EventType.MouseDrag when _dragging:
+                case EventType.MouseDrag when _mapDragging:
                     float dx = e.mousePosition.x - _dragFromX;
-                    if (Mathf.Abs(dx) > 12) _dragMoved = true;
-                    if (_dragMoved) { _mapPanX = Mathf.Clamp(_dragPanX + dx, minX, maxX); e.Use(); }
+                    if (Mathf.Abs(dx) > 12) _mapDragMoved = true;
+                    if (_mapDragMoved) { _mapPanX = Mathf.Clamp(_dragPanX + dx, minX, maxX); e.Use(); }
                     break;
-                case EventType.MouseUp when _dragging:
-                    _dragging = false;
-                    if (_dragMoved) { GUIUtility.hotControl = 0; e.Use(); }
+                case EventType.MouseUp when _mapDragging:
+                    _mapDragging = false;
+                    if (_mapDragMoved) { GUIUtility.hotControl = 0; e.Use(); }
                     break;
             }
         }
