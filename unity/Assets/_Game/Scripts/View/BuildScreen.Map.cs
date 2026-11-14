@@ -150,7 +150,20 @@ namespace Game.View
             _mapPanX = Mathf.Clamp(_mapPanX, minX, maxX);
             DragMap(new Rect(0, headerH, w, h - cardH - 20 - headerH), minX, maxX);
             var mapRect = new Rect(_mapPanX, headerH, size, size);
-            if (map != null) GUI.DrawTexture(mapRect, map);
+            if (map != null)
+            {
+                // Below the picture down to the screen's edge: the picture's own bottom, mirrored and a shade darker,
+                // so no flat blue strip shows around the card.
+                float below = h - mapRect.yMax;
+                if (below > 0)
+                {
+                    float frac = Mathf.Min(1, below / size);
+                    GUI.color = new Color(0.82f, 0.82f, 0.86f, 1);
+                    GUI.DrawTextureWithTexCoords(new Rect(mapRect.x, mapRect.yMax - 1, size, below + 1), map, new Rect(0, frac, 1, -frac));
+                    GUI.color = Color.white;
+                }
+                GUI.DrawTexture(mapRect, map);
+            }
             Vector2 At(int j) => new Vector2(mapRect.x + MapArt.Points[j].x * size, mapRect.y + MapArt.Points[j].y * size);
             int n = Mathf.Min(castles.Count, MapArt.Points.Length);
             float now = Time.time - _mapOpenedAt;

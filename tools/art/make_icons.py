@@ -48,23 +48,46 @@ def back(d, k, col):
     stroke_line(d, [(0.30, 0.5), (0.52, 0.73)], w, col)
 glyph(back, 'back')
 
-# restart: an open ring with an arrow head
+# restart: a circular arrow going clockwise, gap at the top right, a big head at its end.
+# (An open ring with the gap straight up read as a power button.)
 def restart(d, k, col):
     w = 0.19 if k == 1 else 0.095
-    pts = arc_pts(0.5, 0.52, 0.25, -60, 220)
-    stroke_line(d, pts, w, col)
-    ex, ey = pts[0]
-    t = math.radians(-60)
-    # arrow head at the start of the ring, pointing along the ring backwards (counter-clockwise)
-    tip = (ex + 0.13 * math.sin(t) * -1 + 0.0, ey - 0.13 * math.cos(t) * -1)
-    hx, hy = math.cos(t), math.sin(t)
-    a = (ex + hx * 0.13, ey + hy * 0.13)
-    b = (ex - hx * 0.13, ey - hy * 0.13)
-    c = (ex + math.sin(t) * 0.15, ey - math.cos(t) * 0.15)
-    grow = 0.05 if k == 1 else 0
-    d.polygon([(a[0] * S + hx * grow * S, a[1] * S + hy * grow * S), (b[0] * S - hx * grow * S, b[1] * S - hy * grow * S),
-               (c[0] * S + math.sin(t) * grow * S, c[1] * S - math.cos(t) * grow * S)], fill=col)
+    cx, cy, r = 0.5, 0.54, 0.25
+    a0, a1 = -15, 262
+    stroke_line(d, arc_pts(cx, cy, r, a0, a1), w, col)
+    t = math.radians(a1)
+    ex, ey = cx + r * math.cos(t), cy + r * math.sin(t)
+    tx, ty = -math.sin(t), math.cos(t)       # clockwise tangent (y down)
+    nx, ny = math.cos(t), math.sin(t)        # outward normal
+    g = 0.06 if k == 1 else 0
+    L, H = 0.15, 0.13
+    tip = (ex + tx * (L + g * 1.6), ey + ty * (L + g * 1.6))
+    a = (ex - tx * g + nx * (H + g), ey - ty * g + ny * (H + g))
+    b = (ex - tx * g - nx * (H + g), ey - ty * g - ny * (H + g))
+    d.polygon([(x * S, y * S) for x, y in (tip, a, b)], fill=col)
 glyph(restart, 'restart')
+
+# settings: a gear with eight teeth and a hole
+def gear(d, k, col):
+    g = 0.045 if k == 1 else 0
+    cx, cy, r = 0.5, 0.5, 0.25 + g
+    for i in range(8):
+        a = math.radians(i * 45)
+        pts = rrect(cx + math.cos(a) * (0.30 + g / 2), cy + math.sin(a) * (0.30 + g / 2), 0.15 + g, 0.13 + g * 1.4, a + math.pi / 2, 0.02)
+        d.polygon([(x * S, y * S) for x, y in pts], fill=col)
+    d.ellipse(((cx - r) * S, (cy - r) * S, (cx + r) * S, (cy + r) * S), fill=col)
+    h = 0.10 - g * 0.9
+    if k == 1:
+        return
+    d.ellipse(((cx - h) * S, (cy - h) * S, (cx + h) * S, (cy + h) * S), fill=(0, 0, 0, 0))
+
+# next: a fat arrow pointing right (merge strip «two into one»)
+def next_arrow(d, k, col):
+    w = 0.20 if k == 1 else 0.10
+    stroke_line(d, [(0.24, 0.5), (0.70, 0.5)], w, col)
+    stroke_line(d, [(0.70, 0.5), (0.48, 0.27)], w, col)
+    stroke_line(d, [(0.70, 0.5), (0.48, 0.73)], w, col)
+glyph(next_arrow, 'next')
 
 def speaker(d, k, col):
     g = 0.045 if k == 1 else 0
@@ -134,5 +157,5 @@ def broom():
     poly(d, stick, (196, 128, 66, 255))
     finish(img, 'broom')
 
-hammer(); broom()
+hammer(); broom(); glyph(gear, 'gear')
 print('ok', sorted(os.listdir(out)))

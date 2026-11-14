@@ -284,14 +284,20 @@ namespace Game.View
             if (GUILayout.Button(Loc.T("Закончить"), State.Run.ExtraUsed ? _button : _button2, GUILayout.Height(76))) FinishRun();
         }
 
+        private string SummaryTitle()
+        {
+            int n = _summary.Got.Count * (_doubled ? 2 : 1);
+            if (n > 0) return Loc.F("{0} {1}!", n, Plural(n, "сундук", "сундука", "сундуков"));
+            return _summary.NewRecord ? Loc.T("Сундуков нет, зато рекорд!") : Loc.T("В этот раз без сундуков");
+        }
+
         private string SummaryText()
         {
             var lines = new List<string>();
-            lines.Add(_summary.NewRecord ? Loc.F("Очки за забег: {0}. Новый рекорд!", _summary.Score)
-                : Loc.F("Очки за забег: {0}. Рекорд: {1}.", _summary.Score, Mathf.Max(_summary.PrevBest, _summary.Score)));
-            if (_summary.Got.Count == 0) lines.Add(Loc.T("Ни один сундук не упал за край."));
-            if (_summary.Left > 0) lines.Add(_summary.Kept ? Loc.F("Из них {0} с поля, они достались тебе.", _summary.Left) : Loc.F("Сгорело на поле: {0}.", _summary.Left));
-            lines.Add(Loc.F("Всего сундуков ждёт на Стройке: {0}", State.Chests.Count));
+            lines.Add(_summary.NewRecord ? Loc.F("Очки: {0} · новый рекорд!", _summary.Score)
+                : Loc.F("Очки: {0} · рекорд {1}", _summary.Score, Mathf.Max(_summary.PrevBest, _summary.Score)));
+            if (_summary.Left > 0 && !_summary.Kept)
+                lines.Add(Loc.F("{0} {1} остались на поле", _summary.Left, Plural(_summary.Left, "сундук", "сундука", "сундуков")));
             return string.Join("\n", lines);
         }
 

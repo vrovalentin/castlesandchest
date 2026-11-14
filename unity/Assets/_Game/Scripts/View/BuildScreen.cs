@@ -236,7 +236,7 @@ namespace Game.View
             var ways = new List<string>();
             if (t > 1) ways.Add(Loc.F("собрать из 2 деталей {0}-го уровня", t - 1));
             if (t <= rules.ColorTiers) ways.Add(Loc.F("{0} сундук", Palette.BlockNames[t - 1]));
-            if (t >= 6) ways.Add(Loc.F("{0} сундук ★4–5", Palette.BlockNames[rules.ColorTiers - 1]));
+            if (t >= 6) ways.Add(Loc.F("{0} сундук на 4–5 звёзд", Palette.BlockNames[rules.ColorTiers - 1]));
             return Loc.T("Где взять: ") + string.Join(", ", ways) + ".";
         }
 

@@ -111,7 +111,6 @@
 Отмена	Cancel
 Подарок дня	Daily gift
 Заходи каждый день: подарок растёт. Пропустишь день, и всё начнётся с первого.	Come every day: the gift grows. Miss a day and it starts from day one.
-День {0} ✓	Day {0} ✓
 День {0}	Day {0}
 Подарок дня {0}: {1}	Daily gift {0}: {1}
 И как каждый день: {0}	And as every day: {0}
@@ -147,7 +146,6 @@
 Реклама не досмотрена, награды нет. Попробуй ещё раз чуть позже.	The ad wasn't finished, so no reward. Try again a little later.
 собрать из 2 деталей {0}-го уровня	merge 2 parts of level {0}
 {0} сундук	{0} chest
-{0} сундук ★4–5	{0} chest ★4–5
 Где взять: 	Where to get it: 
 тапни, чтобы продолжить	tap to continue
 Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!	Tap groups of 2 or more matching blocks.\nGroups of 4 or more turn into a chest, and chests hold parts for your castle!
@@ -258,3 +256,21 @@
 В тени прохладно. Верблюжонок улыбается.	It's cool in the shade. The baby camel smiles.
 Здесь будет новая постройка.	A new building will stand here.
 Готово!	Done!
+Сундуков нет, зато рекорд!	No chests, but a new record!
+В этот раз без сундуков	No chests this time
+Очки: {0} · новый рекорд!	Points: {0} · new record!
+Очки: {0} · рекорд {1}	Points: {0} · record {1}
+{0} {1} остались на поле	{0} {1} left on the field
+Продолжить  <size=22>ходов: {0}</size>	Continue  <size=22>moves: {0}</size>
+Поставить ×{0}	Place ×{0}
+{0} сундук на 4–5 звёзд	{0} chest with 4–5 stars
+Замок из сундуков · версия {0}	Castle of Chests · version {0}
+Игру сделал Валентин	Made by Valentin
+Конфиденциальность	Privacy
+Понятно	Got it
+Игра не просит имя, почту или телефон и не собирает их.\n\nПрогресс (замки, склад, сундуки, очки) хранится на устройстве, а в Яндекс Играх ещё и в облачном сохранении Яндекса, чтобы не потерялся.\n\nРекламу показывает площадка, на которой ты играешь (например, Яндекс). Она может использовать данные по своим правилам конфиденциальности.\n\nВопросы об игре: через страницу игры на площадке.	The game doesn't ask for your name, email or phone and doesn't collect them.\n\nYour progress (castles, storage, chests, points) is kept on your device, and on Yandex Games also in Yandex cloud saves so it isn't lost.\n\nAds are shown by the platform you play on (for example, Yandex). It may use data under its own privacy policy.\n\nQuestions about the game: through the game's page on the platform.
+Замок строится снизу вверх	Castles are built from the bottom up
+В сундуках детали для замка	Chests hold parts for the castle
+Сундуки добывают в шахте	Chests come from the mine
+Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!	Tap 2+ matching blocks.\n4+ make a chest!
+Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля.	Ice cracks when blocks pop next to it.\nStones don't pop, they fall off the field.

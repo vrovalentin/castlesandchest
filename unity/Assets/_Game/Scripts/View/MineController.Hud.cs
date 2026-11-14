@@ -50,7 +50,8 @@ namespace Game.View
         {
             float s = HudScale, w = Screen.width / s, h = Screen.height / s;
             float colW = Mathf.Min(w, 760f), x0 = (w - colW) / 2f, pad = 16f, inner = colW - 2 * pad;
-            const float gotMin = 150, gap = 12;
+            // «Добыто» is one strip under the board; spare height goes around the board, not into an empty panel.
+            const float gotMin = 130, gap = 12;
             var r = new HudRects
             {
                 Bar = new Rect(x0 + pad, 16, inner, 76),
@@ -62,8 +63,9 @@ namespace Game.View
             var b = State?.Run?.Board;
             float aspect = b != null ? (b.Cols + 0.3f) / (b.Rows + 0.3f) : 1f;
             float bh = Mathf.Min(maxH, inner / aspect);
-            r.Board = new Rect(x0 + pad, top, inner, bh);
-            r.Got = new Rect(x0 + pad, r.Board.yMax + gap, inner, Mathf.Max(gotMin, h - pad - r.Board.yMax - gap));
+            float spare = Mathf.Max(0, h - pad - top - bh - gap - gotMin);
+            r.Board = new Rect(x0 + pad, top + spare * 0.4f, inner, bh);
+            r.Got = new Rect(x0 + pad, r.Board.yMax + gap, inner, gotMin);
             return r;
         }
 
@@ -145,11 +147,11 @@ namespace Game.View
 
             var run = State.Run;
             if (run != null && _mode == Mode.Play && !Busy)
-                Hints.Want("board", new Rect(L.Board.x + 20, L.Board.center.y - 150, L.Board.width - 40, 300),
-                    Loc.T("Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!"));
+                Hints.Want("board", new Rect(L.Board.x + 40, L.Board.center.y - 110, L.Board.width - 80, 220),
+                    Loc.T("Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!"));
             if (run != null && _mode == Mode.Play && !Busy && Hints.Seen("board") && HasObstacles(run.Board))
-                Hints.Want("obstacles", new Rect(L.Board.x + 20, L.Board.center.y - 160, L.Board.width - 40, 320),
-                    Loc.T("Тут лёд и камни!\nБлок во льду не нажимается: взорви группу рядом, и лёд треснет.\nКамень не взрывается: он падает вниз и уходит с поля."));
+                Hints.Want("obstacles", new Rect(L.Board.x + 40, L.Board.center.y - 120, L.Board.width - 80, 240),
+                    Loc.T("Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля."));
             if (run != null)
             {
                 GUI.enabled = !Busy && _mode == Mode.Play;
@@ -164,7 +166,7 @@ namespace Game.View
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
             if (_mode == Mode.OutOfMoves) Panel(w, h, Loc.T("Ходы кончились"), OutOfMovesText(), OutOfMovesButtons);
-            else if (_mode == Mode.Summary) Panel(w, h, Loc.F("Добыто сундуков: {0}", _summary.Got.Count * (_doubled ? 2 : 1)), SummaryText(), SummaryButtons, SummaryChests);
+            else if (_mode == Mode.Summary) Panel(w, h, SummaryTitle(), SummaryText(), SummaryButtons, SummaryChests);
             else if (_mode == Mode.ConfirmRestart) Panel(w, h, Loc.T("Начать заново?"), RestartText(), RestartButtons);
             else if (_mode == Mode.NoTickets) Panel(w, h, Loc.T("Билеты кончились"),
                 Game.CanWatchAdForTickets(State) ? Loc.F("Посмотри рекламу и получи {0} билета. Или жди завтра: придут новые.", Game.Rules.AdTickets) : Loc.T("Новые билеты придут завтра."), () =>
@@ -256,15 +258,16 @@ namespace Game.View
                 int tier = Game.Catalog.TierOf(p.Id);
                 if (tier == 6) { decor += p.N; decorPart ??= p.Id; continue; }
                 if (tier >= 7) { figures += p.N; figurePart ??= p.Id; continue; }
-                chips.Add(new NeedChip { Text = Game.Catalog.NameOf(p.Id).ToLowerInvariant() + Times(p.N), Swatch = Palette.Tier(tier), Part = p.Id });
+                chips.Add(new NeedChip { Text = Times(p.N), Swatch = Palette.Tier(tier), Part = p.Id });
             }
             // Decor and figurines don't drop by block colour, so one chip per tier.
-            if (decor > 0) chips.Add(new NeedChip { Text = Loc.T("декор") + Times(decor), Swatch = Palette.Tier(6), Part = decorPart });
-            if (figures > 0) chips.Add(new NeedChip { Text = Loc.T("фигурки") + Times(figures), Swatch = Palette.Tier(7), Part = figurePart });
+            if (decor > 0) chips.Add(new NeedChip { Text = Times(decor), Swatch = Palette.Tier(6), Part = decorPart });
+            if (figures > 0) chips.Add(new NeedChip { Text = Times(figures), Swatch = Palette.Tier(7), Part = figurePart });
             return chips;
         }
 
-        private static string Times(int n) => n > 1 ? $" ×{n}" : "";
+        // Only the number: the part icon says what it is.
+        private static string Times(int n) => n > 1 ? $"×{n}" : "";
 
         private void DrawNeeds(Rect r)
         {
@@ -291,7 +294,7 @@ namespace Game.View
             foreach (var c in chips)
             {
                 var content = new GUIContent(c.Text);
-                float cw = _chip.CalcSize(content).x;
+                float cw = ChipWidth(c);
                 if (x + cw > right && x > r.x + padX) { x = r.x + padX; y += ch + gapY; }
                 if (y + ch > r.yMax - 4) break;
                 var cr = new Rect(x, y, Mathf.Min(cw, right - x), ch);
@@ -308,13 +311,16 @@ namespace Game.View
             }
         }
 
+        private float ChipWidth(NeedChip c) =>
+            string.IsNullOrEmpty(c.Text) ? 40 : _chip.CalcSize(new GUIContent(c.Text)).x;
+
         private int CountRows(List<NeedChip> chips, float width, float gapX)
         {
             float x = _needsTitle.CalcSize(new GUIContent(Loc.T("Нужно замку:"))).x + gapX;
             int rows = 1;
             foreach (var c in chips)
             {
-                float cw = _chip.CalcSize(new GUIContent(c.Text)).x;
+                float cw = ChipWidth(c);
                 if (x + cw > width && x > 0) { x = 0; rows++; }
                 x += cw + gapX;
             }
@@ -328,9 +334,11 @@ namespace Game.View
             const float bw = 176, gap = 12;
             ToolButton(new Rect(r.x, r.y, bw, r.height), Tool.Broom, UiArt.Broom, State.Brooms);
             ToolButton(new Rect(r.x + bw + gap, r.y, bw, r.height), Tool.Hammer, UiArt.Hammer, State.Hammers);
+            // A line only while a tool is armed; the board itself is taught by the first-run hint.
             string hint = Armed == Tool.Broom ? Loc.T("Тапни ряд: все блоки в нём исчезнут. Ход не тратится.")
                 : Armed == Tool.Hammer ? Loc.T("Тапни блок: он исчезнет. Ход не тратится.")
-                : Loc.T("Тапни группу из 2+ блоков. Из 4+ получится сундук.");
+                : null;
+            if (hint == null) return;
             float hx = r.x + 2 * bw + gap + 16;
             GUI.Label(new Rect(hx, r.y, r.xMax - hx, r.height), hint, _hint);
         }
@@ -368,7 +376,7 @@ namespace Game.View
             const float gap = 6;
             float size = 40;
             int perRow = 1, rows = 1;
-            for (float s = 84; s >= 40; s -= 4)
+            for (float s = Mathf.Min(84, area.height); s >= 40; s -= 4)
             {
                 perRow = Mathf.Max(1, Mathf.FloorToInt((area.width + gap) / (s + gap)));
                 rows = Mathf.Max(1, Mathf.FloorToInt((area.height + gap) / (s + gap)));

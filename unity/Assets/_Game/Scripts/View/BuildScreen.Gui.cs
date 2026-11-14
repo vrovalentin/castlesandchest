@@ -203,7 +203,6 @@ namespace Game.View
                 DrawMap(w, h);
                 return;
             }
-            AskHint(new Rect(x0 + 40, 150, colW - 80, 300));
             // The land of the building's zone (beach, meadow, snow, desert, volcano) fills the screen; where its open
             // ground begins sits a little behind the building site.
             var (bg, horizon) = MapArt.BackgroundOf(State.CastleIndex);
@@ -253,24 +252,10 @@ namespace Game.View
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
-            if (have) Pointer.Show("place", _placeAt);
-            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true);
-            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt);
-        }
-
-        /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
-        private void AskHint(Rect bubble)
-        {
-            if (_reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
-            int next = Game.NextSlot(State);
-            if (next < 0) return;
-            bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
-            if (State.Chests.Count > 0 && !have)
-                Hints.Want("chests", bubble, Loc.T("<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу."));
-            else if (have)
-                Hints.Want("place", bubble, Loc.T("Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить»."));
-            else if (State.Chests.Count == 0)
-                Hints.Want("mine", bubble, Loc.T("Нужны детали? Проверь на складе.\nТам же можешь и собрать недостающие.\nЕсли нет на складе — иди добывай!"));
+            // The arrow says where, one short line says why: no walls of text for a new player.
+            if (have) Pointer.Show("place", _placeAt, caption: Loc.T("Замок строится снизу вверх"));
+            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true, caption: Loc.T("В сундуках детали для замка"));
+            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt, caption: Loc.T("Сундуки добывают в шахте"));
         }
 
         // ---------- header ----------
@@ -280,12 +265,11 @@ namespace Game.View
             var castle = Game.CastleOf(State);
             int done = State.Filled.Count(f => f), total = State.Filled.Length;
             const float progW = 150, btn = 64;
-            if (GUI.Button(new Rect(r.x, r.y, btn, btn), GUIContent.none, _roundBtn)) Later(AskStartOver);
-            GUI.DrawTexture(new Rect(r.x + 11, r.y + 11, btn - 22, btn - 22), UiArt.Restart, ScaleMode.ScaleToFit);
-            // Settings: music, sounds and vibration. The speaker is crossed out when both music and sounds are off.
-            var snd = new Rect(r.x + btn + 8, r.y, btn, btn);
+            // Settings behind a gear: music, sounds, vibration, about the game, and «Начать сначала»
+            // (wiping progress doesn't deserve a button of its own on the main screen).
+            var snd = new Rect(r.x, r.y, btn, btn);
             if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => _settingsOpen = true);
-            GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted && Music.Off ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
+            GUI.DrawTexture(new Rect(snd.x + 10, snd.y + 10, btn - 20, btn - 20), UiArt.Gear, ScaleMode.ScaleToFit);
             // The kingdom map: its own picture, small, in the round button.
             var mapBtn = new Rect(snd.xMax + 8, r.y, btn, btn);
             if (GUI.Button(mapBtn, GUIContent.none, _roundBtn)) Later(() => OpenMap());
@@ -449,10 +433,7 @@ namespace Game.View
 
             float tx = icon.xMax + 18, btnW = 210, textW = card.xMax - padX - tx - (have > 0 ? btnW + 12 : 0);
             GUI.Label(new Rect(tx, y + 56, textW, 44), Game.Catalog.NameOf(id), _bigName);
-            string count = total > 1 ? Loc.F("{0}-я из {1}", nth, total) : "";
-            string sub = have > 0 ? (count.Length > 0 ? count + " · " : "") + Loc.F("на складе {0}", have)
-                : (count.Length > 0 ? count + ". " : "") + Loc.T("Нет на складе. ") + WhereFrom(id);
-            GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), sub, _sub);
+            DrawNextFacts(new Rect(tx, y + 104, textW, 48), tier, nth, total, have);
 
             if (have > 0)
             {
@@ -463,11 +444,73 @@ namespace Game.View
                 GUI.enabled = was && !Placing;
                 if (GUI.Button(b, Loc.T("Поставить"), _green)) Later(() => StartPlace(next), click: false);
                 _placeAt = b;
-                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), Loc.F("Подряд · {0}", row), _wood)) Later(() => StartPlace(next, row), click: false);
+                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), Loc.F("Поставить ×{0}", row), _wood)) Later(() => StartPlace(next, row), click: false);
                 GUI.enabled = was;
             }
             return card.yMax;
         }
+
+        /// <summary>
+        /// Under the next part's name, pictures instead of words: «2/4» when the castle takes several,
+        /// a crate with ×N when the storage has it, otherwise the chest it drops from and «2→1» when it can be merged.
+        /// </summary>
+        private void DrawNextFacts(Rect r, int tier, int nth, int total, int have)
+        {
+            var num = _factNum ??= new GUIStyle(_sub) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = false };
+            float x = r.x, ic = r.height;
+            void Text(string t)
+            {
+                var c = new GUIContent(t);
+                float w = num.CalcSize(c).x;
+                GUI.Label(new Rect(x, r.y, w, r.height), c, num);
+                x += w + 14;
+            }
+            void Icon(Texture tex)
+            {
+                if (tex == null) return;
+                GUI.DrawTexture(new Rect(x, r.y, ic, ic), tex, ScaleMode.ScaleToFit);
+                x += ic + 4;
+            }
+            if (total > 1) Text($"{nth}/{total}");
+            if (have > 0)
+            {
+                Icon(GameArt.ScaffoldCrate);
+                Text($"×{have}");
+                return;
+            }
+            var rules = Game.Rules;
+            if (tier <= rules.ColorTiers) Icon(SpriteFactory.ChestArt(tier - 1)?.texture);
+            if (tier >= 6)
+            {
+                Icon(SpriteFactory.ChestArt(rules.ColorTiers - 1)?.texture);
+                var star = SpriteFactory.Star;
+                if (star != null)
+                {
+                    var old = GUI.color;
+                    GUI.color = new Color32(0xff, 0xc8, 0x3c, 0xff);
+                    GUI.DrawTexture(new Rect(x - 6, r.y + 8, ic - 16, ic - 16), star.texture, ScaleMode.ScaleToFit);
+                    GUI.color = old;
+                    x += ic - 18;
+                }
+                Text("4–5");
+            }
+            // «Two of the tier below make this one»: two dots, an arrow, one dot, in the tiers' colours.
+            if (tier > 1)
+            {
+                float d = 18, cy = r.center.y - d / 2;
+                var old = GUI.color;
+                GUI.color = Palette.Tier(tier - 1);
+                GUI.DrawTexture(new Rect(x, cy, d, d), UiArt.Disc(Color.white, Color.white, 0));
+                GUI.DrawTexture(new Rect(x + d + 4, cy, d, d), UiArt.Disc(Color.white, Color.white, 0));
+                GUI.color = old;
+                GUI.DrawTexture(new Rect(x + 2 * d + 8, r.center.y - 13, 26, 26), UiArt.Next, ScaleMode.ScaleToFit);
+                GUI.color = Palette.Tier(tier);
+                GUI.DrawTexture(new Rect(x + 2 * d + 38, cy - 3, d + 6, d + 6), UiArt.Disc(Color.white, Color.white, 0));
+                GUI.color = old;
+            }
+        }
+
+        private GUIStyle _factNum;
 
         // ---------- chests and storage tiles ----------
 
@@ -673,7 +716,8 @@ namespace Game.View
                 if (k == 0) GUI.Label(new Rect(c.xMax, c.y, 34, st), "+", new GUIStyle(stripTitle) { fontSize = 44, normal = { textColor = Color.white } });
             }
             float ax = strip.x + 20 + 2 * st + 34 + 6;
-            GUI.Label(new Rect(ax, sy, 40, st), "→", new GUIStyle(stripTitle) { fontSize = 44 });
+            // The game font has no arrow glyph: draw the icon.
+            GUI.DrawTexture(new Rect(ax, sy + st / 2 - 22, 40, 44), UiArt.Next, ScaleMode.ScaleToFit);
             float tx = ax + 46;
             if (choosing)
             {
@@ -712,7 +756,7 @@ namespace Game.View
         private void DrawMineButton(Rect r)
         {
             bool ad = Game.CanWatchAdForTickets(State);
-            string text = State.Run != null ? Loc.F("Продолжить · {0} ход.", State.Run.Moves)
+            string text = State.Run != null ? Loc.F("Продолжить  <size=22>ходов: {0}</size>", State.Run.Moves)
                 : State.Tickets > 0 ? Loc.F("Добывать · {0} ходов  <size=22>билетов: {1}</size>", State.Opts.Moves, State.Tickets)
                 : ad ? Loc.F("+{0} билета · реклама  <size=22>билеты кончились</size>", Game.Rules.AdTickets)
                 : Loc.T("Билеты кончились, новые завтра");
@@ -961,7 +1005,7 @@ namespace Game.View
                 var ink = today ? new Color32(0x4a, 0x2a, 0x08, 0xff) : new Color32(0xff, 0xf8, 0xe6, 0xff);
                 var head = new GUIStyle(_nightBody) { fontSize = 22, fontStyle = FontStyle.Bold };
                 head.normal.textColor = ink;
-                GUI.Label(new Rect(t.x, t.y + 8, t.width, 30), past ? Loc.F("День {0} ✓", day) : Loc.F("День {0}", day), head);
+                GUI.Label(new Rect(t.x, t.y + 8, t.width, 30), Loc.F("День {0}", day), head);
                 var body = new GUIStyle(_nightBody) { fontSize = 20 };
                 body.normal.textColor = ink;
                 GUI.Label(new Rect(t.x + 6, t.y + 44, t.width - 12, t.height - 50), GiftText(cal[i], "\n"), body);
@@ -995,11 +1039,14 @@ namespace Game.View
         private static string Plural(int n, string one, string few, string many) => Loc.Plural(n, one, few, many);
 
         /// <summary>Music, sounds and (on phones) vibration, each on or off.</summary>
+        private bool _privacyOpen;
+
         private void DrawSettingsPanel(float w, float h)
         {
             Dim(w, h);
+            if (_privacyOpen) { DrawPrivacy(w, h); return; }
             bool buzz = Haptics.Supported;
-            float pw = Mathf.Min(620, w - 60), ph = buzz ? 600 : 500;
+            float pw = Mathf.Min(620, w - 60), ph = (buzz ? 600 : 500) + 200;
             var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
             NightWindow(r, Loc.T("Настройки"));
             float y = r.y + 110;
@@ -1012,8 +1059,38 @@ namespace Game.View
             if (Row(Loc.T("Музыка: включена"), Loc.T("Музыка: выключена"), !Music.Off)) Later(() => Music.Off = !Music.Off, click: true);
             if (Row(Loc.T("Звуки: включены"), Loc.T("Звуки: выключены"), !Sfx.Muted)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
             if (buzz && Row(Loc.T("Вибрация: включена"), Loc.T("Вибрация: выключена"), !Haptics.Off)) Later(() => { Haptics.Off = !Haptics.Off; Haptics.Tap(40); }, click: true);
+
+            // About the game: who made it, which version. A person's name tells players someone cares about it.
+            var about = new GUIStyle(_nightBody) { fontSize = 21 };
+            about.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
+            y += 6;
+            GUI.Label(new Rect(r.x + 40, y, r.width - 80, 30), Loc.F("Замок из сундуков · версия {0}", Application.version), about);
+            GUI.Label(new Rect(r.x + 40, y + 32, r.width - 80, 30), Loc.T("Игру сделал Валентин"), about);
+            y += 78;
+            var small = new GUIStyle(_wood) { fontSize = 19 };
+            float bw = (r.width - 120 - 12) / 2;
+            if (GUI.Button(new Rect(r.x + 60, y, bw, 56), Loc.T("Конфиденциальность"), small)) Later(() => _privacyOpen = true);
+            if (GUI.Button(new Rect(r.x + 60 + bw + 12, y, bw, 56), Loc.T("Начать сначала"), small))
+                Later(() => { _settingsOpen = false; AskStartOver(); });
             if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), Loc.T("Готово"), 34)) Later(() => _settingsOpen = false);
         }
+
+        private void DrawPrivacy(float w, float h)
+        {
+            float pw = Mathf.Min(640, w - 40), ph = Mathf.Min(h - 80, 900);
+            var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
+            NightWindow(r, Loc.T("Конфиденциальность"));
+            var body = new GUIStyle(_nightBody) { fontSize = 21, alignment = TextAnchor.UpperLeft };
+            body.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
+            GUI.Label(new Rect(r.x + 50, r.y + 110, r.width - 100, r.height - 260), Loc.T(PrivacyText), body);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), Loc.T("Понятно"), 34)) Later(() => _privacyOpen = false);
+        }
+
+        private const string PrivacyText =
+            "Игра не просит имя, почту или телефон и не собирает их.\n\n" +
+            "Прогресс (замки, склад, сундуки, очки) хранится на устройстве, а в Яндекс Играх ещё и в облачном сохранении Яндекса, чтобы не потерялся.\n\n" +
+            "Рекламу показывает площадка, на которой ты играешь (например, Яндекс). Она может использовать данные по своим правилам конфиденциальности.\n\n" +
+            "Вопросы об игре: через страницу игры на площадке.";
 
         /// <summary>Eight sparkles flying out from <paramref name="at"/> and fading, <paramref name="k"/> 0 → 1.</summary>
         private static void DrawBurst(Vector2 at, float k)
