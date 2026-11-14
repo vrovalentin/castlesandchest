@@ -1,0 +1,7 @@
+<!-- Managed stripping is High (ProjectSetup.SetupPlayer): our own assemblies are kept whole, so saves read by
+     JsonUtility and anything reached by reflection stay. Only Unity's and .NET's unused code is cut. -->
+<linker>
+  <assembly fullname="Game.Core" preserve="all"/>
+  <assembly fullname="Game.View" preserve="all"/>
+  <assembly fullname="Game.Platform" preserve="all"/>
+</linker>

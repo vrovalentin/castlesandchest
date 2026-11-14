@@ -41,6 +41,8 @@ def open_piece(path):
     if size is None or name not in rects or im.size == (size, size):
         return im
     x, y, w, h = rects[name]
+    if im.size != (w, h):   # stored smaller than the canvas (scale_castles.py)
+        im = im.resize((w, h), Image.LANCZOS)
     full = Image.new('RGBA', (size, size))
     full.paste(im, (x, y))
     return full

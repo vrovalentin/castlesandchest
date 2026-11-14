@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 
 namespace Game.EditorTools
@@ -8,12 +9,16 @@ namespace Game.EditorTools
     /// </summary>
     public sealed class CastleTextureImport : AssetPostprocessor
     {
-        public override uint GetVersion() => 1;
+        // The buildings, and the storage icons, interface and board pictures (a third of the download before).
+        private static readonly string[] Folders =
+            { "/Art/Resources/Castles/", "/Art/Resources/Parts/", "/Art/Resources/UI/", "/Art/Resources/Board/" };
+
+        public override uint GetVersion() => 2;
 
         private void OnPreprocessTexture()
         {
             string path = assetPath.Replace('\\', '/');
-            if (!path.Contains("/Art/Resources/Castles/")) return;
+            if (!Folders.Any(path.Contains)) return;
             var ti = (TextureImporter)assetImporter;
             ti.textureCompression = TextureImporterCompression.Compressed;
             ti.crunchedCompression = true;
