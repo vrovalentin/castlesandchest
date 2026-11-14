@@ -1,6 +1,8 @@
 # Cut building 5, the treehouse, into its building steps, bottom-up.
 #   domicnaderevve5_cut.png : the tree without the squirrel, the balcony rail and the lanterns
-#   domicnaderevve5.png     : with them
+#   domicnaderevve5.png     : with them; or domik5_full2.png from place_figures.py:
+#     python3 place_figures.py domicnaderevve5_cut.png domik5_full2.png rail=domik5_rail_src.png:0.94:25.8:27.2:holes \
+#       squirrel=domik5_squirrel_src.png:0.215:365.95:268.45:424:behind-rail
 # Usage: python3 cut_house_5.py <clean.png> <full.png> <output folder> [preview.png]
 import sys, os
 import numpy as np
@@ -75,11 +77,22 @@ SLOTS += [('wall', R['trunkL_lo'], 'clean'), ('wall', R['trunkR_lo'], 'clean'),
 
 SLOTS = settle(SLOTS, found)
 
-D = full_only(F, C, aF)
-squirrel = D & S.box(415, 545, 296, 425) & ~S.box(400, 560, 345, 425) | D & S.box(455, 512, 345, 418)
-lantL = D & (S.box(60, 140, 385, 540) | S.box(285, 325, 245, 305))
-lantR = D & (S.box(612, 690, 195, 345) | S.box(860, 935, 535, 670) | S.box(735, 775, 395, 440))
-rail = D & S.box(160, 580, 340, 470) & ~squirrel & ~lantL & ~lantR
+# The squirrel, the balcony rail and the lanterns were drawn on their own and put onto the clean tree
+# (place_figures.py, see make_house_5_full below): their own outlines are the masks, so no bits of the tree
+# stick to them. Without those pictures, the difference of the two pictures.
+fig = lambda name: full_p.replace('.png', f'_{name}.png')
+if os.path.exists(fig('squirrel')):
+    squirrel = np.array(Image.open(fig('squirrel')))[..., 3] > 110
+    D = np.array(Image.open(fig('rail')))[..., 3] > 110
+    lantL = D & (S.box(50, 160, 380, 560) | S.box(270, 335, 235, 315))
+    lantR = D & (S.box(595, 700, 190, 350) | S.box(795, 905, 530, 690))
+    rail = D & S.box(140, 576, 320, 470) & ~lantL & ~lantR
+else:
+    D = full_only(F, C, aF)
+    squirrel = D & S.box(415, 545, 296, 425) & ~S.box(400, 560, 345, 425) | D & S.box(455, 512, 345, 418)
+    lantL = D & (S.box(60, 140, 385, 540) | S.box(285, 325, 245, 305))
+    lantR = D & (S.box(612, 690, 195, 345) | S.box(860, 935, 535, 670) | S.box(735, 775, 395, 440))
+    rail = D & S.box(160, 580, 340, 470) & ~squirrel & ~lantL & ~lantR
 SLOTS += [('porch', rail, 'full'), ('lantern', lantL, 'full'), ('lantern', lantR, 'full'), ('squirrel', squirrel, 'full')]
 
 write_castle(out, 'c5', 'castle_5', SLOTS, C, F, aC, aF, on, found, sys.argv[4] if len(sys.argv) > 4 else None, grey_clay=False, grow_back=True)
