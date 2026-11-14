@@ -63,7 +63,6 @@ namespace Game.EditorTools
             // A smaller download: unused code is cut harder and IL2CPP compiles for size. Our own assemblies are kept
             // whole (Assets/link.xml), so nothing the game reaches only by reflection or JsonUtility goes missing.
             foreach (var t in new[] { UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.NamedBuildTarget.Android })
-            {
                 PlayerSettings.SetManagedStrippingLevel(t, ManagedStrippingLevel.High);
             // Compiling for size is for the web download only: on Android a full IL2CPP rebuild for size needs more
             // memory than the build PC has, and the APK size matters less (Google Play).
