@@ -12,6 +12,9 @@ namespace Game.Core
         public int version;
         public string castleId;
         public int castleIndex;
+        public string homeId = "";
+        public bool[] homeFilled = Array.Empty<bool>();
+        public int homeRuns;
         public string[] partIds = Array.Empty<string>();
         public int[] partCounts = Array.Empty<int>();
         public int[] chestColors = Array.Empty<int>();
@@ -63,6 +66,9 @@ namespace Game.Core
                 castleIndex = s.CastleIndex,
                 castleId = cat.Castles[Math.Min(s.CastleIndex, cat.Castles.Count - 1)].Id,
                 filled = (bool[])s.Filled.Clone(),
+                homeId = s.Replaying ? cat.Castles[Math.Min(s.HomeIndex, cat.Castles.Count - 1)].Id : "",
+                homeFilled = s.Replaying ? (bool[])s.HomeFilled.Clone() : Array.Empty<bool>(),
+                homeRuns = s.HomeRuns,
                 runs = s.Runs,
                 brooms = s.Brooms,
                 hammers = s.Hammers,
@@ -173,6 +179,16 @@ namespace Game.Core
             int slots = cat.Castles[castle].Slots.Length;
             s.Filled = new bool[slots];
             if (d.filled != null) Array.Copy(d.filled, s.Filled, Math.Min(slots, d.filled.Length));
+
+            // A built castle being built again: the castle waiting at home.
+            int home = string.IsNullOrEmpty(d.homeId) ? -1 : cat.CastleIndexOf(d.homeId);
+            if (home >= 0 && home != castle)
+            {
+                s.HomeIndex = home;
+                s.HomeFilled = new bool[cat.Castles[home].Slots.Length];
+                if (d.homeFilled != null) Array.Copy(d.homeFilled, s.HomeFilled, Math.Min(s.HomeFilled.Length, d.homeFilled.Length));
+                s.HomeRuns = d.homeRuns;
+            }
 
             if (d.hasRun && d.run != null) s.Run = FromSave(d.run, rules);
             return s;

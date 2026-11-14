@@ -582,5 +582,55 @@ namespace Game.Core.Tests
                 Assert.Less(sorted.Last(), BalanceBot.MaxRuns, _cat.Castles[i].Id);
             }
         }
+
+        [Test]
+        public void BuiltCastleCanBeBuiltAgainAndTheCastleBeingBuiltWaits()
+        {
+            var s = _game.NewGame();
+            _game.NextCastle(s); _game.NextCastle(s);           // building castle 3
+            s.Filled[0] = s.Filled[1] = true;
+            s.Inventory["wall"] = 4;
+            int score = s.Score, built = s.Built, tickets = s.Tickets;
+
+            Assert.IsFalse(_game.CanReplay(s, 2), "the castle being built is not built yet");
+            Assert.IsFalse(_game.CanReplay(s, 3), "locked");
+            Assert.IsTrue(_game.StartReplay(s, 0));
+            Assert.IsTrue(s.Replaying);
+            Assert.AreEqual(0, s.CastleIndex);
+            Assert.AreEqual(2, s.Frontier);
+            Assert.IsTrue(s.Filled.All(f => !f), "built again from empty");
+            Assert.AreEqual(4, s.Count("wall"), "storage stays");
+
+            // Finish it: points for the parts only; then «Далее» goes home, nothing burns, no tickets.
+            var slots = _game.CastleOf(s).Slots;
+            foreach (var id in slots) s.Add(id, 1);
+            for (int k = 0; k < slots.Length; k++) Assert.IsTrue(_game.Place(s, k));
+            int partsOnly = s.Score - score;
+            Assert.IsTrue(_game.IsComplete(s));
+            Assert.IsFalse(_game.IsLastCastle(s));
+            _game.NextCastle(s);
+            Assert.IsFalse(s.Replaying);
+            Assert.AreEqual(2, s.CastleIndex);
+            Assert.IsTrue(s.Filled[0] && s.Filled[1] && !s.Filled[2], "the waiting castle as it was left");
+            Assert.AreEqual(4, s.Count("wall"));
+            Assert.AreEqual(tickets, s.Tickets);
+            Assert.AreEqual(built, s.Built);
+            Assert.AreEqual(slots.Sum(id => Scoring.Place(_cat.TierOf(id))), partsOnly, "points for the parts, no building bonus");
+        }
+
+        [Test]
+        public void ReplayCanSwitchToAnotherBuiltCastleOrGoHome()
+        {
+            var s = _game.NewGame();
+            _game.NextCastle(s); _game.NextCastle(s);
+            s.Filled[0] = true;
+            Assert.IsTrue(_game.StartReplay(s, 1));
+            Assert.IsFalse(_game.CanReplay(s, 1), "already being built again");
+            Assert.IsTrue(_game.StartReplay(s, 0));
+            Assert.AreEqual(2, s.HomeIndex);
+            _game.EndReplay(s);
+            Assert.AreEqual(2, s.CastleIndex);
+            Assert.IsTrue(s.Filled[0]);
+        }
     }
 }

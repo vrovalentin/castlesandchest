@@ -108,7 +108,7 @@ namespace Game.View
             Pointer.MarkDone("place");
             if (Game.IsComplete(State))
             {
-                State.Built++;
+                if (!State.Replaying) State.Built++;
                 _s.Save();
                 if (quiet) _doneDueAt = Time.time + DropTime + 0.45f;
                 else { _donePanel = true; _doneAt = Time.time; Sfx.Play("fanfare"); }
@@ -152,6 +152,7 @@ namespace Game.View
 
         public void NextCastle()
         {
+            bool replay = State.Replaying;
             if (Game.IsLastCastle(State)) _s.RestartDemo();
             else { Game.NextCastle(State); _s.Save(); }
             // A natural break between castles: the store may show a fullscreen ad here.
@@ -162,7 +163,7 @@ namespace Game.View
             ResetPlacing();
             _pick.Clear();
             // The map shows where the next building goes: its pale picture appears and its resident asks for it.
-            OpenMap(reveal: true);
+            OpenMap(reveal: !replay);
         }
 
         /// <summary>

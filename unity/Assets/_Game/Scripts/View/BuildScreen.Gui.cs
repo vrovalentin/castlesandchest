@@ -857,10 +857,14 @@ namespace Game.View
             GUI.Box(card, GUIContent.none, _nightPanel);
             // The resident thanks the player; what they get goes small under it.
             var lines = new List<string> { Residents.Of(Game.CastleOf(State).Id).Done };
-            string reward = $"+{Scoring.Building(State.CastleIndex)} очков";
-            if (!last) reward += $" · +{Game.Rules.TicketsPerCastle} билета";
-            lines.Add($"<size=21><color=#ffd66e>{reward}</color></size>");
-            if (!last)
+            if (State.Replaying) lines.Add("<size=19>Построено ещё раз! Дальше вернёмся к стройке, детали на складе останутся.</size>");
+            else
+            {
+                string reward = $"+{Scoring.Building(State.CastleIndex)} очков";
+                if (!last) reward += $" · +{Game.Rules.TicketsPerCastle} билета";
+                lines.Add($"<size=21><color=#ffd66e>{reward}</color></size>");
+            }
+            if (!last && !State.Replaying)
             {
                 var bp = Game.PreviewBurn(State);
                 var lost = new List<string>();

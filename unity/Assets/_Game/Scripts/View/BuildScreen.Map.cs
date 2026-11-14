@@ -117,9 +117,10 @@ namespace Game.View
 
         private Spot SpotOf(int i)
         {
-            if (i < State.CastleIndex) return Spot.Built;
-            if (i > State.CastleIndex) return Spot.Locked;
-            return Game.IsComplete(State) ? Spot.Built : Spot.Next;
+            int f = State.Frontier;
+            if (i < f) return Spot.Built;
+            if (i > f) return Spot.Locked;
+            return Game.FrontierComplete(State) ? Spot.Built : Spot.Next;
         }
 
         private GUIStyle _mapTitle, _mapName, _mapLine, _numBuilt, _numNext, _numLocked;
@@ -182,9 +183,9 @@ namespace Game.View
             if (_revealIndex >= 0 && now > 0.5f && !_revealSounded) { _revealSounded = true; Sfx.Play("whoosh"); }
 
             // The arrow bobs over the next building.
-            if (SpotOf(State.CastleIndex) == Spot.Next && Event.current.type == EventType.Repaint && now > 1.2f)
+            if (SpotOf(State.Frontier) == Spot.Next && Event.current.type == EventType.Repaint && now > 1.2f)
             {
-                var c = At(Mathf.Min(State.CastleIndex, n - 1));
+                var c = At(Mathf.Min(State.Frontier, n - 1));
                 float bob = Mathf.Abs(Mathf.Sin(Time.time * 4f)) * 12;
                 GUI.DrawTexture(new Rect(c.x - 30, c.y - r1 - 62 - bob, 60, 60), UiArt.Pointer, ScaleMode.ScaleToFit);
             }
@@ -197,7 +198,7 @@ namespace Game.View
                 if (!GUI.Button(new Rect(c.x - rr, c.y - rr, rr * 2, rr * 2), GUIContent.none, _invisible)) continue;
                 int pick = i;
                 if (SpotOf(i) == Spot.Locked)
-                    Later(() => Say($"Сначала построй: {castles[State.CastleIndex].Name}."));
+                    Later(() => Say($"Сначала построй: {castles[State.Frontier].Name}."));
                 else Later(() => _mapPick = pick);
             }
 
@@ -308,9 +309,23 @@ namespace Game.View
             float tx = pr.xMax + 20, tw = card.xMax - 26 - tx;
             GUI.Label(new Rect(tx, card.y + 26, tw, 44), $"{i + 1}. {castle.Name}", _mapName);
             GUI.Label(new Rect(tx, card.y + 76, tw, 110), next ? who.Start : who.Done, _mapLine);
-            string label = next ? "Строить" : "К стройке";
-            if (GoldButton(new Rect(card.center.x - 160, card.yMax - 112, 320, 92), label, 34))
-                Later(CloseMap, click: false);
+            // The building on the build screen now: back to it. The one waiting while a built one is built again: back
+            // home. Any other built one: build it again.
+            var btn = new Rect(card.center.x - 170, card.yMax - 112, 340, 92);
+            if (i == State.CastleIndex)
+            {
+                if (GoldButton(btn, next || State.Replaying ? "Строить" : "К стройке", 34)) Later(CloseMap, click: false);
+            }
+            else if (State.Replaying && i == State.HomeIndex)
+            {
+                if (GoldButton(btn, next ? "Вернуться к стройке" : "Вернуться", 30))
+                    Later(() => { Game.EndReplay(State); _s.Save(); ResetPlacing(); _pick.Clear(); CloseMap(); }, click: false);
+            }
+            else if (Game.CanReplay(State, i))
+            {
+                if (GoldButton(btn, "Построить заново", 32))
+                    Later(() => { Game.StartReplay(State, i); _s.Save(); ResetPlacing(); _pick.Clear(); CloseMap(); }, click: false);
+            }
         }
     }
 }

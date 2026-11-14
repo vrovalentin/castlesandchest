@@ -135,13 +135,53 @@ namespace Game.Core
             s.Add(id, -1);
             s.Filled[slot] = true;
             s.Score += Scoring.Place(Catalog.TierOf(id));
-            if (IsComplete(s)) s.Score += Scoring.Building(s.CastleIndex);
+            if (IsComplete(s) && !s.Replaying) s.Score += Scoring.Building(s.CastleIndex);
             return true;
         }
 
         public bool IsComplete(GameState s) => s.Filled.All(f => f);
 
-        public bool IsLastCastle(GameState s) => s.CastleIndex >= Catalog.Castles.Count - 1;
+        public bool IsLastCastle(GameState s) => !s.Replaying && s.CastleIndex >= Catalog.Castles.Count - 1;
+
+        /// <summary>True when the frontier castle is finished (when replaying, the one waiting at home).</summary>
+        public bool FrontierComplete(GameState s) => s.Replaying ? s.HomeFilled.Length > 0 && s.HomeFilled.All(f => f) : IsComplete(s);
+
+        /// <summary>A built castle can be built again, from empty: storage and chests stay, the castle being built waits
+        /// with its slots. Building it again gives the points for the parts, not for the building, and no tickets.</summary>
+        public bool CanReplay(GameState s, int index)
+        {
+            if (index < 0 || index >= Catalog.Castles.Count) return false;
+            if (s.Replaying && index == s.CastleIndex) return false;
+            return index < s.Frontier || index == s.Frontier && FrontierComplete(s);
+        }
+
+        public bool StartReplay(GameState s, int index)
+        {
+            if (!CanReplay(s, index)) return false;
+            if (!s.Replaying)
+            {
+                s.HomeIndex = s.CastleIndex;
+                s.HomeFilled = (bool[])s.Filled.Clone();
+                s.HomeRuns = s.Runs;
+            }
+            s.CastleIndex = index;
+            s.Filled = new bool[CastleOf(s).Slots.Length];
+            s.Runs = 0;
+            return true;
+        }
+
+        /// <summary>Back to the castle being built, as it was left. What was placed in the replayed one stays there.</summary>
+        public void EndReplay(GameState s)
+        {
+            if (!s.Replaying) return;
+            s.CastleIndex = s.HomeIndex;
+            s.Filled = new bool[CastleOf(s).Slots.Length];
+            Array.Copy(s.HomeFilled, s.Filled, Math.Min(s.Filled.Length, s.HomeFilled.Length));
+            s.Runs = s.HomeRuns;
+            s.HomeIndex = -1;
+            s.HomeFilled = Array.Empty<bool>();
+            s.HomeRuns = 0;
+        }
 
         /// <summary>What moving to the next castle will burn and keep.</summary>
         public BurnPreview PreviewBurn(GameState s)
@@ -159,6 +199,8 @@ namespace Game.Core
         /// <summary>Storage below KeepTier and closed chests burn; figurines stay.</summary>
         public void NextCastle(GameState s)
         {
+            // A castle built again: back home, nothing burns.
+            if (s.Replaying) { EndReplay(s); return; }
             foreach (var id in s.Inventory.Keys.ToList())
                 if (Catalog.TierOf(id) < Rules.KeepTier) s.Inventory[id] = 0;
             s.Chests.Clear();
