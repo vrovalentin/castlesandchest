@@ -608,8 +608,18 @@ namespace Game.View
             GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), hint, _nightBody);
 
             // The parts, four in a row.
-            const float tile = 124, nameH = 46, gap = 16;
+            // On a short screen with many kinds of parts the tiles get smaller (and more per row), so the last row
+            // never hides under the «Собрать» strip.
+            float tile = 124, nameH = 46, gap = 16;
             int perRow = Mathf.Max(1, Mathf.FloorToInt((r.width - 60 + gap) / (tile + gap)));
+            float room = ph - 176 - (20 + 190 + 30 + 96 + 50);
+            for (int tries = 0; tries < 8; tries++)
+            {
+                int rows = Mathf.Max(1, Mathf.CeilToInt(parts.Count / (float)perRow));
+                if (rows * (tile + nameH + gap) <= room + 1) break;
+                tile *= 0.9f; nameH = Mathf.Max(34, nameH * 0.92f); gap *= 0.9f;
+                perRow = Mathf.Max(1, Mathf.FloorToInt((r.width - 60 + gap) / (tile + gap)));
+            }
             float gridW = perRow * tile + (perRow - 1) * gap, gx = r.center.x - gridW / 2, gy = r.y + 176;
             var nameOnNight = new GUIStyle(_name);
             nameOnNight.normal.textColor = new Color32(0xfb, 0xf0, 0xdc, 0xff);
@@ -632,7 +642,7 @@ namespace Game.View
                 // A part just made pops and throws out sparkles.
                 float mt = id == _mergedId ? Time.time - _mergedAt : 9;
                 float popK = mt < 0.35f ? 1 + 0.28f * Mathf.Sin(Mathf.PI * mt / 0.35f) : 1;
-                GameArt.DrawPart(Scale(new Rect(cell.x + 14, cell.y + 12, tile - 28, tile - 28), popK), id, t);
+                GameArt.DrawPart(Scale(new Rect(cell.x + tile * 0.11f, cell.y + tile * 0.1f, tile * 0.78f, tile * 0.78f), popK), id, t);
                 GUI.color = old;
                 if (mt < 0.7f) DrawBurst(cell.center, mt / 0.7f);
                 Badge(new Vector2(cell.xMax - 8, cell.y + 8), State.Count(id));

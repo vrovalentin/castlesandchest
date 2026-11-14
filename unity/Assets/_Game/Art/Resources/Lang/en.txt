@@ -61,8 +61,8 @@
 Пиратская крепость	Pirate Fortress
 Песчаный дворец	Desert Palace
 Боярский терем	Boyar's Mansion
-<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.	<b>Hi! Let's build fairy-tale castles!</b>\nIt's easy! Look:\na castle is built from parts, from the bottom up.\nThe parts are in chests: tap the «Chests» tile below.
-Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».	The glowing part goes next.\nTap it on the picture or press «Place».
+<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.	<b>Hi! Let's build fairy-tale castles!</b>\nIt's easy! Look:\na castle is built from parts, from the bottom up.\nThe parts are in chests: tap the "Chests" tile below.
+Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».	The glowing part goes next.\nTap it on the picture or press "Place".
 Нужны детали? Проверь на складе.\nТам же можешь и собрать недостающие.\nЕсли нет на складе — иди добывай!	Need parts? Check your storage.\nYou can merge the missing ones there too.\nNot in storage? Go and mine!
 <color=#6b5aa6>{0}</color> из {1}	<color=#6b5aa6>{0}</color> of {1}
 Очки: <color=#6b5aa6>{0}</color>	Points: <color=#6b5aa6>{0}</color>
@@ -94,7 +94,7 @@
 +{0} билета · реклама  <size=22>билеты кончились</size>	+{0} tickets · ad  <size=22>out of tickets</size>
 Билеты кончились, новые завтра	Out of tickets, new ones tomorrow
 Билеты кончились. Новые придут завтра.	Out of tickets. New ones arrive tomorrow.
-ур. {0}	lv. {0}
+ур. {0}	Lv. {0}
 Построено!	Built!
 <size=19>Построено ещё раз! Дальше вернёмся к стройке, детали на складе останутся.</size>	<size=19>Built once more! Now back to the building site; the parts in storage stay.</size>
 +{0} очков	+{0} points
@@ -172,7 +172,7 @@
 Тапни ряд: все блоки в нём исчезнут. Ход не тратится.	Tap a row: all its blocks vanish. No move is used.
 Тапни блок: он исчезнет. Ход не тратится.	Tap a block: it vanishes. No move is used.
 Тапни группу из 2+ блоков. Из 4+ получится сундук.	Tap a group of 2+ blocks. 4+ make a chest.
-ДОБЫТО	WON
+ДОБЫТО	LOOT
 Сундук упадёт сюда, когда уйдёт за нижний край поля	A chest lands here when it falls off the bottom of the board
 Новое поле стоит 1 билет, а билеты кончились.\n\nПосмотри рекламу и получи {0} билета.	A new board costs 1 ticket, and you're out of tickets.\n\nWatch an ad and get {0} tickets.
 Будет новое поле и {0} ходов. Это стоит 1 билет, у тебя их {1}.\n\nДобытые сундуки останутся.	You'll get a new board and {0} moves. It costs 1 ticket; you have {1}.\n\nThe chests you've won stay.
@@ -253,7 +253,7 @@
 Дракон охраняет гнездо, а у гнезда нет крыши.	The dragon guards its nest, and the nest has no roof.
 Дракон доволен и почти не дымит. Королевство построено!	The dragon is pleased and hardly smokes at all. The kingdom is built!
 Пираты уплыли, а попугая забыли. Он не против своей крепости.	The pirates sailed away and forgot the parrot. He doesn't mind having his own fortress.
-Попугай кричит «Полный вперёд!» всем прохожим.	The parrot shouts «Full speed ahead!» at everyone passing by.
+Попугай кричит «Полный вперёд!» всем прохожим.	The parrot shouts "Full speed ahead!" at everyone passing by.
 Верблюжонок пришёл из пустыни и очень хочет тень.	The baby camel came from the desert and really wants some shade.
 В тени прохладно. Верблюжонок улыбается.	It's cool in the shade. The baby camel smiles.
 Здесь будет новая постройка.	A new building will stand here.
