@@ -353,6 +353,13 @@ namespace Game.View
             int last = Mathf.Min(_decorBefore, Layers.Length) - 1;
             bool decor = Decor != null && (last < 0 || filled[last]);
             UpdateCutEdges(filled);
+            // The whole building as a faint plan behind what is built, so from the first second it is clear what we build.
+            if (Base != null && !all)
+            {
+                GUI.color = new Color(1, 1, 1, 0.3f);
+                GUI.DrawTexture(r, Base, ScaleMode.ScaleToFit);
+                GUI.color = old;
+            }
             for (int i = 0; i < Layers.Length; i++)
             {
                 if (i == _decorBefore && decor) GUI.DrawTexture(Place(r, _decorAt), Decor, ScaleMode.StretchToFill);
@@ -379,6 +386,10 @@ namespace Game.View
                 GUI.color = old;
                 return;
             }
+            // A pale see-through picture of the next part inside its outline, so the gap reads as
+            // «this goes here» and not as a hole in the building.
+            GUI.color = new Color(0.9f, 0.93f, 1f, 0.22f + 0.08f * pulse);
+            DrawLayer(r, next);
             // A thick gold glow from the outline drawn a few times around, then the outline itself.
             float o = r.width * 0.004f;
             GUI.color = new Color(Glow.r, Glow.g, Glow.b, 0.5f * pulse);

@@ -13,7 +13,7 @@ namespace Game.EditorTools
         private static readonly string[] Folders =
             { "/Art/Resources/Castles/", "/Art/Resources/Parts/", "/Art/Resources/UI/", "/Art/Resources/Board/" };
 
-        public override uint GetVersion() => 2;
+        public override uint GetVersion() => 3;
 
         private void OnPreprocessTexture()
         {
@@ -23,6 +23,9 @@ namespace Game.EditorTools
             ti.textureCompression = TextureImporterCompression.Compressed;
             ti.crunchedCompression = true;
             ti.compressionQuality = 70;
+            // Clamp, never repeat: a building layer is a trimmed piece, and with Repeat its edge pixels were blended with
+            // the opposite edge, which drew faint rectangle lines around every piece of a building.
+            ti.wrapMode = UnityEngine.TextureWrapMode.Clamp;
         }
     }
 }
