@@ -83,6 +83,10 @@ namespace Game.View
 
         public void ShowMine()
         {
+            // The button that switched screens still holds the press (hotControl): let it go, or the first tap on
+            // the new screen is swallowed.
+            GUIUtility.hotControl = 0;
+            GUIUtility.keyboardControl = 0;
             Build.enabled = false;
             Mine.gameObject.SetActive(true);
             Mine.Enter();
@@ -91,6 +95,10 @@ namespace Game.View
 
         public void ShowBuild()
         {
+            // The button that switched screens still holds the press (hotControl): let it go, or the first tap on
+            // the new screen is swallowed.
+            GUIUtility.hotControl = 0;
+            GUIUtility.keyboardControl = 0;
             Mine.gameObject.SetActive(false);
             Build.enabled = true;
             Session.Save();

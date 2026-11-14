@@ -99,8 +99,8 @@
 <size=19>Построено ещё раз! Дальше вернёмся к стройке, детали на складе останутся.</size>	<size=19>Built once more! Now back to the building site; the parts in storage stay.</size>
 +{0} очков	+{0} points
  · +{0} билета	 · +{0} tickets
-деталей: {0}	parts: {0}
-закрытых сундуков: {0}	unopened chests: {0}
+деталей: {0}	parts ×{0}
+закрытых сундуков: {0}	unopened chests ×{0}
 <size=19>Сгорят {0}.</size>	<size=19>Will burn: {0}.</size>
 <size=19>Новые замки скоро появятся. А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>	<size=19>New castles are coming soon. Meanwhile you can play it all again: points, record and tickets stay.</size>
 Пройти заново	Play again
