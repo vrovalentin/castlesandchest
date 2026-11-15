@@ -178,7 +178,8 @@ namespace Game.View
             if (_toast != null && Time.time < _toastUntil)
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
-            if (_mode == Mode.Play) _panelMode = Mode.Play;
+            // Back on the board from a window: the press that closed it must not also tap the new board.
+            if (_mode == Mode.Play && _panelMode != Mode.Play) { _panelMode = Mode.Play; _playAt = Time.unscaledTime; }
             if (_mode == Mode.OutOfMoves) Panel(w, h, Loc.T("Ходы кончились"), OutOfMovesText(), OutOfMovesButtons);
             else if (_mode == Mode.Summary) Panel(w, h, SummaryTitle(), SummaryText(), SummaryButtons, SummaryChests);
             else if (_mode == Mode.ConfirmRestart) Panel(w, h, Loc.T("Начать заново?"), RestartText(), RestartButtons);

@@ -31,6 +31,8 @@ namespace Game.View
         private RunSummary _summary;
         /// <summary>When the finger last went down anywhere: windows wait until it stops tapping.</summary>
         private float _lastDownAt = -10;
+        /// <summary>When the board came back from a window.</summary>
+        private float _playAt = -10;
         private string _toast;
         private float _toastUntil;
         private Vector2 _lastScreen;
@@ -145,6 +147,7 @@ namespace Game.View
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
             if (Input.GetMouseButtonDown(0)) _lastDownAt = Time.unscaledTime;
             if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
+            if (Time.unscaledTime - _playAt < 0.3f) return;
             // No hotControl check: a control left hot (after a hint or a screen switch) swallowed the first tap.
             // Nothing of the HUD overlaps the board, and TryGetCell only hits board cells.
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
