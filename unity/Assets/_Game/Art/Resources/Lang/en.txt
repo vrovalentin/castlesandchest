@@ -278,3 +278,6 @@
 сундук сгорел|сундука сгорели|сундуков сгорели	chest burned|chests burned
 Твои данные	Your data
 Без сундуков	No chests
+Снегурочка	Snow Maiden
+Снегурочке негде жить: в избе она тает. Нужен дворец изо льда.	The Snow Maiden has nowhere to live: she melts in a warm hut. She needs a palace of ice.
+Снегурочка нарядилась в иней и машет с крыльца.	The Snow Maiden put on her frost dress and waves from the porch.

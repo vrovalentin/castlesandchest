@@ -33,6 +33,7 @@ namespace Game.Core
             new PartInfo("hedgehog", 7, "Ёжик"), new PartInfo("owl", 7, "Сова"), new PartInfo("panda", 7, "Панда"),
             new PartInfo("mermaid", 7, "Русалочка"), new PartInfo("parrot", 7, "Попугай"), new PartInfo("camel", 7, "Верблюжонок"),
             new PartInfo("sled", 5, "Сани"), new PartInfo("emelya", 7, "Емеля"),
+            new PartInfo("snowmaiden", 7, "Снегурочка"),
         };
 
         /// <summary>The parts every castle offers; the rest belong to one building each.</summary>
@@ -83,7 +84,7 @@ namespace Game.Core
                 "spire telescope lantern*2 wizard"), AllTiers("telescope", "wizard"));
             var castle10 = new CastleInfo("castle_10", "Ледяной дворец", 30, 0.25, 0.2, Slots(
                 "clay*6 wall*7 door window*4 floor*4 roof*3 wall*4 window*2 floor*3 wall*3 window*5 roof*2 tiles*2 roof spire*5 " +
-                "porch lantern*2 princess"), AllTiers());
+                "porch lantern*2 snowmaiden"), AllTiers("snowmaiden"));
 
             // Buildings 11-17, cut by tools/art/cut_house_11..17.py. The dragon castle (castle_15) comes last.
             var castle11 = new CastleInfo("castle_11", "Грибной домик", 30, 0.25, 0.2, Slots(
