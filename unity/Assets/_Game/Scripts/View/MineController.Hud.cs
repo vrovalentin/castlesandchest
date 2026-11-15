@@ -481,6 +481,7 @@ namespace Game.View
         private float _panelInnerW = 520;
         private Mode _panelMode;
         private float _panelAt;
+        private bool _panelAwake;
         /// <summary>Height the panel's content took last frame, so the window fits it without a gap.</summary>
         private float _contentH = 140;
 
@@ -497,9 +498,11 @@ namespace Game.View
             // Fast taps on the board must not land on a window that has just opened under the finger
             // (they took the ad for +5 moves, ended the run and started a new one for a ticket). The buttons
             // wake up only once the window has been open a moment AND the finger has stopped tapping.
-            if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; }
+            // Once awake they stay awake: the press on a button must not put it back to sleep.
+            if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; _panelAwake = false; }
+            if (!_panelAwake && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 1.0f) _panelAwake = true;
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = wasEnabled && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 1.0f;
+            GUI.enabled = wasEnabled && _panelAwake;
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
