@@ -88,7 +88,8 @@ namespace Game.View
             _chip.wordWrap = false;
             _chip.padding = new RectOffset(40, 12, 2, 2);
             _tool = UiArt.Style(UiArt.Round(ToolFill, PanelEdge, 18, 3), 18, 22, Cream, TextAnchor.MiddleLeft);
-            _tool.padding = new RectOffset(70, 8, 4, 4);
+            _tool.padding = new RectOffset(66, 4, 4, 4);
+            _tool.wordWrap = false;   // a desktop browser measures the bold word a little wider: «Молото/к»
             _tool.fontStyle = FontStyle.Bold;
             _tool.active.background = UiArt.Round(ToolOn, PanelEdge, 18, 3);
             _tool.active.textColor = Cream;

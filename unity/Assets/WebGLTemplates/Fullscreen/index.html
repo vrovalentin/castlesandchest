@@ -52,6 +52,8 @@
       productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
       // Sharp on phones without rendering at full 3x.
       devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      // Unity saves the files under persistentDataPath to the browser by itself (no deprecation warning in the console).
+      autoSyncPersistentDataPath: true,
     };
     var script = document.createElement("script");
     script.src = "Build/{{{ LOADER_FILENAME }}}";
