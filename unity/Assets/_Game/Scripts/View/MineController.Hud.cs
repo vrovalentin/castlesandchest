@@ -499,7 +499,7 @@ namespace Game.View
             // wake up only once the window has been open a moment AND the finger has stopped tapping.
             if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; }
             bool wasEnabled = GUI.enabled;
-            GUI.enabled = wasEnabled && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 0.6f;
+            GUI.enabled = wasEnabled && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 1.0f;
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
