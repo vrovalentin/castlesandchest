@@ -433,7 +433,7 @@ namespace Game.View
 
             float tx = icon.xMax + 18, btnW = 210, textW = card.xMax - padX - tx - (have > 0 ? btnW + 12 : 0);
             GUI.Label(new Rect(tx, y + 56, textW, 44), Game.Catalog.NameOf(id), _bigName);
-            DrawNextFacts(new Rect(tx, y + 104, textW, 48), tier, nth, total, have);
+            GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), NextFactsText(tier, total - nth + 1, have), _sub);
 
             if (have > 0)
             {
@@ -450,67 +450,18 @@ namespace Game.View
             return card.yMax;
         }
 
-        /// <summary>
-        /// Under the next part's name, pictures instead of words: «2/4» when the castle takes several,
-        /// a crate with ×N when the storage has it, otherwise the chest it drops from and «2→1» when it can be merged.
-        /// </summary>
-        private void DrawNextFacts(Rect r, int tier, int nth, int total, int have)
+        /// <summary>Under the next part's name, in plain words: how many the building still takes, how many are in
+        /// storage, or where to get one.</summary>
+        private string NextFactsText(int tier, int left, int have)
         {
-            var num = _factNum ??= new GUIStyle(_sub) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft, wordWrap = false };
-            float x = r.x, ic = r.height;
-            void Text(string t)
-            {
-                var c = new GUIContent(t);
-                float w = num.CalcSize(c).x;
-                GUI.Label(new Rect(x, r.y, w, r.height), c, num);
-                x += w + 14;
-            }
-            void Icon(Texture tex)
-            {
-                if (tex == null) return;
-                GUI.DrawTexture(new Rect(x, r.y, ic, ic), tex, ScaleMode.ScaleToFit);
-                x += ic + 4;
-            }
-            if (total > 1) Text($"{nth}/{total}");
             if (have > 0)
-            {
-                Icon(GameArt.ScaffoldCrate);
-                Text($"×{have}");
-                return;
-            }
+                return left > 1 ? Loc.F("Нужно ещё {0} · на складе {1}", left, have) : Loc.F("На складе {0}", have);
             var rules = Game.Rules;
-            if (tier <= rules.ColorTiers) Icon(SpriteFactory.ChestArt(tier - 1)?.texture);
-            if (tier >= 6)
-            {
-                Icon(SpriteFactory.ChestArt(rules.ColorTiers - 1)?.texture);
-                var star = SpriteFactory.Star;
-                if (star != null)
-                {
-                    var old = GUI.color;
-                    GUI.color = new Color32(0xff, 0xc8, 0x3c, 0xff);
-                    GUI.DrawTexture(new Rect(x - 6, r.y + 8, ic - 16, ic - 16), star.texture, ScaleMode.ScaleToFit);
-                    GUI.color = old;
-                    x += ic - 18;
-                }
-                Text("4–5");
-            }
-            // «Two of the tier below make this one»: two dots, an arrow, one dot, in the tiers' colours.
-            if (tier > 1)
-            {
-                float d = 18, cy = r.center.y - d / 2;
-                var old = GUI.color;
-                GUI.color = Palette.Tier(tier - 1);
-                GUI.DrawTexture(new Rect(x, cy, d, d), UiArt.Disc(Color.white, Color.white, 0));
-                GUI.DrawTexture(new Rect(x + d + 4, cy, d, d), UiArt.Disc(Color.white, Color.white, 0));
-                GUI.color = old;
-                GUI.DrawTexture(new Rect(x + 2 * d + 8, r.center.y - 13, 26, 26), UiArt.Next, ScaleMode.ScaleToFit);
-                GUI.color = Palette.Tier(tier);
-                GUI.DrawTexture(new Rect(x + 2 * d + 38, cy - 3, d + 6, d + 6), UiArt.Disc(Color.white, Color.white, 0));
-                GUI.color = old;
-            }
+            string chest = tier <= rules.ColorTiers ? Loc.F("{0} сундук", Palette.BlockNames[tier - 1])
+                : Loc.F("{0} сундук на 4–5 звёзд", Palette.BlockNames[rules.ColorTiers - 1]);
+            return tier > 1 ? Loc.F("Нет на складе. Ищи: {0}, или собери из двух попроще", chest)
+                : Loc.F("Нет на складе. Ищи: {0}", chest);
         }
-
-        private GUIStyle _factNum;
 
         // ---------- chests and storage tiles ----------
 

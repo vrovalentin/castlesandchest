@@ -281,3 +281,7 @@
 Снегурочка	Snow Maiden
 Снегурочке негде жить: в избе она тает. Нужен дворец изо льда.	The Snow Maiden has nowhere to live: she melts in a warm hut. She needs a palace of ice.
 Снегурочка нарядилась в иней и машет с крыльца.	The Snow Maiden put on her frost dress and waves from the porch.
+Нужно ещё {0} · на складе {1}	{0} more needed · {1} in storage
+На складе {0}	{0} in storage
+Нет на складе. Ищи: {0}, или собери из двух попроще	Not in storage. Look in: {0}, or merge two simpler ones
+Нет на складе. Ищи: {0}	Not in storage. Look in: {0}
