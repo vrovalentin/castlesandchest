@@ -109,8 +109,18 @@ namespace Game.View
             FitCamera();
         }
 
+        /// <summary>A new board is live: the press that asked for it must not also pop a group on it.</summary>
+        private void FreshBoard()
+        {
+            _playAt = Time.unscaledTime;
+            _waitRelease = true;
+        }
+
+        private bool _waitRelease;
+
         private void StartRun()
         {
+            FreshBoard();
             Armed = null;
             _summary = null;
             _doubled = false;
@@ -146,8 +156,10 @@ namespace Game.View
             if (_s == null) return;
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
             if (Input.GetMouseButtonDown(0)) _lastDownAt = Time.unscaledTime;
+            // After a window, the board waits until the finger is lifted with nothing pressed (see FreshBoard).
+            if (_waitRelease && !Input.GetMouseButton(0) && Input.touchCount == 0 && Time.unscaledTime - _playAt > 0.2f) _waitRelease = false;
             if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
-            if (Time.unscaledTime - _playAt < 0.3f) return;
+            if (Time.unscaledTime - _playAt < 0.5f || _waitRelease) return;
             // No hotControl check: a control left hot (after a hint or a screen switch) swallowed the first tap.
             // Nothing of the HUD overlaps the board, and TryGetCell only hits board cells.
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
@@ -254,6 +266,7 @@ namespace Game.View
             _s.Save();
             _view.Bind(State.Run.Board, Game.Rules);
             _mode = Mode.Play;
+            FreshBoard();
             FitCamera();
             Toast(Loc.F("Новое поле. Билетов осталось: {0}", State.Tickets));
             return true;
