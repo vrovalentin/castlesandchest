@@ -118,9 +118,11 @@ namespace Game.View
 
         private bool _waitRelease;
 
-        private void StartRun()
+        /// <param name="fromWindow">Started by a button of a mine window: the board waits for that finger to lift.
+        /// Coming in from the build screen it doesn't (that wait ate the first tap).</param>
+        private void StartRun(bool fromWindow = false)
         {
-            FreshBoard();
+            if (fromWindow) FreshBoard();
             Armed = null;
             _summary = null;
             _doubled = false;
@@ -352,7 +354,7 @@ namespace Game.View
             else if (GUILayout.Button(Loc.F("Новый забег (билетов: {0})", State.Tickets), _button2, GUILayout.Height(76)))
             {
                 Sdk.Interstitial();
-                StartRun();
+                StartRun(fromWindow: true);
             }
         }
 
@@ -378,7 +380,7 @@ namespace Game.View
                 if (!Game.AdTickets(State)) return;
                 _s.Save();
                 // From the «Билеты кончились» window straight into a run; after a run the button becomes «Новый забег».
-                if (_mode == Mode.NoTickets) StartRun();
+                if (_mode == Mode.NoTickets) StartRun(fromWindow: true);
                 Toast(Loc.F("+{0} билета за рекламу. Билетов: {1}", Game.Rules.AdTickets, State.Tickets));
             }, AdFailed);
         }
