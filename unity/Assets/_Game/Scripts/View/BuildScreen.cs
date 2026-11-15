@@ -198,6 +198,7 @@ namespace Game.View
             if (_reward != null) { CloseReward(); return true; }
             if (_settingsOpen) { _settingsOpen = false; return true; }
             if (_askStartOver) { _askStartOver = false; return true; }
+            if (_partHelpOpen) { _partHelpOpen = false; return true; }
             if (_storageOpen) { _storageOpen = false; _pick.Clear(); return true; }
             if (_chestsOpen) { _chestsOpen = false; return true; }
             return _donePanel;
@@ -211,6 +212,7 @@ namespace Game.View
             Pointer.Reset();
             _askStartOver = false;
             _storageOpen = false;
+            _partHelpOpen = false;
             _mapOpen = false;
             ResetPlacing();
             _chestsOpen = false;

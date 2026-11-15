@@ -285,3 +285,14 @@
 На складе {0}	{0} in storage
 Нет на складе. Ищи: {0}, или собери из двух попроще	Not in storage. Look in: {0}, or merge two simpler ones
 Нет на складе. Ищи: {0}	Not in storage. Look in: {0}
+Нет на складе. Ищи: {0}, или собери на складе из двух деталей ур. {1}	Not in storage. Look in: {0}, or merge two Lv. {1} parts in storage
+Где взять деталь	Where to get it
+1. Найти в сундуке	1. Find it in a chest
+2. Собрать на складе	2. Merge it in storage
+Выпадает из сундука цвета «{0}». Такой сундук получается в шахте из группы в 4 и больше блоков этого цвета. Чем больше группа, тем больше звёзд и деталей.	Drops from a {0} chest. You get one in the mine from a group of 4 or more blocks of that colour. The bigger the group, the more stars and parts.
+Иногда выпадает из сундука цвета «{0}» на 4–5 звёзд. Такой сундук получается в шахте из большой группы блоков этого цвета.	Sometimes drops from a {0} chest with 4–5 stars. You get one in the mine from a big group of blocks of that colour.
+Две любые детали уровня {0} (можно одинаковые) собираются в одну деталь уровня {1}. На складе тапни две такие детали, потом выбери, что из них сделать: «{2}».	Any two Lv. {0} parts (they can be the same) merge into one Lv. {1} part. In storage, tap two of them, then pick what to make: «{2}».
+Деталей уровня {0} у тебя пока нет.	You have no Lv. {0} parts yet.
+У тебя 1 деталь уровня {0}, нужна ещё одна.	You have 1 Lv. {0} part, you need one more.
+Деталей уровня {0} у тебя: {1}. Хватает, можно собрать!	Your Lv. {0} parts: {1}. Enough to merge!
+Открыть склад	Open storage

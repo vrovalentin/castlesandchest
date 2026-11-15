@@ -217,7 +217,7 @@ namespace Game.View
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen && !_calendarOpen;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen && !_calendarOpen && !_partHelpOpen;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
             if (GUI.enabled) CastleTap(cardsTop - 8);
             if (hasNext) DrawNext(x0 + pad, cardsTop, inner);
@@ -238,6 +238,7 @@ namespace Game.View
             else if (_calendarOpen) DrawCalendarPanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
             else if (_settingsOpen) DrawSettingsPanel(w, h);
+            else if (_partHelpOpen) DrawPartHelp(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
             else if (_chestsOpen) DrawChestsWindow(w, h);
             Hints.Draw();
@@ -248,7 +249,7 @@ namespace Game.View
         /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
         private void ShowPointer()
         {
-            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _partHelpOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
@@ -426,13 +427,17 @@ namespace Game.View
             var card = new Rect(x, y, inner, hgt);
             GUI.Box(card, GUIContent.none, _nextCard);
             GUI.Label(new Rect(x + padX, y + 12, 400, 30), Loc.T("СЛЕДУЮЩАЯ ДЕТАЛЬ"), _section);
+            // «?»: where this part comes from, in full (which chest, what to merge in storage).
+            if (HelpButton(new Rect(card.xMax - 12 - 44, y + 8, 44, 44))) Later(() => _partHelpOpen = true);
             var icon = new Rect(x + padX, y + 52, 124, 124);
             _iconAt = icon;
             GUI.Box(icon, GUIContent.none, have > 0 ? _tilePicked : _tile);
             GameArt.DrawPart(new Rect(icon.x + 12, icon.y + 12, 100, 100), id, tier);
 
             float tx = icon.xMax + 18, btnW = 210, textW = card.xMax - padX - tx - (have > 0 ? btnW + 12 : 0);
-            GUI.Label(new Rect(tx, y + 56, textW, 44), Game.Catalog.NameOf(id), _bigName);
+            // The name line ends before the «?» in the corner.
+            float nameW = have > 0 ? textW : textW - 40;
+            GUI.Label(new Rect(tx, y + 56, nameW, 44), Game.Catalog.NameOf(id), _bigName);
             GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), NextFactsText(tier, total - nth + 1, have), _sub);
 
             if (have > 0)
@@ -459,7 +464,7 @@ namespace Game.View
             var rules = Game.Rules;
             string chest = tier <= rules.ColorTiers ? Loc.F("{0} сундук", Palette.BlockNames[tier - 1])
                 : Loc.F("{0} сундук на 4–5 звёзд", Palette.BlockNames[rules.ColorTiers - 1]);
-            return tier > 1 ? Loc.F("Нет на складе. Ищи: {0}, или собери из двух попроще", chest)
+            return tier > 1 ? Loc.F("Нет на складе. Ищи: {0}, или собери на складе из двух деталей ур. {1}", chest, tier - 1)
                 : Loc.F("Нет на складе. Ищи: {0}", chest);
         }
 

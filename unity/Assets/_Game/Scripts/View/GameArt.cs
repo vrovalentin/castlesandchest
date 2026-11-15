@@ -21,6 +21,9 @@ namespace Game.View
         public static Texture2D ChestOpen(int color) =>
             Load($"Board/chest_{SpriteFactory.ColorNames[Mathf.Clamp(color, 0, SpriteFactory.ColorNames.Length - 1)]}_open");
 
+        public static Texture2D ChestClosed(int color) =>
+            Load($"Board/chest_{SpriteFactory.ColorNames[Mathf.Clamp(color, 0, SpriteFactory.ColorNames.Length - 1)]}");
+
         /// <summary>Icon of a part (Art/Resources/Parts/part_&lt;id&gt;.png).</summary>
         public static Texture2D Part(string id) => Load("Parts/part_" + id);
 
