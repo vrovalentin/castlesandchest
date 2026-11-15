@@ -29,6 +29,10 @@ namespace Game.View
         private Camera _cam;
         private Mode _mode;
         private RunSummary _summary;
+        /// <summary>When the finger last went down anywhere: windows wait until it stops tapping.</summary>
+        private float _lastDownAt = -10;
+        /// <summary>When the board came back from a window.</summary>
+        private float _playAt = -10;
         private string _toast;
         private float _toastUntil;
         private Vector2 _lastScreen;
@@ -105,8 +109,20 @@ namespace Game.View
             FitCamera();
         }
 
-        private void StartRun()
+        /// <summary>A new board is live: the press that asked for it must not also pop a group on it.</summary>
+        private void FreshBoard()
         {
+            _playAt = Time.unscaledTime;
+            _waitRelease = true;
+        }
+
+        private bool _waitRelease;
+
+        /// <param name="fromWindow">Started by a button of a mine window: the board waits for that finger to lift.
+        /// Coming in from the build screen it doesn't (that wait ate the first tap).</param>
+        private void StartRun(bool fromWindow = false)
+        {
+            if (fromWindow) FreshBoard();
             Armed = null;
             _summary = null;
             _doubled = false;
@@ -141,8 +157,13 @@ namespace Game.View
         {
             if (_s == null) return;
             if (Screen.width != _lastScreen.x || Screen.height != _lastScreen.y) FitCamera();
+            if (Input.GetMouseButtonDown(0)) _lastDownAt = Time.unscaledTime;
+            // After a window, the board waits until the finger is lifted with nothing pressed (see FreshBoard).
+            if (_waitRelease && !Input.GetMouseButton(0) && Input.touchCount == 0 && Time.unscaledTime - _playAt > 0.2f) _waitRelease = false;
             if (Busy || _mode != Mode.Play || Hints.Showing || !Input.GetMouseButtonDown(0)) return;
-            if (GUIUtility.hotControl != 0) return;
+            if (Time.unscaledTime - _playAt < 0.5f || _waitRelease) return;
+            // No hotControl check: a control left hot (after a hint or a screen switch) swallowed the first tap.
+            // Nothing of the HUD overlaps the board, and TryGetCell only hits board cells.
             var world = _cam.ScreenToWorldPoint(Input.mousePosition);
             if (_view.TryGetCell(world, out int r, out int c)) TryTap(r, c);
         }
@@ -155,17 +176,20 @@ namespace Game.View
             var cell = board[r, c];
             if (cell == null) return false;
             if (Armed.HasValue) return TryTool(Armed.Value, r, c);
-            if (cell.IsChest) { Toast("Сундук не нажимается. Убери блоки под ним, и он упадёт."); return false; }
-            if (cell.IsStone) { Toast("Камень не взрывается. Убери блоки под ним, и он упадёт с поля."); StartCoroutine(_view.Shake(cell.Id)); return false; }
-            if (cell.Ice) { Toast("Блок во льду. Взорви группу рядом, и лёд треснет."); StartCoroutine(_view.Shake(cell.Id)); return false; }
+            if (cell.IsChest) { Toast(Loc.T("Сундук не нажимается. Убери блоки под ним, и он упадёт.")); return false; }
+            if (cell.IsStone) { Toast(Loc.T("Камень не взрывается. Убери блоки под ним, и он упадёт с поля.")); StartCoroutine(_view.Shake(cell.Id)); return false; }
+            if (cell.Ice) { Toast(Loc.T("Блок во льду. Взорви группу рядом, и лёд треснет.")); StartCoroutine(_view.Shake(cell.Id)); return false; }
             if (board.Group(r, c).Count < 2) { StartCoroutine(_view.Shake(cell.Id)); return false; }
 
             var frames = new List<Frame>();
             var res = Game.Tap(State, r, c, _rng, p => frames.Add(BoardView.Capture(board, p)));
             if (res == null) return false;
+            // The first-run lines over the board are learned once the player makes a move.
+            if (!Hints.Seen("board")) Hints.MarkSeen("board");
+            else if (_obstacleLine) Hints.MarkSeen("obstacles");
             StartCoroutine(PlayThen(frames, () =>
             {
-                if (res.Chests.Count >= 2) Toast($"Серия: {res.Chests.Count} сундука за ход!");
+                if (res.Chests.Count >= 2) Toast(Loc.F("Серия: {0} сундука за ход!", res.Chests.Count));
                 if (State.Run.Moves <= 0) _mode = Mode.OutOfMoves;
             }));
             return true;
@@ -179,7 +203,7 @@ namespace Game.View
             if (left < 1)
             {
                 if (Game.CanWatchAdForTools(State)) _mode = Mode.NoTools;
-                else Toast($"{ToolName(tool)}: кончились, новые завтра");
+                else Toast(Loc.F("{0}: кончились, новые завтра", ToolName(tool)));
                 return;
             }
             Armed = tool;
@@ -188,10 +212,10 @@ namespace Game.View
         private bool TryTool(Tool tool, int r, int c)
         {
             var board = State.Run.Board;
-            if (tool == Tool.Hammer && board[r, c].IsChest) { Toast("Молоток бьёт только блоки, сундук не разбить"); return false; }
+            if (tool == Tool.Hammer && board[r, c].IsChest) { Toast(Loc.T("Молоток бьёт только блоки, сундук не разбить")); return false; }
             var frames = new List<Frame>();
             var res = Game.UseTool(State, tool, r, c, _rng, p => frames.Add(BoardView.Capture(board, p)));
-            if (res == null) { Toast("Тут нечего убирать"); return false; }
+            if (res == null) { Toast(Loc.T("Тут нечего убирать")); return false; }
             Armed = null;
             Sfx.Play(tool == Tool.Broom ? "broom" : "hammer");
             StartCoroutine(PlayThen(frames, () => { if (State.Run.Moves <= 0) _mode = Mode.OutOfMoves; }));
@@ -230,7 +254,7 @@ namespace Game.View
         {
             if (Busy || State.Run == null || _mode != Mode.Play) return;
             // Out of tickets: the same window offers an ad for tickets, or says new ones come tomorrow.
-            if (State.Tickets < 1 && !Game.CanWatchAdForTickets(State)) { Toast("Билеты кончились, начать заново можно завтра"); return; }
+            if (State.Tickets < 1 && !Game.CanWatchAdForTickets(State)) { Toast(Loc.T("Билеты кончились, начать заново можно завтра")); return; }
             _mode = Mode.ConfirmRestart;
         }
 
@@ -244,8 +268,9 @@ namespace Game.View
             _s.Save();
             _view.Bind(State.Run.Board, Game.Rules);
             _mode = Mode.Play;
+            FreshBoard();
             FitCamera();
-            Toast($"Новое поле. Билетов осталось: {State.Tickets}");
+            Toast(Loc.F("Новое поле. Билетов осталось: {0}", State.Tickets));
             return true;
         }
 
@@ -255,29 +280,23 @@ namespace Game.View
             _toastUntil = Time.time + 2.5f;
         }
 
-        private static string ToolName(Tool t) => t == Tool.Broom ? "Метла" : "Молоток";
+        private static string ToolName(Tool t) => t == Tool.Broom ? Loc.T("Метла") : Loc.T("Молоток");
 
-        private static string Plural(int n, string one, string few, string many)
-        {
-            int m10 = n % 10, m100 = n % 100;
-            if (m10 == 1 && m100 != 11) return one;
-            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-            return many;
-        }
+        private static string Plural(int n, string one, string few, string many) => Loc.Plural(n, one, few, many);
 
         private string OutOfMovesText()
         {
             int left = State.Run.Board.ChestsLeft().Count;
             string s = left > 0
-                ? $"На поле ещё {left} {Plural(left, "сундук", "сундука", "сундуков")}. " + (State.Opts.KeepOnEnd ? "Они достанутся тебе." : "Если закончить, они сгорят.")
-                : "Сундуков на поле не осталось.";
-            if (State.Run.ExtraUsed) s += "\nДополнительные ходы уже брали в этом забеге.";
+                ? Loc.F("На поле ещё {0} {1}. ", left, Plural(left, "сундук", "сундука", "сундуков")) + (State.Opts.KeepOnEnd ? Loc.T("Они достанутся тебе.") : Loc.T("Если закончить, они сгорят."))
+                : Loc.T("Сундуков на поле не осталось.");
+            if (State.Run.ExtraUsed) s += Loc.T("\nДополнительные ходы уже брали в этом забеге.");
             return s;
         }
 
         private void OutOfMovesButtons()
         {
-            if (!State.Run.ExtraUsed && GUILayout.Button("+5 ходов · реклама", _button, GUILayout.Height(76)))
+            if (!State.Run.ExtraUsed && GUILayout.Button(Loc.T("+5 ходов · реклама"), _button, GUILayout.Height(76)))
                 Sdk.Rewarded(() =>
                 {
                     if (State.Run == null || State.Run.ExtraUsed) return;
@@ -287,23 +306,29 @@ namespace Game.View
                     _s.Save();
                 }, AdFailed);
             GUILayout.Space(12);
-            if (GUILayout.Button("Закончить", State.Run.ExtraUsed ? _button : _button2, GUILayout.Height(76))) FinishRun();
+            if (GUILayout.Button(Loc.T("Закончить"), State.Run.ExtraUsed ? _button : _button2, GUILayout.Height(76))) FinishRun();
+        }
+
+        private string SummaryTitle()
+        {
+            int n = _summary.Got.Count * (_doubled ? 2 : 1);
+            if (n > 0) return Loc.F("{0} {1}!", n, Plural(n, "сундук", "сундука", "сундуков"));
+            return Loc.T("Без сундуков");
         }
 
         private string SummaryText()
         {
             var lines = new List<string>();
-            lines.Add(_summary.NewRecord ? $"Очки за забег: {_summary.Score}. Новый рекорд!"
-                : $"Очки за забег: {_summary.Score}. Рекорд: {Mathf.Max(_summary.PrevBest, _summary.Score)}.");
-            if (_summary.Got.Count == 0) lines.Add("Ни один сундук не упал за край.");
-            if (_summary.Left > 0) lines.Add(_summary.Kept ? $"Из них {_summary.Left} с поля, они достались тебе." : $"Сгорело на поле: {_summary.Left}.");
-            lines.Add($"Всего сундуков ждёт на Стройке: {State.Chests.Count}");
+            lines.Add(_summary.NewRecord ? Loc.F("Очки: {0} · новый рекорд!", _summary.Score)
+                : Loc.F("Очки: {0} · рекорд {1}", _summary.Score, Mathf.Max(_summary.PrevBest, _summary.Score)));
+            if (_summary.Left > 0 && !_summary.Kept)
+                lines.Add(Loc.F("{0} {1} на поле", _summary.Left, Plural(_summary.Left, "сундук сгорел", "сундука сгорели", "сундуков сгорели")));
             return string.Join("\n", lines);
         }
 
         private void SummaryButtons()
         {
-            if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button("Удвоить · реклама", _button, GUILayout.Height(76)))
+            if (_summary.Got.Count > 0 && !_doubled && GUILayout.Button(Loc.T("Удвоить · реклама"), _button, GUILayout.Height(76)))
             {
                 var got = _summary;
                 Sdk.Rewarded(() =>
@@ -315,7 +340,7 @@ namespace Game.View
                 }, AdFailed);
             }
             GUILayout.Space(12);
-            if (_toBuild != null && GUILayout.Button("Открывать на Стройке", _button, GUILayout.Height(76)))
+            if (_toBuild != null && GUILayout.Button(Loc.T("Открывать на стройке"), _button, GUILayout.Height(76)))
             {
                 // After the run summary is a natural break: the store may show a fullscreen ad.
                 Sdk.Interstitial();
@@ -324,12 +349,12 @@ namespace Game.View
             GUILayout.Space(12);
             if (Game.CanWatchAdForTickets(State))
             {
-                if (GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76))) WatchAdForTickets();
+                if (GUILayout.Button(Loc.F("+{0} билета · реклама", Game.Rules.AdTickets), _button2, GUILayout.Height(76))) WatchAdForTickets();
             }
-            else if (GUILayout.Button($"Новый забег (билетов: {State.Tickets})", _button2, GUILayout.Height(76)))
+            else if (GUILayout.Button(Loc.F("Новый забег (билетов: {0})", State.Tickets), _button2, GUILayout.Height(76)))
             {
                 Sdk.Interstitial();
-                StartRun();
+                StartRun(fromWindow: true);
             }
         }
 
@@ -342,7 +367,7 @@ namespace Game.View
                 if (!Game.AdTools(State)) return;
                 _s.Save();
                 _mode = Mode.Play;
-                Toast($"+{Game.Rules.AdTools} метлы и +{Game.Rules.AdTools} молотка за рекламу");
+                Toast(Loc.F("+{0} метлы и +{1} молотка за рекламу", Game.Rules.AdTools, Game.Rules.AdTools));
             }, AdFailed);
         }
 
@@ -355,8 +380,8 @@ namespace Game.View
                 if (!Game.AdTickets(State)) return;
                 _s.Save();
                 // From the «Билеты кончились» window straight into a run; after a run the button becomes «Новый забег».
-                if (_mode == Mode.NoTickets) StartRun();
-                Toast($"+{Game.Rules.AdTickets} билета за рекламу. Билетов: {State.Tickets}");
+                if (_mode == Mode.NoTickets) StartRun(fromWindow: true);
+                Toast(Loc.F("+{0} билета за рекламу. Билетов: {1}", Game.Rules.AdTickets, State.Tickets));
             }, AdFailed);
         }
 

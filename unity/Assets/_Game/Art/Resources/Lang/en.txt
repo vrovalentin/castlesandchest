@@ -1,0 +1,298 @@
+# English for the game texts: the Russian text (as written in the code), a TAB, the English. Made by tools/loc/keys.py.
+Глина	Clay
+Кирпич	Brick
+Стенка	Wall
+Перекрытие	Floor
+Крыша	Roof
+Черепица	Tiles
+Окно	Window
+Дверь	Door
+Шпиль	Spire
+Крыльцо	Porch
+Фонарик	Lantern
+Принцесса	Princess
+Рыцарь	Knight
+Дракон	Dragon
+Единорог	Unicorn
+Крыло	Sail
+Труба	Chimney
+Пекарь	Baker
+Мельник	Miller
+Лестница	Ladder
+Лоза	Vine
+Огонь	Fire
+Вывеска	Sign
+Телескоп	Telescope
+Белка	Squirrel
+Кот-моряк	Sailor Cat
+Фея	Fairy
+Трактирщик	Innkeeper
+Волшебник	Wizard
+Грибочки	Mushrooms
+Пушка	Cannon
+Пальма	Palm Tree
+Часы	Clock
+Колокольчики	Bells
+Жемчужина	Pearl
+Гнездо	Nest
+Ёжик	Hedgehog
+Сова	Owl
+Панда	Panda
+Русалочка	Mermaid
+Попугай	Parrot
+Верблюжонок	Baby Camel
+Сани	Sleigh
+Емеля	Emelya
+Башня в 2 этажа	Two-Storey Tower
+Замок с башнями	Castle with Towers
+Пряничный домик	Gingerbread House
+Мельница	Windmill
+Домик на дереве	Treehouse
+Маяк	Lighthouse
+Тыквенный домик	Pumpkin House
+Трактир	Tavern
+Башня волшебника	Wizard's Tower
+Ледяной дворец	Ice Palace
+Грибной домик	Mushroom House
+Часовая башня	Clock Tower
+Пагода	Pagoda
+Дворец-ракушка	Seashell Palace
+Драконья крепость	Dragon Fortress
+Пиратская крепость	Pirate Fortress
+Песчаный дворец	Desert Palace
+Боярский терем	Boyar's Mansion
+<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.	<b>Hi! Let's build fairy-tale castles!</b>\nIt's easy! Look:\na castle is built from parts, from the bottom up.\nThe parts are in chests: tap the "Chests" tile below.
+Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».	The glowing part goes next.\nTap it on the picture or press "Place".
+Нужны детали? Проверь на складе.\nТам же можешь и собрать недостающие.\nЕсли нет на складе — иди добывай!	Need parts? Check your storage.\nYou can merge the missing ones there too.\nNot in storage? Go and mine!
+<color=#6b5aa6>{0}</color> из {1}	<color=#6b5aa6>{0}</color> of {1}
+Очки: <color=#6b5aa6>{0}</color>	Points: <color=#6b5aa6>{0}</color>
+Очки: {0}	Points: {0}
+СЛЕДУЮЩАЯ ДЕТАЛЬ	NEXT PART
+{0}-я из {1}	{0} of {1}
+на складе {0}	in storage: {0}
+Нет на складе. 	Not in storage. 
+Поставить	Place
+Подряд · {0}	In a row · {0}
+все	all
+Сундуки	Chests
+выбрать	pick
+тапни, чтобы открыть	tap to open
+добываются в шахте	won in the mine
+Склад	Storage
+собрать детали	merge parts
+пусто	empty
+Всего: {0}. Тапни сундук, чтобы открыть его, или открой все сразу.	Total: {0}. Tap a chest to open it, or open them all at once.
+Открыть все	Open all
+Закрыть	Close
+Пусто. Детали выпадают из сундуков.	Empty. Parts drop out of chests.
+Тапни две детали одного уровня, чтобы собрать из них деталь уровнем выше.	Tap two parts of the same level to merge them into a part one level higher.
+Выбрано: {0}. Выбери вторую того же уровня.	Picked: {0}. Pick a second one of the same level.
+Во что собрать? Тапни нужную деталь справа.	Merge into what? Tap the part you need on the right.
+Собрать	Merge
+Продолжить · {0} ход.	Continue · {0} moves
+Добывать · {0} ходов  <size=22>билетов: {1}</size>	Mine · {0} moves  <size=22>tickets: {1}</size>
++{0} билета · реклама  <size=22>билеты кончились</size>	+{0} tickets · ad  <size=22>out of tickets</size>
+Билеты кончились, новые завтра	Out of tickets, new ones tomorrow
+Билеты кончились. Новые придут завтра.	Out of tickets. New ones arrive tomorrow.
+ур. {0}	Lv. {0}
+Построено!	Built!
+<size=19>Построено ещё раз! Дальше вернёмся к стройке, детали на складе останутся.</size>	<size=19>Built once more! Now back to the building site; the parts in storage stay.</size>
++{0} очков	+{0} points
+ · +{0} билета	 · +{0} tickets
+деталей: {0}	parts ×{0}
+закрытых сундуков: {0}	unopened chests ×{0}
+<size=19>Сгорят {0}.</size>	<size=19>Will burn: {0}.</size>
+<size=19>Новые замки скоро появятся. А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>	<size=19>New castles are coming soon. Meanwhile you can play it all again: points, record and tickets stay.</size>
+Пройти заново	Play again
+Далее	Next
+Начать сначала?	Start over?
+Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.	All progress will be erased: castles, storage and chests. The game starts again from the first castle.
+Начать сначала	Start over
+Отмена	Cancel
+Подарок дня	Daily gift
+Заходи каждый день: подарок растёт. Пропустишь день, и всё начнётся с первого.	Come every day: the gift grows. Miss a day and it starts from day one.
+День {0}	Day {0}
+Подарок дня {0}: {1}	Daily gift {0}: {1}
+И как каждый день: {0}	And as every day: {0}
+Забрать	Collect
+Настройки	Settings
+Музыка: включена	Music: on
+Музыка: выключена	Music: off
+Звуки: включены	Sounds: on
+Звуки: выключены	Sounds: off
+Вибрация: включена	Vibration: on
+Вибрация: выключена	Vibration: off
+Готово	Done
+Открываем {0} сундука…	Opening {0} chests…
+Открываем…	Opening…
+Открыто сундуков: {0}	Chests opened: {0}
+Сундук открыт!	Chest opened!
+и ещё: 	and also: 
+билет|билета|билетов	ticket|tickets
+метла|метлы|мётел	broom|brooms
+молоток|молотка|молотков	hammer|hammers
+Сначала построй: {0}.	Build this first: {0}.
+Королевство · построено {0} из {1}	Kingdom · built {0} of {1}
+Строить	Build
+К стройке	To the site
+Вернуться к стройке	Back to building
+Вернуться	Go back
+Построить заново	Build again
+Замок строится снизу вверх. Сначала: {0}.	A castle is built from the bottom up. First: {0}.
+{0}: нет на складе. {1}	{0}: not in storage. {1}
+{0}: уже на месте.	{0}: already in place.
+Собрано: {0}	Merged: {0}
++{0} билета за рекламу. Можно добывать!	+{0} tickets for the ad. Time to mine!
+Реклама не досмотрена, награды нет. Попробуй ещё раз чуть позже.	The ad wasn't finished, so no reward. Try again a little later.
+собрать из 2 деталей {0}-го уровня	merge 2 parts of level {0}
+{0} сундук	{0} chest
+Где взять: 	Where to get it: 
+тапни, чтобы продолжить	tap to continue
+Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!	Tap groups of 2 or more matching blocks.\nGroups of 4 or more turn into a chest, and chests hold parts for your castle!
+Тут лёд и камни!\nБлок во льду не нажимается: взорви группу рядом, и лёд треснет.\nКамень не взрывается: он падает вниз и уходит с поля.	Ice and stones here!\nA block in ice can't be tapped: blast a group next to it and the ice cracks.\nA stone doesn't blast: it falls down and leaves the board.
+Ходы кончились	Out of moves
+Добыто сундуков: {0}	Chests won: {0}
+Начать заново?	Start again?
+Билеты кончились	Out of tickets
+Посмотри рекламу и получи {0} билета. Или жди завтра: придут новые.	Watch an ad and get {0} tickets. Or wait until tomorrow: new ones will come.
+Новые билеты придут завтра.	New tickets arrive tomorrow.
++{0} билета · реклама	+{0} tickets · ad
+На стройку	To the Site
+Нет инструментов	Out of tools
+Посмотри рекламу и получи {0} метлы и {1} молотка. Или жди завтра: придут новые.	Watch an ad and get {0} brooms and {1} hammers. Or wait until tomorrow: new ones will come.
++{0} и +{1} · реклама	+{0} and +{1} · ad
+Позже	Later
+Ходы: <color={0}>{1}</color>	Moves: <color={0}>{1}</color>
+декор	decor
+фигурки	figurines
+Замку всего хватает: открывай сундуки и строй	The castle has everything: open chests and build
+Нужно замку:	The castle needs:
+Тапни ряд: все блоки в нём исчезнут. Ход не тратится.	Tap a row: all its blocks vanish. No move is used.
+Тапни блок: он исчезнет. Ход не тратится.	Tap a block: it vanishes. No move is used.
+Тапни группу из 2+ блоков. Из 4+ получится сундук.	Tap a group of 2+ blocks. 4+ make a chest.
+ДОБЫТО	LOOT
+Сундук упадёт сюда, когда уйдёт за нижний край поля	A chest lands here when it falls off the bottom of the board
+Новое поле стоит 1 билет, а билеты кончились.\n\nПосмотри рекламу и получи {0} билета.	A new board costs 1 ticket, and you're out of tickets.\n\nWatch an ad and get {0} tickets.
+Будет новое поле и {0} ходов. Это стоит 1 билет, у тебя их {1}.\n\nДобытые сундуки останутся.	You'll get a new board and {0} moves. It costs 1 ticket; you have {1}.\n\nThe chests you've won stay.
+ Сундуки с поля ({0}) тоже достанутся тебе.	 The chests on the board ({0}) will be yours too.
+ Сундуки на поле ({0}) сгорят.	 The chests on the board ({0}) will burn.
+Начать заново	Start again
+Сундук не нажимается. Убери блоки под ним, и он упадёт.	A chest can't be tapped. Clear the blocks under it and it will fall.
+Камень не взрывается. Убери блоки под ним, и он упадёт с поля.	A stone doesn't blast. Clear the blocks under it and it will fall off the board.
+Блок во льду. Взорви группу рядом, и лёд треснет.	A block in ice. Blast a group next to it and the ice cracks.
+Серия: {0} сундука за ход!	Combo: {0} chests in one move!
+{0}: кончились, новые завтра	{0}: used up, new ones tomorrow
+Молоток бьёт только блоки, сундук не разбить	The hammer only breaks blocks, not chests
+Тут нечего убирать	Nothing to clear here
+Билеты кончились, начать заново можно завтра	Out of tickets, you can start again tomorrow
+Новое поле. Билетов осталось: {0}	New board. Tickets left: {0}
+Метла	Broom
+Молоток	Hammer
+На поле ещё {0} {1}. 	{0} {1} still on the board. 
+Они достанутся тебе.	They will be yours.
+Если закончить, они сгорят.	If you finish, they will burn.
+Сундуков на поле не осталось.	No chests left on the board.
+\nДополнительные ходы уже брали в этом забеге.	\nExtra moves were already taken in this run.
++5 ходов · реклама	+5 moves · ad
+Закончить	Finish
+Очки за забег: {0}. Новый рекорд!	Run points: {0}. New record!
+Очки за забег: {0}. Рекорд: {1}.	Run points: {0}. Record: {1}.
+Ни один сундук не упал за край.	Not a single chest fell off the edge.
+Из них {0} с поля, они достались тебе.	{0} of them from the board are yours.
+Сгорело на поле: {0}.	Burned on the board: {0}.
+Всего сундуков ждёт на Стройке: {0}	Chests waiting at the building site: {0}
+Удвоить · реклама	Double · ad
+Открывать на стройке	Open at the Site
+Новый забег (билетов: {0})	New run (tickets: {0})
++{0} метлы и +{1} молотка за рекламу	+{0} brooms and +{1} hammers for the ad
++{0} билета за рекламу. Билетов: {1}	+{0} tickets for the ad. Tickets: {1}
+сундук|сундука|сундуков	chest|chests
+зелёный	green
+коричневый	brown
+серый	grey
+синий	blue
+фиолетовый	purple
+Кирпичи	Bricks
+Стенки	Walls
+Перекрытия и кровля	Floors and roofs
+Окна и двери	Windows and doors
+Декор	Decor
+Фигурки	Figurines
+Начнём с маленькой башни. С неё видно всё королевство!	Let's start with a little tower. You can see the whole kingdom from it!
+Башня готова! Сверху видно, куда идти дальше.	The tower is done! From the top you can see where to go next.
+Принцесса устала жить в палатке. Рыцарь тоже, но молчит.	The princess is tired of living in a tent. So is the knight, but he keeps quiet.
+Принцесса довольна. Рыцарь наконец снял доспехи.	The princess is happy. The knight has finally taken off his armour.
+Пекарю негде печь пряники. Тесто уже убегает!	The baker has nowhere to bake gingerbread. The dough is already running away!
+Пахнет корицей! Первый пряник — тебе.	Smells of cinnamon! The first gingerbread is yours.
+Мельник три дня ждёт ветра. Ветер есть, мельницы нет.	The miller has waited three days for wind. There's wind, but no mill.
+Крылья крутятся! Будет мука для пекаря.	The sails are turning! There'll be flour for the baker.
+Белка спрятала орехи и забыла где. Нужен дом с кладовкой.	The squirrel hid her nuts and forgot where. She needs a house with a pantry.
+Белка переехала. Орехи нашлись — все сорок два.	The squirrel has moved in. The nuts turned up, all forty-two.
+Кот-моряк видит корабли, а они его — нет. Нужен огонь!	The sailor cat can see the ships, but they can't see him. He needs a light!
+Огонь горит. Корабли машут коту.	The light is on. The ships wave to the cat.
+Фея вырастила тыкву размером с дом. Надо же в ней жить!	The fairy grew a pumpkin as big as a house. Someone has to live in it!
+Фея счастлива. Только не зови её в гости в полночь.	The fairy is happy. Just don't visit her at midnight.
+Путникам негде отдохнуть, а у трактирщика остывает суп.	Travellers have nowhere to rest, and the innkeeper's soup is getting cold.
+Двери открыты! Суп горячий, лавки тёплые.	The doors are open! Hot soup, warm benches.
+Волшебнику нужна башня повыше: звёзды плохо видно.	The wizard needs a taller tower: the stars are hard to see.
+Звёзды как на ладони. Волшебник обещал не взрывать её.	The stars are right there. The wizard promised not to blow it up.
+Снежная принцесса мёрзнет без дворца. Да, так бывает.	The snow princess is freezing without a palace. Yes, that happens.
+Принцесса нарядилась в иней и машет из окна.	The princess dressed up in frost and waves from the window.
+Емеля приехал на печи. Печь есть, а терема нет.	Emelya came riding on his stove. He has a stove, but no mansion.
+Терем готов! Печь заехала в горницу и греет всех.	The mansion is done! The stove drove into the main room and keeps everyone warm.
+Ёжик набрал грибов на целый дом. Так и построим!	The hedgehog picked enough mushrooms for a whole house. So that's what we'll build!
+Ёжик дома. Грибы, правда, чуть-чуть надкусаны.	The hedgehog is home. The mushrooms are a tiny bit nibbled, though.
+Сова путает день и ночь. Нужны часы!	The owl mixes up day and night. She needs a clock!
+Часы идут. Сова спит днём, как положено.	The clock is ticking. The owl sleeps in the daytime, as she should.
+Панда ищет тихое место, чтобы жевать бамбук.	The panda is looking for a quiet place to chew bamboo.
+Тихо, звенят колокольчики. Панда жуёт.	It's quiet, the bells are ringing. The panda chews.
+Русалочка нашла жемчужину. Ей нужен дворец под стать.	The little mermaid found a pearl. It needs a palace to match.
+Жемчужина сияет над морем. Русалочка поёт.	The pearl shines over the sea. The little mermaid sings.
+Дракон охраняет гнездо, а у гнезда нет крыши.	The dragon guards its nest, and the nest has no roof.
+Дракон доволен и почти не дымит. Королевство построено!	The dragon is pleased and hardly smokes at all. The kingdom is built!
+Пираты уплыли, а попугая забыли. Он не против своей крепости.	The pirates sailed away and forgot the parrot. He doesn't mind having his own fortress.
+Попугай кричит «Полный вперёд!» всем прохожим.	The parrot shouts "Full speed ahead!" at everyone passing by.
+Верблюжонок пришёл из пустыни и очень хочет тень.	The baby camel came from the desert and really wants some shade.
+В тени прохладно. Верблюжонок улыбается.	It's cool in the shade. The baby camel smiles.
+Здесь будет новая постройка.	A new building will stand here.
+Готово!	Done!
+Сундуков нет, зато рекорд!	No chests, but a new record!
+В этот раз без сундуков	No chests this time
+Очки: {0} · новый рекорд!	Points: {0} · new record!
+Очки: {0} · рекорд {1}	Points: {0} · record {1}
+{0} {1} остались на поле	{0} {1} left on the field
+Продолжить  <size=22>ходов: {0}</size>	Continue  <size=22>moves: {0}</size>
+Поставить ×{0}	Place ×{0}
+{0} сундук на 4–5 звёзд	{0} chest with 4–5 stars
+Замок из сундуков · версия {0}	Castle of Chests · version {0}
+Игру сделал Валентин	Made by Valentin
+Конфиденциальность	Privacy
+Понятно	Got it
+Игра не просит имя, почту или телефон и не собирает их.\n\nПрогресс (замки, склад, сундуки, очки) хранится на устройстве, а в Яндекс Играх ещё и в облачном сохранении Яндекса, чтобы не потерялся.\n\nРекламу показывает площадка, на которой ты играешь (например, Яндекс). Она может использовать данные по своим правилам конфиденциальности.\n\nВопросы об игре: через страницу игры на площадке.	The game doesn't ask for your name, email or phone and doesn't collect them.\n\nYour progress (castles, storage, chests, points) is kept on your device, and on Yandex Games also in Yandex cloud saves so it isn't lost.\n\nAds are shown by the platform you play on (for example, Yandex). It may use data under its own privacy policy.\n\nQuestions about the game: through the game's page on the platform.
+Замок строится снизу вверх	Castles are built from the bottom up
+В сундуках детали для замка	Chests hold parts for the castle
+Сундуки добывают в шахте	Chests come from the mine
+Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!	Tap 2+ matching blocks.\n4+ make a chest!
+Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля.	Ice cracks when blocks pop next to it.\nStones don't pop, they fall off the field.
+{0} {1} на поле	{0} {1} on the field
+сундук сгорел|сундука сгорели|сундуков сгорели	chest burned|chests burned
+Твои данные	Your data
+Без сундуков	No chests
+Снегурочка	Snow Maiden
+Снегурочке негде жить: в избе она тает. Нужен дворец изо льда.	The Snow Maiden has nowhere to live: she melts in a warm hut. She needs a palace of ice.
+Снегурочка нарядилась в иней и машет с крыльца.	The Snow Maiden put on her frost dress and waves from the porch.
+Нужно ещё {0} · на складе {1}	{0} more needed · {1} in storage
+На складе {0}	{0} in storage
+Нет на складе. Ищи: {0}, или собери из двух попроще	Not in storage. Look in: {0}, or merge two simpler ones
+Нет на складе. Ищи: {0}	Not in storage. Look in: {0}
+Нет на складе. Ищи: {0}, или собери на складе из двух деталей ур. {1}	Not in storage. Look in: {0}, or merge two Lv. {1} parts in storage
+Где взять деталь	Where to get it
+1. Найти в сундуке	1. Find it in a chest
+2. Собрать на складе	2. Merge it in storage
+Выпадает из сундука цвета «{0}». Такой сундук получается в шахте из группы в 4 и больше блоков этого цвета. Чем больше группа, тем больше звёзд и деталей.	Drops from a {0} chest. You get one in the mine from a group of 4 or more blocks of that colour. The bigger the group, the more stars and parts.
+Иногда выпадает из сундука цвета «{0}» на 4–5 звёзд. Такой сундук получается в шахте из большой группы блоков этого цвета.	Sometimes drops from a {0} chest with 4–5 stars. You get one in the mine from a big group of blocks of that colour.
+Две любые детали уровня {0} (можно одинаковые) собираются в одну деталь уровня {1}. На складе тапни две такие детали, потом выбери, что из них сделать: «{2}».	Any two Lv. {0} parts (they can be the same) merge into one Lv. {1} part. In storage, tap two of them, then pick what to make: «{2}».
+Деталей уровня {0} у тебя пока нет.	You have no Lv. {0} parts yet.
+У тебя 1 деталь уровня {0}, нужна ещё одна.	You have 1 Lv. {0} part, you need one more.
+Деталей уровня {0} у тебя: {1}. Хватает, можно собрать!	Your Lv. {0} parts: {1}. Enough to merge!
+Открыть склад	Open storage

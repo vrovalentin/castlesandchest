@@ -60,6 +60,15 @@ namespace Game.EditorTools
             // No «Made with Unity» screen (allowed on Personal since Unity 6): the game starts 2-3 s sooner.
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
+            // A smaller download: unused code is cut harder and IL2CPP compiles for size. Our own assemblies are kept
+            // whole (Assets/link.xml), so nothing the game reaches only by reflection or JsonUtility goes missing.
+            foreach (var t in new[] { UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.NamedBuildTarget.Android })
+                PlayerSettings.SetManagedStrippingLevel(t, ManagedStrippingLevel.High);
+            // Compiling for size is for the web download only: on Android a full IL2CPP rebuild for size needs more
+            // memory than the build PC has, and the APK size matters less (Google Play).
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.WebGL, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+            PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.Android, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSpeed);
+            PlayerSettings.stripEngineCode = true;
         }
     }
 }

@@ -117,6 +117,8 @@ namespace Game.View
         public static Texture2D Restart => Drawn("restart") ?? RestartShapeIcon;
         public static Texture2D Hammer => Drawn("hammer") ?? HammerShape;
         public static Texture2D Broom => Drawn("broom") ?? BroomShape;
+        public static Texture2D Gear => Drawn("gear") ?? BackShape;
+        public static Texture2D Next => Drawn("next") ?? BackShape;
         public static Texture2D SoundOn => Drawn("sound_on") ?? BackShape;
         public static Texture2D SoundOff => Drawn("sound_off") ?? BackShape;
 

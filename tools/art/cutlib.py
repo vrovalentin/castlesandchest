@@ -215,3 +215,12 @@ def slots_of(spec, R, found, pieces):
         part, reg = item.split(':')
         S.append((part, R[reg], 'clean'))
     return S
+
+
+def figure_of(full_p, name, fallback=None):
+    """A figure drawn on its own and put onto the full picture (align_figures.py) left its own outline next to
+    it, <full>_<name>.png: that outline is the figure's mask, so no bits of the building stick to it."""
+    p = full_p.replace('.png', f'_{name}.png')
+    if os.path.exists(p):
+        return np.array(Image.open(p).convert('RGBA'))[..., 3] > 110
+    return fallback

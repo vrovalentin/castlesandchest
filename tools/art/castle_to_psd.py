@@ -22,7 +22,7 @@ SOURCE = {
     9: 'game1part4/volshebnaya_bashnya9.png', 10: 'game1part4/ledyanoi_zamok10.png',
     11: 'game1part5/grib1_full.png', 12: 'game1part5/chasi1_full.png', 13: 'game1part5/pagoda1_full.png',
     14: 'game1part5/saeadvorec1_full.png', 15: 'game1part5/zamokdrakon1_full.png',
-    16: 'game1part5/pirate1_full.png', 17: 'game1part5/dvorecverblud1_full.png',
+    16: 'game1part5/pirate1_full.png', 17: 'game1part5/dvorecverblud1_full.png', 18: 'terem/terem_full.png',
 }
 
 

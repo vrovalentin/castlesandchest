@@ -1,0 +1,161 @@
+Build size report — branch claude/project-thread-0hmk41 @ 89baea0, built 2026-11-14 on the Windows build PC (Unity 6000.6.4f1)
+
+== Output sizes ==
+APK  Builds/castles.apk           41.1 MB (debug-signed test APK, ARM64 only)
+WebGL Builds/castles-webgl.zip    29.3 MB
+WebGL Build folder:
+     24.01 MB  WebGL.data.unityweb
+      0.07 MB  WebGL.framework.js.unityweb
+      0.05 MB  WebGL.loader.js
+      5.28 MB  WebGL.wasm.unityweb
+  (index.html, platform.js and the TemplateData are a few KB)
+
+== Settings ==
+WebGL (BuildWeb.cs): compressionFormat=Gzip, decompressionFallback=true (.unityweb files), dataCaching=true,
+  exceptionSupport=ExplicitlyThrownExceptionsOnly, linker target=Wasm, memory 32 MB initial, stripEngineCode=1.
+Android (BuildAndroid.cs): scripting backend IL2CPP, targetArchitectures=ARM64 only (no ARMv7), buildAppBundle=false (APK),
+  minSdk 26, targetSdk auto, debug keystore. il2cppCodeGeneration / il2cppCompilerConfiguration / managedStrippingLevel
+  not set in ProjectSettings => Unity defaults (managed stripping Minimal for IL2CPP, compiler config Release, code gen OptimizeRuntime).
+Textures: 757 PNGs; import defaults on all of them (textureCompression=Compressed (Normal quality), no crunch,
+  maxTextureSize 2048, no platform overrides, mipmaps off for most). With Unity defaults that is ASTC (Android)
+  and DXT5/BC3 (WebGL); a 1024x1024 *_full.png takes 1.0 MB in both = 8 bits per pixel.
+  Exception: Map/ (MapTextureImport.cs) — max 1024, Compressed, crunched, quality 60.
+
+== Resources usage grouped (Android build, uncompressed in build) ==
+   46.4 MB   635 files  Castles: step layers
+   18.0 MB    18 files  Castles: *_full.png (whole building)
+    9.0 MB    18 files  Castles: *_hit.bytes (tap masks)
+    5.9 MB    22 files  UI
+    3.6 MB    43 files  Parts
+    2.7 MB    17 files  Board
+    0.7 MB    37 files  Map
+    0.7 MB     5 files  Backgrounds
+    0.5 MB     1 files  unity_builtin_extra
+    0.3 MB     4 files  Fx
+    0.2 MB     2 files  Fonts
+    0.1 MB    19 files  Sfx
+    0.0 MB    29 files  Assets
+    0.0 MB     2 files  Shaders
+
+== Android: Build Report (top 40 assets) ==
+Build Report
+Uncompressed usage by category (Percentages based on user generated assets only):
+Textures               78.7 mb	 89.3% 
+Meshes                 0.0 kb	 0.0% 
+Animations             0.0 kb	 0.0% 
+Sounds                 77.9 kb	 0.1% 
+Shaders                29.3 kb	 0.0% 
+Other Assets           9.3 mb	 10.5% 
+Levels                 1.5 kb	 0.0% 
+File headers           118.2 kb	 0.1% 
+Total User Assets      88.2 mb	 100.0% 
+Complete build size    265.0 mb
+Used Assets and files from the Resources folder, sorted by uncompressed size:
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_9/castle_9_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_8/castle_8_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_7/castle_7_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_6/castle_6_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_5/castle_5_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_4/castle_4_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_3/castle_3_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_2/castle_2_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_18/castle_18_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_17/castle_17_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_16/castle_16_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_15/castle_15_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_14/castle_14_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_13/castle_13_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_12/castle_12_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_11/castle_11_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_10/castle_10_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_1/castle_1_full.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_9/c9_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_8/c8_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_7/c7_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_6/c6_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_5/c5_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_4/c4_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_3/c3_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_2/c2_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_18/c18_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_17/c17_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_16/c16_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_15/c15_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_14/c14_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_13/c13_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_12/c12_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_11/c11_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_10/c10_base.png
+ 1.0 mb	 0.4% Assets/_Game/Art/Resources/Castles/castle_1/c1_base.png
+ 924.1 kb	 0.3% Assets/_Game/Art/Resources/UI/scaff_top.png
+ 876.1 kb	 0.3% Assets/_Game/Art/Resources/Castles/castle_5/c5_27_ladder.png
+ 836.1 kb	 0.3% Assets/_Game/Art/Resources/UI/scaff_crate_empty.png
+ 836.1 kb	 0.3% Assets/_Game/Art/Resources/Castles/castle_11/c11_29_shrooms.png
+
+== WebGL: Build Report (top 40 assets) ==
+Build Report
+Uncompressed usage by category (Percentages based on user generated assets only):
+Textures               78.6 mb	 89.2% 
+Meshes                 0.0 kb	 0.0% 
+Animations             0.0 kb	 0.0% 
+Sounds                 187.4 kb	 0.2% 
+Shaders                16.9 kb	 0.0% 
+Other Assets           9.3 mb	 10.5% 
+Levels                 0.0 kb	 0.0% 
+File headers           24.9 kb	 0.0% 
+Total User Assets      88.1 mb	 100.0% 
+Complete build size    29.4 mb
+Used Assets and files from the Resources folder, sorted by uncompressed size:
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_9/castle_9_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_8/castle_8_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_7/castle_7_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_6/castle_6_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_5/castle_5_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_4/castle_4_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_3/castle_3_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_2/castle_2_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_18/castle_18_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_17/castle_17_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_16/castle_16_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_15/castle_15_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_14/castle_14_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_13/castle_13_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_12/castle_12_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_11/castle_11_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_10/castle_10_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_1/castle_1_full.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_9/c9_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_8/c8_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_7/c7_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_6/c6_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_5/c5_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_4/c4_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_3/c3_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_2/c2_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_18/c18_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_17/c17_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_16/c16_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_15/c15_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_14/c14_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_13/c13_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_12/c12_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_11/c11_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_10/c10_base.png
+ 1.0 mb	 3.4% Assets/_Game/Art/Resources/Castles/castle_1/c1_base.png
+ 924.1 kb	 3.1% Assets/_Game/Art/Resources/UI/scaff_top.png
+ 876.1 kb	 2.9% Assets/_Game/Art/Resources/Castles/castle_5/c5_27_ladder.png
+ 836.1 kb	 2.8% Assets/_Game/Art/Resources/UI/scaff_crate_empty.png
+ 836.1 kb	 2.8% Assets/_Game/Art/Resources/Castles/castle_11/c11_29_shrooms.png
+
+== APK contents, largest entries (unzip -l) ==
+ 17094928  1981-01-01 01:01   lib/arm64-v8a/libunity.so
+ 12276368  1981-01-01 01:01   lib/arm64-v8a/libil2cpp.so
+  6441588  1981-01-01 01:01   classes.dex
+  3775680  1981-01-01 01:01   assets/bin/Data/Resources/unity default resources
+  2217210  1981-01-01 01:01   assets/bin/Data/Managed/Metadata/global-metadata.dat
+  1292904  1981-01-01 01:01   lib/arm64-v8a/libc++_shared.so
+  1048848  1981-01-01 01:01   assets/bin/Data/fd8a0533732e4c86be68dbf347828249
+  1048848  1981-01-01 01:01   assets/bin/Data/eda994c6d6ae434e98d73d7b395bf003
+  1048848  1981-01-01 01:01   assets/bin/Data/e8175de6ce1e40dfb4fafd7542c272ce
+  1048848  1981-01-01 01:01   assets/bin/Data/df8eb79d98c64d32992710d3d3249ec6
+  1048848  1981-01-01 01:01   assets/bin/Data/dc5a22069bc94f20b3a7e8d12d3e010b

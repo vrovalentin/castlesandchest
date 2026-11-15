@@ -27,7 +27,7 @@ if not os.path.exists(dst + '.meta'):
 for f in glob.glob(f'{src}/{prefix}_*.png') + glob.glob(f'{src}/{cid}_full.png'):
     t = os.path.join(dst, os.path.basename(f))
     shutil.copy(f, t)
-    tmpl = 'c2_line_00.png' if '_line_' in f else 'c2_00_clay.png'
+    tmpl = 'c2_line_00.png' if '_line_' in f and os.path.exists(os.path.join(c2, 'c2_line_00.png.meta')) else 'c2_00_clay.png'
     meta_from(os.path.join(c2, tmpl + '.meta'), t)
 # drop layers from an earlier cut that no longer exist
 for f in glob.glob(f'{dst}/{prefix}_*.png'):
@@ -37,6 +37,8 @@ subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'make_hi
 meta_from(os.path.join(c2, 'c2_hit.bytes.meta'), os.path.join(dst, f'{prefix}_hit.bytes'))
 # keep only the box around each piece (the game reads where it goes from <prefix>_rects.txt)
 subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'trim_layers.py'), '--no-lines', dst], check=True)
+# stored at 3/4 of the canvas (the game places them by the rects)
+subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'scale_castles.py'), dst], check=True)
 
 # storage icons: the layer cropped to its picture and fitted into 256x256
 for part, spec in icons.items():

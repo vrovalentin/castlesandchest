@@ -11,6 +11,13 @@ namespace Game.Core
 
         public int Version = CurrentVersion;
         public int CastleIndex;
+        /// <summary>While a built castle is being built again: the castle the player was building (-1 otherwise), with its slots and runs.</summary>
+        public int HomeIndex = -1;
+        public bool[] HomeFilled = Array.Empty<bool>();
+        public int HomeRuns;
+        public bool Replaying => HomeIndex >= 0;
+        /// <summary>The furthest castle reached: the one being built, not a built one being built again.</summary>
+        public int Frontier => Replaying ? HomeIndex : CastleIndex;
         /// <summary>Part id → count in storage. Missing id means zero.</summary>
         public Dictionary<string, int> Inventory = new Dictionary<string, int>();
         /// <summary>Collected chests waiting to be opened.</summary>

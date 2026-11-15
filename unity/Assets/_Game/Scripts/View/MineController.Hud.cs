@@ -34,6 +34,7 @@ namespace Game.View
             _gotBox, _gotTitle, _gotEmpty, _toastStyle, _dim, _panel, _panelTitle, _panelBody, _button, _button2;
 
         private readonly List<float> _gotAt = new List<float>();
+        private bool _obstacleLine;
 
         /// <summary>Screen pixels per virtual HUD pixel.</summary>
         private static float HudScale => Mathf.Max(0.01f, Mathf.Min(Screen.width / 720f, Screen.height / 1280f));
@@ -50,7 +51,8 @@ namespace Game.View
         {
             float s = HudScale, w = Screen.width / s, h = Screen.height / s;
             float colW = Mathf.Min(w, 760f), x0 = (w - colW) / 2f, pad = 16f, inner = colW - 2 * pad;
-            const float gotMin = 150, gap = 12;
+            // «Добыто» is one strip under the board; spare height goes around the board, not into an empty panel.
+            const float gotMin = 130, gap = 12;
             var r = new HudRects
             {
                 Bar = new Rect(x0 + pad, 16, inner, 76),
@@ -62,8 +64,13 @@ namespace Game.View
             var b = State?.Run?.Board;
             float aspect = b != null ? (b.Cols + 0.3f) / (b.Rows + 0.3f) : 1f;
             float bh = Mathf.Min(maxH, inner / aspect);
-            r.Board = new Rect(x0 + pad, top, inner, bh);
-            r.Got = new Rect(x0 + pad, r.Board.yMax + gap, inner, Mathf.Max(gotMin, h - pad - r.Board.yMax - gap));
+            // «Добыто» sits at the bottom like a tray. Spare height on tall phones goes in three even gaps
+            // (under the bar, above the board, under it), so no single empty hole shows.
+            r.Got = new Rect(x0 + pad, h - pad - gotMin, inner, gotMin);
+            float g = Mathf.Max(0, r.Got.y - gap - top - bh) / 3f;
+            r.Needs.y += g;
+            r.Tools.y += g;
+            r.Board = new Rect(x0 + pad, top + 2 * g, inner, bh);
             return r;
         }
 
@@ -81,7 +88,8 @@ namespace Game.View
             _chip.wordWrap = false;
             _chip.padding = new RectOffset(40, 12, 2, 2);
             _tool = UiArt.Style(UiArt.Round(ToolFill, PanelEdge, 18, 3), 18, 22, Cream, TextAnchor.MiddleLeft);
-            _tool.padding = new RectOffset(70, 8, 4, 4);
+            _tool.padding = new RectOffset(66, 4, 4, 4);
+            _tool.wordWrap = false;   // a desktop browser measures the bold word a little wider: «Молото/к»
             _tool.fontStyle = FontStyle.Bold;
             _tool.active.background = UiArt.Round(ToolOn, PanelEdge, 18, 3);
             _tool.active.textColor = Cream;
@@ -144,12 +152,18 @@ namespace Game.View
             var L = Layout();
 
             var run = State.Run;
-            if (run != null && _mode == Mode.Play && !Busy)
-                Hints.Want("board", new Rect(L.Board.x + 20, L.Board.center.y - 150, L.Board.width - 40, 300),
-                    "Тапай группы из 2 и больше одинаковых блоков.\nИз 4 и больше получится сундук, а в сундуках детали для замка!");
-            if (run != null && _mode == Mode.Play && !Busy && Hints.Seen("board") && HasObstacles(run.Board))
-                Hints.Want("obstacles", new Rect(L.Board.x + 20, L.Board.center.y - 160, L.Board.width - 40, 320),
-                    "Тут лёд и камни!\nБлок во льду не нажимается: взорви группу рядом, и лёд треснет.\nКамень не взрывается: он падает вниз и уходит с поля.");
+            // First-run lines in a strip under the board: they don't block the board and go away after a move.
+            string line = null;
+            _obstacleLine = false;
+            if (run != null && _mode == Mode.Play)
+            {
+                if (!Hints.Seen("board")) line = Loc.T("Тапай 2+ одинаковых блока.\nИз 4+ получится сундук!");
+                else if (!Hints.Seen("obstacles") && HasObstacles(run.Board))
+                {
+                    line = Loc.T("Лёд треснет от взрыва рядом.\nКамень не взрывается, он падает с поля.");
+                    _obstacleLine = true;
+                }
+            }
             if (run != null)
             {
                 GUI.enabled = !Busy && _mode == Mode.Play;
@@ -160,27 +174,31 @@ namespace Game.View
                 DrawGot(L.Got, run.Got);
             }
 
+            if (line != null && !(_toast != null && Time.time < _toastUntil))
+                GUI.Box(new Rect(L.Got.x, L.Got.y + 8, L.Got.width, L.Got.height - 16), line, _toastStyle);
             if (_toast != null && Time.time < _toastUntil)
                 GUI.Box(new Rect(L.Board.x + 24, L.Board.y + 16, L.Board.width - 48, 84), _toast, _toastStyle);
 
-            if (_mode == Mode.OutOfMoves) Panel(w, h, "Ходы кончились", OutOfMovesText(), OutOfMovesButtons);
-            else if (_mode == Mode.Summary) Panel(w, h, $"Добыто сундуков: {_summary.Got.Count * (_doubled ? 2 : 1)}", SummaryText(), SummaryButtons, SummaryChests);
-            else if (_mode == Mode.ConfirmRestart) Panel(w, h, "Начать заново?", RestartText(), RestartButtons);
-            else if (_mode == Mode.NoTickets) Panel(w, h, "Билеты кончились",
-                Game.CanWatchAdForTickets(State) ? $"Посмотри рекламу и получи {Game.Rules.AdTickets} билета. Или жди завтра: придут новые." : "Новые билеты придут завтра.", () =>
+            // Back on the board from a window: the press that closed it must not also tap the new board.
+            if (_mode == Mode.Play && _panelMode != Mode.Play) { _panelMode = Mode.Play; _playAt = Time.unscaledTime; }
+            if (_mode == Mode.OutOfMoves) Panel(w, h, Loc.T("Ходы кончились"), OutOfMovesText(), OutOfMovesButtons);
+            else if (_mode == Mode.Summary) Panel(w, h, SummaryTitle(), SummaryText(), SummaryButtons, SummaryChests);
+            else if (_mode == Mode.ConfirmRestart) Panel(w, h, Loc.T("Начать заново?"), RestartText(), RestartButtons);
+            else if (_mode == Mode.NoTickets) Panel(w, h, Loc.T("Билеты кончились"),
+                Game.CanWatchAdForTickets(State) ? Loc.F("Посмотри рекламу и получи {0} билета. Или жди завтра: придут новые.", Game.Rules.AdTickets) : Loc.T("Новые билеты придут завтра."), () =>
             {
-                if (Game.CanWatchAdForTickets(State) && GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button2, GUILayout.Height(76)))
+                if (Game.CanWatchAdForTickets(State) && GUILayout.Button(Loc.F("+{0} билета · реклама", Game.Rules.AdTickets), _button2, GUILayout.Height(76)))
                     WatchAdForTickets();
                 GUILayout.Space(12);
-                if (_toBuild != null && GUILayout.Button("На Стройку", _button, GUILayout.Height(76))) _toBuild();
+                if (_toBuild != null && GUILayout.Button(Loc.T("На стройку"), _button, GUILayout.Height(76))) _toBuild();
             });
-            else if (_mode == Mode.NoTools) Panel(w, h, "Нет инструментов",
-                $"Посмотри рекламу и получи {Game.Rules.AdTools} метлы и {Game.Rules.AdTools} молотка. Или жди завтра: придут новые.", () =>
+            else if (_mode == Mode.NoTools) Panel(w, h, Loc.T("Нет инструментов"),
+                Loc.F("Посмотри рекламу и получи {0} метлы и {1} молотка. Или жди завтра: придут новые.", Game.Rules.AdTools, Game.Rules.AdTools), () =>
             {
-                if (Game.CanWatchAdForTools(State) && GUILayout.Button($"+{Game.Rules.AdTools} и +{Game.Rules.AdTools} · реклама", _button2, GUILayout.Height(76)))
+                if (Game.CanWatchAdForTools(State) && GUILayout.Button(Loc.F("+{0} и +{1} · реклама", Game.Rules.AdTools, Game.Rules.AdTools), _button2, GUILayout.Height(76)))
                     WatchAdForTools();
                 GUILayout.Space(12);
-                if (GUILayout.Button("Позже", _button, GUILayout.Height(76))) _mode = Mode.Play;
+                if (GUILayout.Button(Loc.T("Позже"), _button, GUILayout.Height(76))) _mode = Mode.Play;
             });
             Hints.Draw();
         }
@@ -206,7 +224,7 @@ namespace Game.View
             float x = r.center.x - (movesW + chestsW + scoreW + 2 * gap) / 2f, y = r.y + 8, ph = b - 16;
             var small = new GUIStyle(_pill) { fontSize = 24, wordWrap = false, padding = new RectOffset(14, 10, 6, 6), alignment = TextAnchor.MiddleCenter };
             string movesCol = run.Moves <= 5 ? "#d9534f" : "#6b5aa6";
-            GUI.Label(new Rect(x, y, movesW, ph), $"Ходы: <color={movesCol}>{run.Moves}</color>", small);
+            GUI.Label(new Rect(x, y, movesW, ph), Loc.F("Ходы: <color={0}>{1}</color>", movesCol, run.Moves), small);
 
             var chestRect = new Rect(x + movesW + gap, y, chestsW, ph);
             var pill = new GUIStyle(small) { padding = new RectOffset(52, 10, 6, 6) };
@@ -220,7 +238,7 @@ namespace Game.View
             var sr = new Rect(chestRect.xMax + gap, y, scoreW, ph);
             var m = GUI.matrix;
             GUIUtility.ScaleAroundPivot(new Vector2(k, k), sr.center);
-            GUI.Label(sr, $"Очки: <color=#6b5aa6>{run.Score}</color>", small);
+            GUI.Label(sr, Loc.F("Очки: <color=#6b5aa6>{0}</color>", run.Score), small);
             GUI.matrix = m;
         }
 
@@ -256,15 +274,16 @@ namespace Game.View
                 int tier = Game.Catalog.TierOf(p.Id);
                 if (tier == 6) { decor += p.N; decorPart ??= p.Id; continue; }
                 if (tier >= 7) { figures += p.N; figurePart ??= p.Id; continue; }
-                chips.Add(new NeedChip { Text = Game.Catalog.NameOf(p.Id).ToLowerInvariant() + Times(p.N), Swatch = Palette.Tier(tier), Part = p.Id });
+                chips.Add(new NeedChip { Text = Times(p.N), Swatch = Palette.Tier(tier), Part = p.Id });
             }
             // Decor and figurines don't drop by block colour, so one chip per tier.
-            if (decor > 0) chips.Add(new NeedChip { Text = "декор" + Times(decor), Swatch = Palette.Tier(6), Part = decorPart });
-            if (figures > 0) chips.Add(new NeedChip { Text = "фигурки" + Times(figures), Swatch = Palette.Tier(7), Part = figurePart });
+            if (decor > 0) chips.Add(new NeedChip { Text = Times(decor), Swatch = Palette.Tier(6), Part = decorPart });
+            if (figures > 0) chips.Add(new NeedChip { Text = Times(figures), Swatch = Palette.Tier(7), Part = figurePart });
             return chips;
         }
 
-        private static string Times(int n) => n > 1 ? $" ×{n}" : "";
+        // Only the number: the part icon says what it is.
+        private static string Times(int n) => n > 1 ? $"×{n}" : "";
 
         private void DrawNeeds(Rect r)
         {
@@ -275,7 +294,7 @@ namespace Game.View
             if (chips.Count == 0)
             {
                 if (!Mathf.Approximately(NeedsHeight(1), _needsHeight)) { _needsHeight = NeedsHeight(1); FitCamera(); }
-                GUI.Label(new Rect(x, y, right - x, r.height - 2 * padY), "Замку всего хватает: открывай сундуки и строй", _needsTitle);
+                GUI.Label(new Rect(x, y, right - x, r.height - 2 * padY), Loc.T("Замку всего хватает: открывай сундуки и строй"), _needsTitle);
                 return;
             }
             int rows = CountRows(chips, r.width - 2 * padX, gapX);
@@ -284,14 +303,14 @@ namespace Game.View
                 _needsHeight = NeedsHeight(rows);
                 FitCamera();
             }
-            var title = new GUIContent("Нужно замку:");
+            var title = new GUIContent(Loc.T("Нужно замку:"));
             float tw = _needsTitle.CalcSize(title).x;
             GUI.Label(new Rect(x, y, tw, ch), title, _needsTitle);
             x += tw + gapX;
             foreach (var c in chips)
             {
                 var content = new GUIContent(c.Text);
-                float cw = _chip.CalcSize(content).x;
+                float cw = ChipWidth(c);
                 if (x + cw > right && x > r.x + padX) { x = r.x + padX; y += ch + gapY; }
                 if (y + ch > r.yMax - 4) break;
                 var cr = new Rect(x, y, Mathf.Min(cw, right - x), ch);
@@ -308,13 +327,16 @@ namespace Game.View
             }
         }
 
+        private float ChipWidth(NeedChip c) =>
+            string.IsNullOrEmpty(c.Text) ? 40 : _chip.CalcSize(new GUIContent(c.Text)).x;
+
         private int CountRows(List<NeedChip> chips, float width, float gapX)
         {
-            float x = _needsTitle.CalcSize(new GUIContent("Нужно замку:")).x + gapX;
+            float x = _needsTitle.CalcSize(new GUIContent(Loc.T("Нужно замку:"))).x + gapX;
             int rows = 1;
             foreach (var c in chips)
             {
-                float cw = _chip.CalcSize(new GUIContent(c.Text)).x;
+                float cw = ChipWidth(c);
                 if (x + cw > width && x > 0) { x = 0; rows++; }
                 x += cw + gapX;
             }
@@ -328,9 +350,11 @@ namespace Game.View
             const float bw = 176, gap = 12;
             ToolButton(new Rect(r.x, r.y, bw, r.height), Tool.Broom, UiArt.Broom, State.Brooms);
             ToolButton(new Rect(r.x + bw + gap, r.y, bw, r.height), Tool.Hammer, UiArt.Hammer, State.Hammers);
-            string hint = Armed == Tool.Broom ? "Тапни ряд: все блоки в нём исчезнут. Ход не тратится."
-                : Armed == Tool.Hammer ? "Тапни блок: он исчезнет. Ход не тратится."
-                : "Тапни группу из 2+ блоков. Из 4+ получится сундук.";
+            // A line only while a tool is armed; the board itself is taught by the first-run hint.
+            string hint = Armed == Tool.Broom ? Loc.T("Тапни ряд: все блоки в нём исчезнут. Ход не тратится.")
+                : Armed == Tool.Hammer ? Loc.T("Тапни блок: он исчезнет. Ход не тратится.")
+                : null;
+            if (hint == null) return;
             float hx = r.x + 2 * bw + gap + 16;
             GUI.Label(new Rect(hx, r.y, r.xMax - hx, r.height), hint, _hint);
         }
@@ -351,7 +375,7 @@ namespace Game.View
         {
             GUI.Box(r, GUIContent.none, _gotBox);
             const float padX = 16, padTop = 10, titleH = 28;
-            GUI.Label(new Rect(r.x + padX, r.y + padTop, r.width - 2 * padX, titleH), "ДОБЫТО", _gotTitle);
+            GUI.Label(new Rect(r.x + padX, r.y + padTop, r.width - 2 * padX, titleH), Loc.T("ДОБЫТО"), _gotTitle);
 
             // Pop-in time for each chest, so a new one bounces when it lands here.
             if (got.Count < _gotAt.Count) _gotAt.Clear();
@@ -360,7 +384,7 @@ namespace Game.View
             var area = new Rect(r.x + padX, r.y + padTop + titleH + 4, r.width - 2 * padX, r.height - padTop - titleH - 14);
             if (got.Count == 0)
             {
-                GUI.Label(area, "Сундук упадёт сюда, когда уйдёт за нижний край поля", _gotEmpty);
+                GUI.Label(area, Loc.T("Сундук упадёт сюда, когда уйдёт за нижний край поля"), _gotEmpty);
                 return;
             }
 
@@ -368,7 +392,7 @@ namespace Game.View
             const float gap = 6;
             float size = 40;
             int perRow = 1, rows = 1;
-            for (float s = 84; s >= 40; s -= 4)
+            for (float s = Mathf.Min(84, area.height); s >= 40; s -= 4)
             {
                 perRow = Mathf.Max(1, Mathf.FloorToInt((area.width + gap) / (s + gap)));
                 rows = Mathf.Max(1, Mathf.FloorToInt((area.height + gap) / (s + gap)));
@@ -404,10 +428,10 @@ namespace Game.View
         private string RestartText()
         {
             if (State.Tickets < 1)
-                return $"Новое поле стоит 1 билет, а билеты кончились.\n\nПосмотри рекламу и получи {Game.Rules.AdTickets} билета.";
+                return Loc.F("Новое поле стоит 1 билет, а билеты кончились.\n\nПосмотри рекламу и получи {0} билета.", Game.Rules.AdTickets);
             int left = State.Run.Board.ChestsLeft().Count;
-            string s = $"Будет новое поле и {State.Opts.Moves} ходов. Это стоит 1 билет, у тебя их {State.Tickets}.\n\nДобытые сундуки останутся.";
-            if (left > 0) s += State.Opts.KeepOnEnd ? $" Сундуки с поля ({left}) тоже достанутся тебе." : $" Сундуки на поле ({left}) сгорят.";
+            string s = Loc.F("Будет новое поле и {0} ходов. Это стоит 1 билет, у тебя их {1}.\n\nДобытые сундуки останутся.", State.Opts.Moves, State.Tickets);
+            if (left > 0) s += State.Opts.KeepOnEnd ? Loc.F(" Сундуки с поля ({0}) тоже достанутся тебе.", left) : Loc.F(" Сундуки на поле ({0}) сгорят.", left);
             return s;
         }
 
@@ -415,12 +439,12 @@ namespace Game.View
         {
             if (State.Tickets < 1)
             {
-                if (Game.CanWatchAdForTickets(State) && GUILayout.Button($"+{Game.Rules.AdTickets} билета · реклама", _button, GUILayout.Height(76)))
+                if (Game.CanWatchAdForTickets(State) && GUILayout.Button(Loc.F("+{0} билета · реклама", Game.Rules.AdTickets), _button, GUILayout.Height(76)))
                     WatchAdForTickets();
             }
-            else if (GUILayout.Button("Начать заново", _button, GUILayout.Height(76))) Restart();
+            else if (GUILayout.Button(Loc.T("Начать заново"), _button, GUILayout.Height(76))) Restart();
             GUILayout.Space(12);
-            if (GUILayout.Button("Отмена", _button2, GUILayout.Height(76))) _mode = Mode.Play;
+            if (GUILayout.Button(Loc.T("Отмена"), _button2, GUILayout.Height(76))) _mode = Mode.Play;
         }
 
         /// <summary>The chests of the finished run as pictures, one per kind, with a count badge top-right.</summary>
@@ -457,6 +481,9 @@ namespace Game.View
         }
 
         private float _panelInnerW = 520;
+        private Mode _panelMode;
+        private float _panelAt;
+        private bool _panelAwake;
         /// <summary>Height the panel's content took last frame, so the window fits it without a gap.</summary>
         private float _contentH = 140;
 
@@ -467,7 +494,17 @@ namespace Game.View
             GUI.Box(new Rect(0, 0, w, h), GUIContent.none, _dim);
             GUI.color = old;
             float pw = Mathf.Min(600, w - 80);
-            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : 700);
+            bool ribbon0 = GameArt.Ribbon != null;
+            float textH = string.IsNullOrEmpty(text) ? 0 : _panelBody.CalcHeight(new GUIContent(text), pw - 80);
+            float ph = Mathf.Min(h - 160, content != null ? 520 + _contentH : (ribbon0 ? 136 : 72) + 20 + textH + 30 + 176);
+            // Fast taps on the board must not land on a window that has just opened under the finger
+            // (they took the ad for +5 moves, ended the run and started a new one for a ticket). The buttons
+            // wake up only once the window has been open a moment AND the finger has stopped tapping.
+            // Once awake they stay awake: the press on a button must not put it back to sleep.
+            if (_mode != _panelMode) { _panelMode = _mode; _panelAt = Time.unscaledTime; _panelAwake = false; }
+            if (!_panelAwake && Time.unscaledTime - Mathf.Max(_panelAt, _lastDownAt) > 1.0f) _panelAwake = true;
+            bool wasEnabled = GUI.enabled;
+            GUI.enabled = wasEnabled && _panelAwake;
             var r = new Rect((w - pw) / 2, (h - ph) / 2, pw, ph);
             GUI.Box(r, GUIContent.none, _panel);
             bool ribbon = GameArt.Ribbon != null;
@@ -492,6 +529,7 @@ namespace Game.View
             GUILayout.FlexibleSpace();
             buttons();
             GUILayout.EndArea();
+            GUI.enabled = wasEnabled;
         }
     }
 }

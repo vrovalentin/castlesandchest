@@ -128,5 +128,24 @@ namespace Game.Core.Tests
             d.version = GameState.CurrentVersion + 1;
             Assert.IsNull(SaveMapper.FromSave(d, _cat));
         }
+
+        [Test]
+        public void ReplaySurvivesSaveAndLoad()
+        {
+            var s = _game.NewGame();
+            _game.NextCastle(s); _game.NextCastle(s);
+            s.Filled[1] = true;
+            s.Runs = 3;
+            _game.StartReplay(s, 0);
+            s.Filled[0] = true;
+            var t = RoundTrip(s);
+            Assert.IsTrue(t.Replaying);
+            Assert.AreEqual(0, t.CastleIndex);
+            Assert.AreEqual(2, t.HomeIndex);
+            Assert.IsTrue(t.Filled[0]);
+            Assert.IsTrue(t.HomeFilled[1] && !t.HomeFilled[0]);
+            Assert.AreEqual(3, t.HomeRuns);
+            Assert.IsFalse(RoundTrip(_game.NewGame()).Replaying);
+        }
     }
 }

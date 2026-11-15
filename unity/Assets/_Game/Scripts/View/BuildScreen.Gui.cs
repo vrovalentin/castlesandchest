@@ -198,10 +198,15 @@ namespace Game.View
             bool hasNext = Game.NextSlot(State) >= 0;
             float cardsTop = hasNext ? tilesY - 14 - NextH : tilesY;
             float groundY = cardsTop - 30;
-            AskHint(new Rect(x0 + 40, 150, colW - 80, 300));
-            var bg = GameArt.BuildBackground;
-            // The meadow fills the screen; its horizon (about 60% down the picture) sits a little behind the building site.
-            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, 0.6f, groundY - 150);
+            if (_mapOpen)
+            {
+                DrawMap(w, h);
+                return;
+            }
+            // The land of the building's zone (beach, meadow, snow, desert, volcano) fills the screen; where its open
+            // ground begins sits a little behind the building site.
+            var (bg, horizon) = MapArt.BackgroundOf(State.CastleIndex);
+            if (bg != null) GameArt.DrawCoverAnchored(new Rect(0, 0, w, h), bg, horizon, groundY - 150);
             if (_donePanel)
             {
                 // The finished building gets the whole screen; the page comes back with the next building.
@@ -212,7 +217,7 @@ namespace Game.View
             DrawScene(new Rect(x0, 0, colW, groundY + 74), groundY);
 
             // Behind an open window the page doesn't take clicks.
-            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen && !_calendarOpen;
+            GUI.enabled = _reward == null && !_donePanel && !_askStartOver && !_storageOpen && !_chestsOpen && !_settingsOpen && !_calendarOpen && !_partHelpOpen;
             DrawHeader(new Rect(x0 + pad, 16, inner, 100));
             if (GUI.enabled) CastleTap(cardsTop - 8);
             if (hasNext) DrawNext(x0 + pad, cardsTop, inner);
@@ -233,6 +238,7 @@ namespace Game.View
             else if (_calendarOpen) DrawCalendarPanel(w, h);
             else if (_askStartOver) DrawStartOverPanel(w, h);
             else if (_settingsOpen) DrawSettingsPanel(w, h);
+            else if (_partHelpOpen) DrawPartHelp(w, h);
             else if (_storageOpen) DrawStorageWindow(w, h);
             else if (_chestsOpen) DrawChestsWindow(w, h);
             Hints.Draw();
@@ -243,28 +249,14 @@ namespace Game.View
         /// <summary>For a new player: an arrow over the button to tap next, until they have done it once.</summary>
         private void ShowPointer()
         {
-            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
+            if (Hints.Showing || _reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _partHelpOpen || _storageOpen || _chestsOpen || _flying.Count > 0 || Placing) return;
             int next = Game.NextSlot(State);
             if (next < 0) return;
             bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
-            if (have) Pointer.Show("place", _placeAt);
-            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true);
-            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt);
-        }
-
-        /// <summary>The first-time hint that fits what the player can do now, if they haven't seen it.</summary>
-        private void AskHint(Rect bubble)
-        {
-            if (_reward != null || _donePanel || _askStartOver || _settingsOpen || _calendarOpen || _storageOpen || _chestsOpen || _flying.Count > 0) return;
-            int next = Game.NextSlot(State);
-            if (next < 0) return;
-            bool have = State.Count(Game.CastleOf(State).Slots[next]) > 0;
-            if (State.Chests.Count > 0 && !have)
-                Hints.Want("chests", bubble, "<b>Привет! Давай строить сказочные замки!</b>\nЭто просто! Смотри:\nзамок строится из деталей, снизу вверх.\nДетали лежат в сундуках: тапни плитку «Сундуки» внизу.");
-            else if (have)
-                Hints.Want("place", bubble, "Светится деталь, которую ставить следующей.\nТапни по ней на рисунке или жми «Поставить».");
-            else if (State.Chests.Count == 0)
-                Hints.Want("mine", bubble, "Нужны детали? Проверь на складе.\nТам же можешь и собрать недостающие.\nЕсли нет на складе — иди добывай!");
+            // The arrow says where, one short line says why: no walls of text for a new player.
+            if (have) Pointer.Show("place", _placeAt); // the glowing slot and the button say it; a caption here covered the card
+            else if (State.Chests.Count > 0) Pointer.Show("chest", _chestsAt, into: true); // the tile says «Сундуки» itself
+            else if (State.Run != null || State.Tickets > 0) Pointer.Show("mine", _mineAt, into: true); // the button says «Добывать» itself
         }
 
         // ---------- header ----------
@@ -274,17 +266,20 @@ namespace Game.View
             var castle = Game.CastleOf(State);
             int done = State.Filled.Count(f => f), total = State.Filled.Length;
             const float progW = 150, btn = 64;
-            if (GUI.Button(new Rect(r.x, r.y, btn, btn), GUIContent.none, _roundBtn)) Later(AskStartOver);
-            GUI.DrawTexture(new Rect(r.x + 11, r.y + 11, btn - 22, btn - 22), UiArt.Restart, ScaleMode.ScaleToFit);
-            // Settings: music, sounds and vibration. The speaker is crossed out when both music and sounds are off.
-            var snd = new Rect(r.x + btn + 8, r.y, btn, btn);
+            // Settings behind a gear: music, sounds, vibration, about the game, and «Начать сначала»
+            // (wiping progress doesn't deserve a button of its own on the main screen).
+            var snd = new Rect(r.x, r.y, btn, btn);
             if (GUI.Button(snd, GUIContent.none, _roundBtn)) Later(() => _settingsOpen = true);
-            GUI.DrawTexture(new Rect(snd.x + 11, snd.y + 11, btn - 22, btn - 22), Sfx.Muted && Music.Off ? UiArt.SoundOff : UiArt.SoundOn, ScaleMode.ScaleToFit);
-            float px = snd.xMax + 10;
+            GUI.DrawTexture(new Rect(snd.x + 10, snd.y + 10, btn - 20, btn - 20), UiArt.Gear, ScaleMode.ScaleToFit);
+            // The kingdom map: its own picture, small, in the round button.
+            var mapBtn = new Rect(snd.xMax + 8, r.y, btn, btn);
+            if (GUI.Button(mapBtn, GUIContent.none, _roundBtn)) Later(() => OpenMap());
+            if (MapArt.Map != null) GUI.DrawTexture(new Rect(mapBtn.x + 8, mapBtn.y + 8, btn - 16, btn - 16), MapArt.Map, ScaleMode.ScaleAndCrop);
+            float px = mapBtn.xMax + 10;
             var title = new GUIStyle(_pill) { fontSize = 23, wordWrap = false, clipping = TextClipping.Clip, padding = new RectOffset(16, 10, 4, 4) };
             GUI.Label(new Rect(px, r.y, r.xMax - progW - 12 - px, 64), $"{State.CastleIndex + 1}. {castle.Name}", title);
             var center = new GUIStyle(_pill) { alignment = TextAnchor.MiddleCenter, richText = true, padding = new RectOffset(4, 4, 4, 4) };
-            GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), $"<color=#6b5aa6>{done}</color> из {total}", center);
+            GUI.Label(new Rect(r.xMax - progW, r.y, progW, 64), Loc.F("<color=#6b5aa6>{0}</color> из {1}", done, total), center);
 
             var bar = new Rect(r.x, r.y + 76, r.width, 16);
             GUI.DrawTexture(bar, UiArt.Round(new Color(1, 1, 1, 0.75f), CardEdge, 8, 2));
@@ -295,8 +290,8 @@ namespace Game.View
             if (State.Score != _shownScore) { if (_shownScore >= 0) _scoreAt = Time.time; _shownScore = State.Score; }
             float k = 1 + 0.15f * Mathf.Clamp01(1 - (Time.time - _scoreAt) / 0.35f);
             var score = new GUIStyle(center) { fontSize = 22, wordWrap = false };
-            string text = $"Очки: <color=#6b5aa6>{State.Score}</color>";
-            float sw = Mathf.Max(170, score.CalcSize(new GUIContent($"Очки: {State.Score}")).x + 34);
+            string text = Loc.F("Очки: <color=#6b5aa6>{0}</color>", State.Score);
+            float sw = Mathf.Max(170, score.CalcSize(new GUIContent(Loc.F("Очки: {0}", State.Score))).x + 34);
             var sr = new Rect(r.xMax - sw, bar.yMax + 10, sw, 46);
             var m = GUI.matrix;
             GUIUtility.ScaleAroundPivot(new Vector2(k, k), sr.center);
@@ -431,18 +426,19 @@ namespace Game.View
             const float padX = 18, hgt = 196;
             var card = new Rect(x, y, inner, hgt);
             GUI.Box(card, GUIContent.none, _nextCard);
-            GUI.Label(new Rect(x + padX, y + 12, 400, 30), "СЛЕДУЮЩАЯ ДЕТАЛЬ", _section);
+            GUI.Label(new Rect(x + padX, y + 12, 400, 30), Loc.T("СЛЕДУЮЩАЯ ДЕТАЛЬ"), _section);
+            // «?»: where this part comes from, in full (which chest, what to merge in storage).
+            if (HelpButton(new Rect(card.xMax - 12 - 44, y + 8, 44, 44))) Later(() => _partHelpOpen = true);
             var icon = new Rect(x + padX, y + 52, 124, 124);
             _iconAt = icon;
             GUI.Box(icon, GUIContent.none, have > 0 ? _tilePicked : _tile);
             GameArt.DrawPart(new Rect(icon.x + 12, icon.y + 12, 100, 100), id, tier);
 
             float tx = icon.xMax + 18, btnW = 210, textW = card.xMax - padX - tx - (have > 0 ? btnW + 12 : 0);
-            GUI.Label(new Rect(tx, y + 56, textW, 44), Game.Catalog.NameOf(id), _bigName);
-            string count = total > 1 ? $"{nth}-я из {total}" : "";
-            string sub = have > 0 ? (count.Length > 0 ? count + " · " : "") + $"на складе {have}"
-                : (count.Length > 0 ? count + ". " : "") + "Нет на складе. " + WhereFrom(id);
-            GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), sub, _sub);
+            // The name line ends before the «?» in the corner.
+            float nameW = have > 0 ? textW : textW - 40;
+            GUI.Label(new Rect(tx, y + 56, nameW, 44), Game.Catalog.NameOf(id), _bigName);
+            GUI.Label(new Rect(tx, y + 104, textW, hgt - 112), NextFactsText(tier, total - nth + 1, have), _sub);
 
             if (have > 0)
             {
@@ -451,12 +447,25 @@ namespace Game.View
                 // While a part is on its way the buttons wait for it to land.
                 bool was = GUI.enabled;
                 GUI.enabled = was && !Placing;
-                if (GUI.Button(b, "Поставить", _green)) Later(() => StartPlace(next), click: false);
+                if (GUI.Button(b, Loc.T("Поставить"), _green)) Later(() => StartPlace(next), click: false);
                 _placeAt = b;
-                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), $"Подряд · {row}", _wood)) Later(() => StartPlace(next, row), click: false);
+                if (row > 1 && GUI.Button(new Rect(b.x, b.yMax + 10, btnW, 50), Loc.F("Поставить ×{0}", row), _wood)) Later(() => StartPlace(next, row), click: false);
                 GUI.enabled = was;
             }
             return card.yMax;
+        }
+
+        /// <summary>Under the next part's name, in plain words: how many the building still takes, how many are in
+        /// storage, or where to get one.</summary>
+        private string NextFactsText(int tier, int left, int have)
+        {
+            if (have > 0)
+                return left > 1 ? Loc.F("Нужно ещё {0} · на складе {1}", left, have) : Loc.F("На складе {0}", have);
+            var rules = Game.Rules;
+            string chest = tier <= rules.ColorTiers ? Loc.F("{0} сундук", Palette.BlockNames[tier - 1])
+                : Loc.F("{0} сундук на 4–5 звёзд", Palette.BlockNames[rules.ColorTiers - 1]);
+            return tier > 1 ? Loc.F("Нет на складе. Ищи: {0}, или собери на складе из двух деталей ур. {1}", chest, tier - 1)
+                : Loc.F("Нет на складе. Ищи: {0}", chest);
         }
 
         // ---------- chests and storage tiles ----------
@@ -476,7 +485,7 @@ namespace Game.View
             // IMGUI gives a click to the first button drawn under it, so «все» must come before the tile.
             GUI.Box(chests, GUIContent.none, _card);
             var all = new Rect(chests.xMax - 112, chests.yMax - 62, 102, 54);
-            if (n > 1 && SmallGoldButton(all, "все", 34)) Later(() => OpenChests());
+            if (n > 1 && SmallGoldButton(all, Loc.T("все"), 34)) Later(() => OpenChests());
             _chestsAt = new Rect(chests.x + 12, chests.y + 14, 112, 112);
             if (GUI.Button(chests, GUIContent.none, _invisible) && n > 0)
                 Later(() => { if (State.Chests.Count == 1) OpenChests(0); else _chestsOpen = true; });
@@ -488,9 +497,9 @@ namespace Game.View
                 GameArt.DrawChest(chestIcon, new Chest(1, 1));
                 GUI.color = old;
             }
-            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 26, chests.xMax - chestIcon.xMax - 16, 44), "Сундуки", _tileTitle);
+            GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 26, chests.xMax - chestIcon.xMax - 16, 44), Loc.T("Сундуки"), _tileTitle);
             GUI.Label(new Rect(chestIcon.xMax + 10, chests.y + 72, chests.xMax - chestIcon.xMax - (n > 1 ? 122 : 16), 56),
-                n > 1 ? "выбрать" : n > 0 ? "тапни, чтобы открыть" : "добываются в шахте", _sub);
+                n > 1 ? Loc.T("выбрать") : n > 0 ? Loc.T("тапни, чтобы открыть") : Loc.T("добываются в шахте"), _sub);
             if (n > 0) Badge(new Vector2(chestIcon.xMax - 6, chestIcon.y + 4), n);
 
             int parts = Game.Catalog.Parts.Sum(p => State.Count(p.Id));
@@ -506,8 +515,8 @@ namespace Game.View
                 GameArt.DrawPart(partIcon, "wall", Game.Catalog.TierOf("wall"));
                 GUI.color = old;
             }
-            GUI.Label(new Rect(partIcon.xMax + 16, store.y + 26, store.xMax - partIcon.xMax - 22, 44), "Склад", _tileTitle);
-            GUI.Label(new Rect(partIcon.xMax + 16, store.y + 72, store.xMax - partIcon.xMax - 22, 50), parts > 0 ? "собрать детали" : "пусто", _sub);
+            GUI.Label(new Rect(partIcon.xMax + 16, store.y + 26, store.xMax - partIcon.xMax - 22, 44), Loc.T("Склад"), _tileTitle);
+            GUI.Label(new Rect(partIcon.xMax + 16, store.y + 72, store.xMax - partIcon.xMax - 22, 50), parts > 0 ? Loc.T("собрать детали") : Loc.T("пусто"), _sub);
             if (parts > 0) Badge(new Vector2(partIcon.xMax, partIcon.y), parts);
             return store;
         }
@@ -547,8 +556,8 @@ namespace Game.View
             int rows = Mathf.CeilToInt(groups.Count / (float)perRow);
             float ph = Mathf.Min(h - 150, 170 + rows * (size + gap) + 30 + 96 + 24 + 72 + 46);
             var r = new Rect((w - pw) / 2, Mathf.Max(110, (h - ph) / 2), pw, ph);
-            NightWindow(r, "Сундуки");
-            GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), $"Всего: {State.Chests.Count}. Тапни сундук, чтобы открыть его, или открой все сразу.", _nightBody);
+            NightWindow(r, Loc.T("Сундуки"));
+            GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), Loc.F("Всего: {0}. Тапни сундук, чтобы открыть его, или открой все сразу.", State.Chests.Count), _nightBody);
             float gy = r.y + 170;
             for (int i = 0; i < groups.Count; i++)
             {
@@ -562,9 +571,9 @@ namespace Game.View
                 int idx = groups[i].last;
                 if (GUI.Button(cell, GUIContent.none, _invisible)) Later(() => OpenChests(idx));
             }
-            if (GoldButton(new Rect(r.x + 70, r.yMax - 238, r.width - 140, 96), "Открыть все", 34))
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 238, r.width - 140, 96), Loc.T("Открыть все"), 34))
                 Later(() => { _chestsOpen = false; OpenChests(); }, click: false);
-            if (GUI.Button(new Rect(r.x + 130, r.yMax - 122, r.width - 260, 72), "Закрыть", new GUIStyle(_wood) { fontSize = 28 }))
+            if (GUI.Button(new Rect(r.x + 130, r.yMax - 122, r.width - 260, 72), Loc.T("Закрыть"), new GUIStyle(_wood) { fontSize = 28 }))
                 Later(() => _chestsOpen = false);
         }
 
@@ -587,19 +596,29 @@ namespace Game.View
             int gridRows = Mathf.Max(1, Mathf.CeilToInt(parts.Count / 4f));
             float ph = Mathf.Min(h - 150, 176 + gridRows * 186 + 20 + 190 + 30 + 96 + 50);
             var r = new Rect((w - pw) / 2, Mathf.Max(110, (h - ph) / 2), pw, ph);
-            NightWindow(r, "Склад");
+            NightWindow(r, Loc.T("Склад"));
             bool choosing = _pick.Count == 2;
             bool fresh = _message != null && Time.time < _messageUntil;
-            string hint = parts.Count == 0 ? "Пусто. Детали выпадают из сундуков."
+            string hint = parts.Count == 0 ? Loc.T("Пусто. Детали выпадают из сундуков.")
                 : fresh ? _message
-                : _pick.Count == 0 ? "Тапни две детали одного уровня, чтобы собрать из них деталь уровнем выше."
-                : _pick.Count == 1 ? $"Выбрано: {Game.Catalog.NameOf(_pick[0])}. Выбери вторую того же уровня."
-                : "Во что собрать? Тапни нужную деталь справа.";
+                : _pick.Count == 0 ? Loc.T("Тапни две детали одного уровня, чтобы собрать из них деталь уровнем выше.")
+                : _pick.Count == 1 ? Loc.F("Выбрано: {0}. Выбери вторую того же уровня.", Game.Catalog.NameOf(_pick[0]))
+                : Loc.T("Во что собрать? Тапни нужную деталь справа.");
             GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64), hint, _nightBody);
 
             // The parts, four in a row.
-            const float tile = 124, nameH = 46, gap = 16;
+            // On a short screen with many kinds of parts the tiles get smaller (and more per row), so the last row
+            // never hides under the «Собрать» strip.
+            float tile = 124, nameH = 46, gap = 16;
             int perRow = Mathf.Max(1, Mathf.FloorToInt((r.width - 60 + gap) / (tile + gap)));
+            float room = ph - 176 - (20 + 190 + 30 + 96 + 50);
+            for (int tries = 0; tries < 8; tries++)
+            {
+                int rows = Mathf.Max(1, Mathf.CeilToInt(parts.Count / (float)perRow));
+                if (rows * (tile + nameH + gap) <= room + 1) break;
+                tile *= 0.9f; nameH = Mathf.Max(34, nameH * 0.92f); gap *= 0.9f;
+                perRow = Mathf.Max(1, Mathf.FloorToInt((r.width - 60 + gap) / (tile + gap)));
+            }
             float gridW = perRow * tile + (perRow - 1) * gap, gx = r.center.x - gridW / 2, gy = r.y + 176;
             var nameOnNight = new GUIStyle(_name);
             nameOnNight.normal.textColor = new Color32(0xfb, 0xf0, 0xdc, 0xff);
@@ -622,7 +641,7 @@ namespace Game.View
                 // A part just made pops and throws out sparkles.
                 float mt = id == _mergedId ? Time.time - _mergedAt : 9;
                 float popK = mt < 0.35f ? 1 + 0.28f * Mathf.Sin(Mathf.PI * mt / 0.35f) : 1;
-                GameArt.DrawPart(Scale(new Rect(cell.x + 14, cell.y + 12, tile - 28, tile - 28), popK), id, t);
+                GameArt.DrawPart(Scale(new Rect(cell.x + tile * 0.11f, cell.y + tile * 0.1f, tile * 0.78f, tile * 0.78f), popK), id, t);
                 GUI.color = old;
                 if (mt < 0.7f) DrawBurst(cell.center, mt / 0.7f);
                 Badge(new Vector2(cell.xMax - 8, cell.y + 8), State.Count(id));
@@ -638,7 +657,7 @@ namespace Game.View
             GUI.Box(strip, GUIContent.none, _strip);
             var stripTitle = new GUIStyle(_onNight) { fontSize = 26, alignment = TextAnchor.MiddleCenter };
             stripTitle.normal.textColor = new Color32(0xff, 0xd6, 0x6e, 0xff);
-            GUI.Label(new Rect(strip.x, strip.y + 10, strip.width, 36), "Собрать", stripTitle);
+            GUI.Label(new Rect(strip.x, strip.y + 10, strip.width, 36), Loc.T("Собрать"), stripTitle);
             const float st = 92;
             float sy = strip.y + 62;
             for (int k = 0; k < 2; k++)
@@ -653,7 +672,8 @@ namespace Game.View
                 if (k == 0) GUI.Label(new Rect(c.xMax, c.y, 34, st), "+", new GUIStyle(stripTitle) { fontSize = 44, normal = { textColor = Color.white } });
             }
             float ax = strip.x + 20 + 2 * st + 34 + 6;
-            GUI.Label(new Rect(ax, sy, 40, st), "→", new GUIStyle(stripTitle) { fontSize = 44 });
+            // The game font has no arrow glyph: draw the icon.
+            GUI.DrawTexture(new Rect(ax, sy + st / 2 - 22, 40, 44), UiArt.Next, ScaleMode.ScaleToFit);
             float tx = ax + 46;
             if (choosing)
             {
@@ -683,7 +703,7 @@ namespace Game.View
             else
                 GUI.DrawTexture(new Rect(tx, sy, st, st), UiArt.Round(new Color32(0xff, 0xff, 0xff, 0x55), Gold, 18, 2));
 
-            if (GoldButton(new Rect(r.center.x - 160, r.yMax - 140, 320, 96), "Закрыть", 34))
+            if (GoldButton(new Rect(r.center.x - 160, r.yMax - 140, 320, 96), Loc.T("Закрыть"), 34))
                 Later(() => { _storageOpen = false; _pick.Clear(); }, click: false);
         }
 
@@ -692,17 +712,17 @@ namespace Game.View
         private void DrawMineButton(Rect r)
         {
             bool ad = Game.CanWatchAdForTickets(State);
-            string text = State.Run != null ? $"Продолжить · {State.Run.Moves} ход."
-                : State.Tickets > 0 ? $"Добывать · {State.Opts.Moves} ходов  <size=22>билетов: {State.Tickets}</size>"
-                : ad ? $"+{Game.Rules.AdTickets} билета · реклама  <size=22>билеты кончились</size>"
-                : "Билеты кончились, новые завтра";
+            string text = State.Run != null ? Loc.F("Продолжить  <size=22>ходов: {0}</size>", State.Run.Moves)
+                : State.Tickets > 0 ? Loc.F("Добывать · {0} ходов  <size=22>билетов: {1}</size>", State.Opts.Moves, State.Tickets)
+                : ad ? Loc.F("+{0} билета · реклама  <size=22>билеты кончились</size>", Game.Rules.AdTickets)
+                : Loc.T("Билеты кончились, новые завтра");
             _mineAt = r;
             if (GUI.Button(r, text, _mineBtn) && _reward == null)
             {
                 if (State.Run == null && State.Tickets < 1)
                 {
                     if (ad) Later(() => WatchAdForTickets(), click: false);
-                    else Say("Билеты кончились. Новые придут завтра.");
+                    else Say(Loc.T("Билеты кончились. Новые придут завтра."));
                 }
                 else Later(() => { Pointer.MarkDone("mine"); _toMine?.Invoke(); });
             }
@@ -765,7 +785,7 @@ namespace Game.View
             GUI.DrawTexture(r, UiArt.Round(c, Color.Lerp(c, Color.black, 0.45f), 15, 3));
             // A soft light top half, like the gold buttons.
             GUI.DrawTexture(new Rect(r.x + 6, r.y + 4, r.width - 12, r.height * 0.36f), UiArt.Round(new Color(1, 1, 1, 0.28f), new Color(1, 1, 1, 0), 6, 0));
-            Outlined(r, $"ур. {tier}", _tierTag ??= new GUIStyle(_ribbonTitle) { fontSize = 19 }, Color.Lerp(c, Color.black, 0.6f), 2f);
+            Outlined(r, Loc.F("ур. {0}", tier), _tierTag ??= new GUIStyle(_ribbonTitle) { fontSize = 19 }, Color.Lerp(c, Color.black, 0.6f), 2f);
             GUI.color = old;
         }
 
@@ -822,7 +842,7 @@ namespace Game.View
                 GUI.color = new Color(1, 1, 1, drop);
                 var rib = new Rect(w / 2 - 280, 26 - 150 * (1 - drop), 560, 140);
                 if (GameArt.Ribbon != null) GUI.DrawTexture(rib, GameArt.Ribbon);
-                Outlined(new Rect(rib.x + 44, rib.y + 16, rib.width - 88, 88), "Построено!", new GUIStyle(_ribbonTitle) { fontSize = 46 }, RibbonInk, 3f);
+                Outlined(new Rect(rib.x + 44, rib.y + 16, rib.width - 88, 88), Loc.T("Построено!"), new GUIStyle(_ribbonTitle) { fontSize = 46 }, RibbonInk, 3f);
                 GUI.color = Color.white;
             }
             // The name comes once the ribbon has landed, on a dark plate, so it never reads as grey on the bright meadow.
@@ -845,24 +865,27 @@ namespace Game.View
             GUI.color = new Color(1, 1, 1, show);
             var card = new Rect(30, cardTop + (1 - show) * 120, w - 60, cardH);
             GUI.Box(card, GUIContent.none, _nightPanel);
-            var lines = new List<string> { $"Бонус за постройку: <color=#ffd66e>+{Scoring.Building(State.CastleIndex)}</color> очков. Всего: {State.Score}." };
-            if (!last)
-            {
-                lines.Add($"Награда: <color=#ffd66e>+{Game.Rules.TicketsPerCastle} билета</color> на следующую постройку.");
-                var bp = Game.PreviewBurn(State);
-                var lost = new List<string>();
-                if (bp.Parts > 0) lost.Add($"деталей: {bp.Parts}");
-                if (bp.Chests > 0) lost.Add($"закрытых сундуков: {bp.Chests}");
-                lines.Add(lost.Count > 0 ? $"<size=19>Сгорят {string.Join(", ", lost)}. Фигурки остаются.</size>" : "<size=19>Склад пуст, сгорать нечему. Фигурки остаются.</size>");
-            }
+            // The resident thanks the player; what they get goes small under it.
+            var lines = new List<string> { Residents.Of(Game.CastleOf(State).Id).Done };
+            if (State.Replaying) lines.Add(Loc.T("<size=19>Построено ещё раз! Дальше вернёмся к стройке, детали на складе останутся.</size>"));
             else
             {
-                lines.Add($"<color=#ffd66e>Все {Game.Catalog.Castles.Count} построек готовы!</color> Новые замки скоро появятся.");
-                lines.Add("<size=19>А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>");
+                string reward = Loc.F("+{0} очков", Scoring.Building(State.CastleIndex));
+                if (!last) reward += Loc.F(" · +{0} билета", Game.Rules.TicketsPerCastle);
+                lines.Add($"<size=21><color=#ffd66e>{reward}</color></size>");
             }
+            if (!last && !State.Replaying)
+            {
+                var bp = Game.PreviewBurn(State);
+                var lost = new List<string>();
+                if (bp.Parts > 0) lost.Add(Loc.F("деталей: {0}", bp.Parts));
+                if (bp.Chests > 0) lost.Add(Loc.F("закрытых сундуков: {0}", bp.Chests));
+                if (lost.Count > 0) lines.Add(Loc.F("<size=19>Сгорят {0}.</size>", string.Join(", ", lost)));
+            }
+            else lines.Add(Loc.T("<size=19>Новые замки скоро появятся. А пока можно пройти всё заново: очки, рекорд и билеты останутся.</size>"));
             _showText ??= new GUIStyle(_nightBody) { richText = true, alignment = TextAnchor.MiddleCenter };
             GUI.Label(new Rect(card.x + 34, card.y + 26, card.width - 68, cardH - 160), string.Join("\n", lines), _showText);
-            if (GoldButton(new Rect(card.center.x - 170, card.yMax - 126, 340, 100), last ? "Пройти заново" : "Далее", 40) && show >= 1)
+            if (GoldButton(new Rect(card.center.x - 170, card.yMax - 126, 340, 100), last ? Loc.T("Пройти заново") : Loc.T("Далее"), 40) && show >= 1)
                 Later(NextCastle, click: false);
             GUI.color = Color.white;
         }
@@ -901,11 +924,11 @@ namespace Game.View
             Dim(w, h);
             float pw = Mathf.Min(620, w - 60);
             var r = new Rect((w - pw) / 2, h / 2 - 230, pw, 460);
-            NightWindow(r, "Начать сначала?");
+            NightWindow(r, Loc.T("Начать сначала?"));
             GUI.Label(new Rect(r.x + 44, r.y + 96, r.width - 88, 110),
-                "Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка.", _nightBody);
-            if (GoldButton(new Rect(r.x + 70, r.yMax - 228, r.width - 140, 96), "Начать сначала", 34)) Later(StartOver);
-            if (GUI.Button(new Rect(r.x + 110, r.yMax - 116, r.width - 220, 72), "Отмена", _wood)) Later(() => _askStartOver = false);
+                Loc.T("Весь прогресс сотрётся: замки, склад и сундуки. Игра начнётся с первого замка."), _nightBody);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 228, r.width - 140, 96), Loc.T("Начать сначала"), 34)) Later(StartOver);
+            if (GUI.Button(new Rect(r.x + 110, r.yMax - 116, r.width - 220, 72), Loc.T("Отмена"), _wood)) Later(() => _askStartOver = false);
         }
 
         /// <summary>
@@ -919,9 +942,9 @@ namespace Game.View
             var cal = Game.Rules.Calendar;
             float pw = Mathf.Min(680, w - 40), ph = 730;
             var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
-            NightWindow(r, "Подарок дня");
+            NightWindow(r, Loc.T("Подарок дня"));
             GUI.Label(new Rect(r.x + 40, r.y + 92, r.width - 80, 64),
-                "Заходи каждый день: подарок растёт. Пропустишь день, и всё начнётся с первого.", _nightBody);
+                Loc.T("Заходи каждый день: подарок растёт. Пропустишь день, и всё начнётся с первого."), _nightBody);
             // Days 1-4 in the top row, 5-7 below; the 7th tile is wider: it is the big one.
             float gap = 10, tw = (r.width - 60 - 3 * gap) / 4, th = 150, top = r.y + 170;
             for (int i = 0; i < cal.Length; i++)
@@ -938,7 +961,7 @@ namespace Game.View
                 var ink = today ? new Color32(0x4a, 0x2a, 0x08, 0xff) : new Color32(0xff, 0xf8, 0xe6, 0xff);
                 var head = new GUIStyle(_nightBody) { fontSize = 22, fontStyle = FontStyle.Bold };
                 head.normal.textColor = ink;
-                GUI.Label(new Rect(t.x, t.y + 8, t.width, 30), past ? $"День {day} ✓" : $"День {day}", head);
+                GUI.Label(new Rect(t.x, t.y + 8, t.width, 30), Loc.F("День {0}", day), head);
                 var body = new GUIStyle(_nightBody) { fontSize = 20 };
                 body.normal.textColor = ink;
                 GUI.Label(new Rect(t.x + 6, t.y + 44, t.width - 12, t.height - 50), GiftText(cal[i], "\n"), body);
@@ -954,9 +977,9 @@ namespace Game.View
             };
             var rest = new GUIStyle(_nightBody) { fontSize = 21 };
             float ty = top + 2 * (th + gap) + 10;
-            GUI.Label(new Rect(r.x + 30, ty, r.width - 60, 44), $"Подарок дня {gift.Day}: {GiftText(bonus, ", ")}", got);
-            GUI.Label(new Rect(r.x + 30, ty + 46, r.width - 60, 60), $"И как каждый день: {GiftText(daily, ", ")}", rest);
-            if (GoldButton(new Rect(r.x + 90, r.yMax - 130, r.width - 180, 96), "Забрать", 36))
+            GUI.Label(new Rect(r.x + 30, ty, r.width - 60, 44), Loc.F("Подарок дня {0}: {1}", gift.Day, GiftText(bonus, ", ")), got);
+            GUI.Label(new Rect(r.x + 30, ty + 46, r.width - 60, 60), Loc.F("И как каждый день: {0}", GiftText(daily, ", ")), rest);
+            if (GoldButton(new Rect(r.x + 90, r.yMax - 130, r.width - 180, 96), Loc.T("Забрать"), 36))
                 Later(() => { _calendarOpen = false; _s.NewGift = null; Sfx.Play("collect"); });
         }
 
@@ -969,22 +992,19 @@ namespace Game.View
             return parts.Count > 0 ? string.Join(sep, parts) : "—";
         }
 
-        private static string Plural(int n, string one, string few, string many)
-        {
-            int m10 = n % 10, m100 = n % 100;
-            if (m10 == 1 && m100 != 11) return one;
-            if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-            return many;
-        }
+        private static string Plural(int n, string one, string few, string many) => Loc.Plural(n, one, few, many);
 
         /// <summary>Music, sounds and (on phones) vibration, each on or off.</summary>
+        private bool _privacyOpen;
+
         private void DrawSettingsPanel(float w, float h)
         {
             Dim(w, h);
+            if (_privacyOpen) { DrawPrivacy(w, h); return; }
             bool buzz = Haptics.Supported;
-            float pw = Mathf.Min(620, w - 60), ph = buzz ? 600 : 500;
+            float pw = Mathf.Min(620, w - 60), ph = (buzz ? 600 : 500) + 200;
             var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
-            NightWindow(r, "Настройки");
+            NightWindow(r, Loc.T("Настройки"));
             float y = r.y + 110;
             bool Row(string onText, string offText, bool on)
             {
@@ -992,11 +1012,41 @@ namespace Game.View
                 y += 96;
                 return hit;
             }
-            if (Row("Музыка: включена", "Музыка: выключена", !Music.Off)) Later(() => Music.Off = !Music.Off, click: true);
-            if (Row("Звуки: включены", "Звуки: выключены", !Sfx.Muted)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
-            if (buzz && Row("Вибрация: включена", "Вибрация: выключена", !Haptics.Off)) Later(() => { Haptics.Off = !Haptics.Off; Haptics.Tap(40); }, click: true);
-            if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), "Готово", 34)) Later(() => _settingsOpen = false);
+            if (Row(Loc.T("Музыка: включена"), Loc.T("Музыка: выключена"), !Music.Off)) Later(() => Music.Off = !Music.Off, click: true);
+            if (Row(Loc.T("Звуки: включены"), Loc.T("Звуки: выключены"), !Sfx.Muted)) Later(() => { Sfx.Muted = !Sfx.Muted; if (!Sfx.Muted) Sfx.Play("click"); }, click: false);
+            if (buzz && Row(Loc.T("Вибрация: включена"), Loc.T("Вибрация: выключена"), !Haptics.Off)) Later(() => { Haptics.Off = !Haptics.Off; Haptics.Tap(40); }, click: true);
+
+            // About the game: who made it, which version. A person's name tells players someone cares about it.
+            var about = new GUIStyle(_nightBody) { fontSize = 21 };
+            about.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
+            y += 6;
+            GUI.Label(new Rect(r.x + 40, y, r.width - 80, 30), Loc.F("Замок из сундуков · версия {0}", Application.version), about);
+            GUI.Label(new Rect(r.x + 40, y + 32, r.width - 80, 30), Loc.T("Игру сделал Валентин"), about);
+            y += 78;
+            var small = new GUIStyle(_wood) { fontSize = 19 };
+            float bw = (r.width - 120 - 12) / 2;
+            if (GUI.Button(new Rect(r.x + 60, y, bw, 56), Loc.T("Конфиденциальность"), small)) Later(() => _privacyOpen = true);
+            if (GUI.Button(new Rect(r.x + 60 + bw + 12, y, bw, 56), Loc.T("Начать сначала"), small))
+                Later(() => { _settingsOpen = false; AskStartOver(); });
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), Loc.T("Готово"), 34)) Later(() => _settingsOpen = false);
         }
+
+        private void DrawPrivacy(float w, float h)
+        {
+            float pw = Mathf.Min(640, w - 40), ph = Mathf.Min(h - 80, 900);
+            var r = new Rect((w - pw) / 2, h / 2 - ph / 2, pw, ph);
+            NightWindow(r, Loc.T("Твои данные"));
+            var body = new GUIStyle(_nightBody) { fontSize = 21, alignment = TextAnchor.UpperLeft };
+            body.normal.textColor = new Color32(0xee, 0xea, 0xdc, 0xff);
+            GUI.Label(new Rect(r.x + 50, r.y + 110, r.width - 100, r.height - 260), Loc.T(PrivacyText), body);
+            if (GoldButton(new Rect(r.x + 70, r.yMax - 124, r.width - 140, 96), Loc.T("Понятно"), 34)) Later(() => _privacyOpen = false);
+        }
+
+        private const string PrivacyText =
+            "Игра не просит имя, почту или телефон и не собирает их.\n\n" +
+            "Прогресс (замки, склад, сундуки, очки) хранится на устройстве, а в Яндекс Играх ещё и в облачном сохранении Яндекса, чтобы не потерялся.\n\n" +
+            "Рекламу показывает площадка, на которой ты играешь (например, Яндекс). Она может использовать данные по своим правилам конфиденциальности.\n\n" +
+            "Вопросы об игре: через страницу игры на площадке.";
 
         /// <summary>Eight sparkles flying out from <paramref name="at"/> and fading, <paramref name="k"/> 0 → 1.</summary>
         private static void DrawBurst(Vector2 at, float k)
@@ -1082,8 +1132,8 @@ namespace Game.View
             }
 
             // The title on a red ribbon over the top edge of the frame.
-            string title = t < shakeEnd ? (rw.Chests > 1 ? $"Открываем {rw.Chests} сундука…" : "Открываем…")
-                : rw.Chests > 1 ? $"Открыто сундуков: {rw.Chests}" : "Сундук открыт!";
+            string title = t < shakeEnd ? (rw.Chests > 1 ? Loc.F("Открываем {0} сундука…", rw.Chests) : Loc.T("Открываем…"))
+                : rw.Chests > 1 ? Loc.F("Открыто сундуков: {0}", rw.Chests) : Loc.T("Сундук открыт!");
             var rib = new Rect(r.center.x - 256, r.y - 44, 512, 128);
             if (GameArt.Ribbon != null)
             {
@@ -1190,12 +1240,12 @@ namespace Game.View
             }
             if (more && t > lastLand)
                 Outlined(new Rect(r.x + 30, y0 + 2 * rowH, r.width - 60, 40),
-                    "и ещё: " + Describe(rw.Parts.Where(p => groups.Skip(perRow * 2).Any(g => g.Key == p)).ToList()), _onNight, NightInk, 2f);
+                    Loc.T("и ещё: ") + Describe(rw.Parts.Where(p => groups.Skip(perRow * 2).Any(g => g.Key == p)).ToList()), _onNight, NightInk, 2f);
 
             // «Забрать» shows up once everything has landed; a tap on the window before that skips the show.
             if (t > lastLand)
             {
-                if (GoldButton(new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96), "Забрать", 40)) Later(CloseReward, click: false);
+                if (GoldButton(new Rect(r.x + 70, r.yMax - 136, r.width - 140, 96), Loc.T("Забрать"), 40)) Later(CloseReward, click: false);
             }
             else if (GUI.Button(r, GUIContent.none, _invisible)) rw.Since = Time.time - lastLand - 0.01f;
         }

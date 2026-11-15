@@ -21,8 +21,9 @@ namespace Game.EditorTools
         {
             ProjectSetup.SetupPlayer();
             PlayerSettings.WebGL.template = "PROJECT:Fullscreen";
-            // Gzip with the JS fallback works on any static server, a phone over Wi-Fi included, and on Yandex.
-            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+            // Brotli is ~15-20% smaller than gzip; with the JS fallback the browser unpacks it itself, so it works on
+            // any static server, a phone over Wi-Fi included, and on Yandex.
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
             PlayerSettings.WebGL.decompressionFallback = true;
             PlayerSettings.WebGL.dataCaching = true;
             PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.ExplicitlyThrownExceptionsOnly;
